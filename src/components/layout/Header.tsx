@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import { Bars3Icon, XMarkIcon, BeakerIcon } from '@heroicons/react/24/outline';
 
 const navigation = [
   { name: 'Trang chủ', href: '/' },
@@ -19,65 +19,75 @@ export default function Header() {
   const isLoggedIn = false;
 
   return (
-    <header className="bg-white shadow-md">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8" aria-label="Global">
+    <header className="bg-white/95 backdrop-blur-md border-b border-secondary-200 sticky top-0 z-50">
+      <nav className="container-max flex items-center justify-between py-4" aria-label="Global">
         <div className="flex lg:flex-1">
-          <Link href="/" className="-m-1.5 p-1.5">
-            <span className="sr-only">DNA Testing Service</span>
-            <div className="flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-8 h-8 text-blue-600">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
-              </svg>
-              <span className="ml-2 text-xl font-bold text-gray-900">DNA Testing VN</span>
+          <Link href="/" className="flex items-center group">
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-primary text-white group-hover:scale-105 transition-transform duration-200">
+              <BeakerIcon className="w-6 h-6" />
+            </div>
+            <div className="ml-3">
+              <span className="text-xl font-bold text-secondary-900">DNA Testing VN</span>
+              <div className="text-xs text-secondary-600 font-medium">Chuyên nghiệp • Uy tín</div>
             </div>
           </Link>
         </div>
+        
         <div className="flex lg:hidden">
           <button
             type="button"
-            className="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-700"
+            className="inline-flex items-center justify-center rounded-lg p-2.5 text-secondary-700 hover:bg-secondary-100 transition-colors duration-200"
             onClick={() => setMobileMenuOpen(true)}
           >
             <span className="sr-only">Mở menu</span>
             <Bars3Icon className="h-6 w-6" aria-hidden="true" />
           </button>
         </div>
-        <div className="hidden lg:flex lg:gap-x-12">
+        
+        <div className="hidden lg:flex lg:gap-x-8">
           {navigation.map((item) => (
             <Link
               key={item.name}
               href={item.href}
-              className="text-sm font-semibold leading-6 text-gray-900 hover:text-blue-600"
+              className="text-sm font-medium text-secondary-700 hover:text-primary-600 transition-colors duration-200 relative group"
             >
               {item.name}
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary-600 group-hover:w-full transition-all duration-200"></span>
             </Link>
           ))}
         </div>
-        <div className="hidden lg:flex lg:flex-1 lg:justify-end">
+        
+        <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:gap-x-4">
           {isLoggedIn ? (
-            <div className="flex items-center space-x-4">
-              <Link href="/my-tests" className="text-sm font-semibold text-gray-900 hover:text-blue-600">
+            <>
+              <Link 
+                href="/my-tests" 
+                className="text-sm font-medium text-secondary-700 hover:text-primary-600 transition-colors duration-200"
+              >
                 Xét nghiệm của tôi
               </Link>
-              <Link href="/dashboard" className="text-sm font-semibold text-gray-900 hover:text-blue-600">
+              <Link 
+                href="/dashboard" 
+                className="text-sm font-medium text-secondary-700 hover:text-primary-600 transition-colors duration-200"
+              >
                 Tài khoản
               </Link>
-              <button className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+              <button className="btn-secondary text-sm py-2 px-4">
                 Đăng xuất
               </button>
-            </div>
+            </>
           ) : (
-            <div className="flex items-center space-x-4">
-              <Link href="/auth/login" className="text-sm font-semibold leading-6 text-gray-900 hover:text-blue-600">
-                Đăng nhập <span aria-hidden="true">&rarr;</span>
-              </Link>
-              <Link
-                href="/auth/register"
-                className="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            <>
+              <Link 
+                href="/auth/login" 
+                className="text-sm font-medium text-secondary-700 hover:text-primary-600 transition-colors duration-200"
               >
-                Đăng ký
+                Đăng nhập
               </Link>
-            </div>
+              <Link href="/auth/register" className="btn-primary text-sm py-2 px-4">
+                Đăng ký ngay
+              </Link>
+            </>
           )}
         </div>
       </nav>
@@ -85,61 +95,58 @@ export default function Header() {
       {/* Mobile menu */}
       {mobileMenuOpen && (
         <div className="lg:hidden">
-          <div className="fixed inset-0 z-50 bg-white">
-            <div className="flex items-center justify-between px-6 py-4 border-b">
-              <div className="flex">
-                <Link href="/" className="-m-1.5 p-1.5">
-                  <span className="sr-only">DNA Testing Service</span>
-                  <div className="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-8 h-8 text-blue-600">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
-                    </svg>
-                    <span className="ml-2 text-xl font-bold text-gray-900">DNA Testing VN</span>
+          <div className="fixed inset-0 z-50 bg-secondary-900/50 backdrop-blur-sm animate-fade-in" onClick={() => setMobileMenuOpen(false)}>
+            <div className="fixed inset-y-0 right-0 z-50 w-full max-w-sm bg-white shadow-large animate-slide-up" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-6 py-4 border-b border-secondary-200">
+                <Link href="/" className="flex items-center" onClick={() => setMobileMenuOpen(false)}>
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-primary text-white">
+                    <BeakerIcon className="w-5 h-5" />
                   </div>
+                  <span className="ml-2 text-lg font-bold text-secondary-900">DNA Testing VN</span>
                 </Link>
+                <button
+                  type="button"
+                  className="rounded-lg p-2 text-secondary-700 hover:bg-secondary-100 transition-colors duration-200"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <span className="sr-only">Đóng menu</span>
+                  <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                </button>
               </div>
-              <button
-                type="button"
-                className="-m-2.5 rounded-md p-2.5 text-gray-700"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <span className="sr-only">Đóng menu</span>
-                <XMarkIcon className="h-6 w-6" aria-hidden="true" />
-              </button>
-            </div>
-            <div className="mt-6 flow-root">
-              <div className="-my-6 divide-y divide-gray-500/10">
-                <div className="space-y-2 py-6 px-6">
+              
+              <div className="flex flex-col h-full">
+                <div className="flex-1 px-6 py-6 space-y-2">
                   {navigation.map((item) => (
                     <Link
                       key={item.name}
                       href={item.href}
-                      className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
+                      className="block rounded-lg px-4 py-3 text-base font-medium text-secondary-700 hover:bg-secondary-100 hover:text-primary-600 transition-colors duration-200"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       {item.name}
                     </Link>
                   ))}
                 </div>
-                <div className="py-6 px-6">
+                
+                <div className="border-t border-secondary-200 px-6 py-6 space-y-3">
                   {isLoggedIn ? (
                     <>
                       <Link
                         href="/my-tests"
-                        className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
+                        className="block rounded-lg px-4 py-3 text-base font-medium text-secondary-700 hover:bg-secondary-100 hover:text-primary-600 transition-colors duration-200"
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         Xét nghiệm của tôi
                       </Link>
                       <Link
                         href="/dashboard"
-                        className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
+                        className="block rounded-lg px-4 py-3 text-base font-medium text-secondary-700 hover:bg-secondary-100 hover:text-primary-600 transition-colors duration-200"
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         Tài khoản
                       </Link>
                       <button 
-                        className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
+                        className="w-full text-left rounded-lg px-4 py-3 text-base font-medium text-secondary-700 hover:bg-secondary-100 hover:text-primary-600 transition-colors duration-200"
                       >
                         Đăng xuất
                       </button>
@@ -148,17 +155,17 @@ export default function Header() {
                     <>
                       <Link
                         href="/auth/login"
-                        className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
+                        className="block rounded-lg px-4 py-3 text-base font-medium text-secondary-700 hover:bg-secondary-100 hover:text-primary-600 transition-colors duration-200"
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         Đăng nhập
                       </Link>
                       <Link
                         href="/auth/register"
-                        className="mt-4 block rounded-md bg-blue-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-blue-500"
+                        className="block btn-primary text-center"
                         onClick={() => setMobileMenuOpen(false)}
                       >
-                        Đăng ký
+                        Đăng ký ngay
                       </Link>
                     </>
                   )}

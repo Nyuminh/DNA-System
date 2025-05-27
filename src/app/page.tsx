@@ -1,24 +1,36 @@
 'use client';
 
-import Image from "next/image";
 import Link from 'next/link';
 import MainLayout from '@/components/layout/MainLayout';
+import { 
+  CheckCircleIcon, 
+  ShieldCheckIcon, 
+  HomeIcon,
+  BuildingOfficeIcon,
+  TruckIcon,
+  BeakerIcon,
+  StarIcon
+} from '@heroicons/react/24/outline';
 
 export default function Home() {
   const services = [
     {
       id: 'paternity',
       title: 'Xét nghiệm Huyết thống',
-      description: 'Xác định mối quan hệ cha con, mẹ con thông qua xét nghiệm ADN với độ chính xác cao.',
+      description: 'Xác định mối quan hệ cha con, mẹ con thông qua xét nghiệm ADN với độ chính xác cao lên đến 99.9999%.',
       imageUrl: '/images/paternity-testing.svg',
       href: '/services#paternity',
+      features: ['Kết quả chính xác', 'Bảo mật tuyệt đối', 'Tư vấn miễn phí'],
+      price: 'Từ 2.500.000đ',
     },
     {
       id: 'legal',
       title: 'Xét nghiệm ADN Hành chính',
-      description: 'Dịch vụ xét nghiệm ADN được công nhận bởi cơ quan pháp lý, phục vụ các mục đích hành chính.',
+      description: 'Dịch vụ xét nghiệm ADN được công nhận bởi cơ quan pháp lý, phục vụ các mục đích hành chính và pháp lý.',
       imageUrl: '/images/legal-dna.svg',
       href: '/services#legal',
+      features: ['Giá trị pháp lý', 'Quy trình chuẩn', 'Chứng nhận hợp lệ'],
+      price: 'Từ 3.500.000đ',
     },
     {
       id: 'private',
@@ -26,170 +38,264 @@ export default function Home() {
       description: 'Dịch vụ xét nghiệm ADN bảo mật, không cần thiết phải cung cấp thông tin cá nhân của người tham gia.',
       imageUrl: '/images/private-dna.svg',
       href: '/services#private',
+      features: ['Hoàn toàn bảo mật', 'Ẩn danh tùy chọn', 'Nhanh chóng'],
+      price: 'Từ 2.200.000đ',
     },
   ];
 
   const features = [
     {
       title: 'Tự thu mẫu tại nhà',
-      description: 'Nhận bộ kit thu mẫu và tự thực hiện lấy mẫu tại nhà, sau đó gửi mẫu đến trung tâm xét nghiệm.',
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-          <path d="M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a.75.75 0 101.06-1.06l-8.689-8.69a2.25 2.25 0 00-3.182 0l-8.69 8.69a.75.75 0 001.061 1.06l8.69-8.69z" />
-          <path d="M12 5.432l8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-3a.75.75 0 00-.75.75V21a.75.75 0 01-.75.75H5.625a1.875 1.875 0 01-1.875-1.875v-6.198a2.29 2.29 0 00.091-.086L12 5.43z" />
-        </svg>
-      ),
+      description: 'Nhận bộ kit thu mẫu chuyên nghiệp và tự thực hiện lấy mẫu tại nhà theo hướng dẫn chi tiết, sau đó gửi mẫu về trung tâm.',
+      icon: HomeIcon,
+      benefits: ['Tiện lợi, riêng tư', 'Hướng dẫn chi tiết', 'Kit chuyên nghiệp']
     },
     {
       title: 'Thu mẫu tại cơ sở y tế',
-      description: 'Đặt lịch hẹn và đến cơ sở y tế của chúng tôi để được nhân viên chuyên nghiệp lấy mẫu xét nghiệm.',
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-          <path fillRule="evenodd" d="M8.25 6.75a3.75 3.75 0 117.5 0 3.75 3.75 0 01-7.5 0zM15.75 9.75a3 3 0 116 0 3 3 0 01-6 0zM2.25 9.75a3 3 0 116 0 3 3 0 01-6 0zM6.31 15.117A6.745 6.745 0 0112 12a6.745 6.745 0 016.709 7.498.75.75 0 01-.372.568A12.696 12.696 0 0112 21.75c-2.305 0-4.47-.612-6.337-1.684a.75.75 0 01-.372-.568 6.787 6.787 0 011.019-4.38z" clipRule="evenodd" />
-          <path d="M5.082 14.254a8.287 8.287 0 00-1.308 5.135 9.687 9.687 0 01-1.764-.44l-.115-.04a.563.563 0 01-.373-.487l-.01-.121a3.75 3.75 0 013.57-4.047zM20.226 19.389a8.287 8.287 0 00-1.308-5.135 3.75 3.75 0 013.57 4.047l-.01.121a.563.563 0 01-.373.486l-.115.04c-.567.2-1.156.349-1.764.441z" />
-        </svg>
-      ),
+      description: 'Đặt lịch hẹn và đến cơ sở y tế của chúng tôi để được nhân viên y tế chuyên nghiệp lấy mẫu xét nghiệm.',
+      icon: BuildingOfficeIcon,
+      benefits: ['Nhân viên chuyên nghiệp', 'Trang thiết bị hiện đại', 'An toàn tuyệt đối']
     },
     {
       title: 'Thu mẫu tận nơi',
-      description: 'Nhân viên của chúng tôi sẽ đến tận nhà hoặc địa điểm yêu cầu để thực hiện việc lấy mẫu xét nghiệm.',
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-          <path d="M3.375 4.5C2.339 4.5 1.5 5.34 1.5 6.375V13.5h12V6.375c0-1.036-.84-1.875-1.875-1.875h-8.25zM13.5 15h-12v2.625c0 1.035.84 1.875 1.875 1.875h.375a3 3 0 116 0h3a.75.75 0 00.75-.75V15z" />
-          <path d="M8.25 19.5a1.5 1.5 0 10-3 0 1.5 1.5 0 003 0zM15.75 6.75a.75.75 0 00-.75.75v11.25c0 .087.015.17.042.248a3 3 0 015.958.464c.853-.175 1.522-.935 1.464-1.883a18.659 18.659 0 00-3.732-10.104 1.837 1.837 0 00-1.47-.725H15.75z" />
-          <path d="M19.5 19.5a1.5 1.5 0 10-3 0 1.5 1.5 0 003 0z" />
-        </svg>
-      ),
+      description: 'Nhân viên y tế của chúng tôi sẽ đến tận nhà hoặc địa điểm yêu cầu để thực hiện việc lấy mẫu xét nghiệm một cách thuận tiện.',
+      icon: TruckIcon,
+      benefits: ['Phục vụ tận nơi', 'Tiết kiệm thời gian', 'Linh hoạt địa điểm']
+    },
+  ];
+
+  const stats = [
+    { number: '99.9999%', label: 'Độ chính xác' },
+    { number: '10+', label: 'Năm kinh nghiệm' },
+    { number: '50,000+', label: 'Khách hàng tin tưởng' },
+    { number: '24/7', label: 'Hỗ trợ khách hàng' },
+  ];
+
+  const testimonials = [
+    {
+      name: 'Chị Nguyễn Thị Lan',
+      role: 'Khách hàng',
+      content: 'Dịch vụ rất chuyên nghiệp, kết quả chính xác và nhanh chóng. Nhân viên tư vấn nhiệt tình, hỗ trợ tận tình.',
+      rating: 5,
+    },
+    {
+      name: 'Anh Trần Văn Nam',
+      role: 'Khách hàng',
+      content: 'Quy trình làm việc minh bạch, kết quả được giải thích rõ ràng. Rất hài lòng với dịch vụ.',
+      rating: 5,
+    },
+    {
+      name: 'Chị Lê Thị Hoa',
+      role: 'Khách hàng',
+      content: 'Bảo mật thông tin tuyệt đối, dịch vụ chu đáo. Tôi sẽ giới thiệu cho bạn bè khi cần.',
+      rating: 5,
     },
   ];
 
   return (
     <MainLayout>
       {/* Hero section */}
-      <div className="relative bg-gradient-to-r from-blue-600 to-indigo-700">
-        <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8 lg:py-40">
-          <div className="flex flex-col lg:flex-row">
-            <div className="lg:w-1/2 mb-12 lg:mb-0">
-              <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
-                Dịch vụ Xét nghiệm ADN Uy tín & Chính xác
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0 gradient-hero"></div>
+        <div className="relative container-max section-padding">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="animate-slide-up">
+              <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white text-sm font-medium mb-6">
+                <CheckCircleIcon className="w-4 h-4 mr-2" />
+                Chứng nhận ISO 15189 & CAP
+              </div>
+              <h1 className="text-4xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+                Dịch vụ Xét nghiệm
+                <span className="block text-transparent bg-gradient-to-r from-blue-300 to-cyan-300 bg-clip-text">
+                  ADN Chuyên nghiệp
+                </span>
               </h1>
-              <p className="mt-6 text-lg leading-8 text-gray-100">
-                Chúng tôi cung cấp dịch vụ xét nghiệm ADN chuyên nghiệp với kết quả chính xác lên đến 99.9999%.
-                Bảo mật thông tin khách hàng và kết quả xét nghiệm là ưu tiên hàng đầu của chúng tôi.
+              <p className="text-xl text-blue-100 mb-8 leading-relaxed">
+                Trung tâm xét nghiệm ADN hàng đầu với công nghệ hiện đại nhất, 
+                mang đến kết quả chính xác <strong>99.9999%</strong> và dịch vụ tận tâm.
               </p>
-              <div className="mt-10 flex items-center gap-x-6">
-                <Link
-                  href="/services"
-                  className="rounded-md bg-white px-5 py-3 text-lg font-semibold text-blue-600 shadow-sm hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                >
-                  Xem dịch vụ
+              <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                <Link href="/services" className="btn-primary text-lg">
+                  Khám phá dịch vụ
                 </Link>
-                <Link href="/contact" className="text-lg font-semibold leading-6 text-white hover:text-gray-200">
-                  Liên hệ <span aria-hidden="true">→</span>
+                <Link href="/contact" className="btn-outline text-lg border-white text-white hover:bg-white hover:text-secondary-900">
+                  Tư vấn miễn phí
                 </Link>
               </div>
+              
+              {/* Stats */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                {stats.map((stat, index) => (
+                  <div key={index} className="text-center">
+                    <div className="text-2xl lg:text-3xl font-bold text-white">{stat.number}</div>
+                    <div className="text-sm text-blue-200">{stat.label}</div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="lg:w-1/2 lg:pl-12 flex items-center justify-center">
-              <div className="relative w-full max-w-lg h-80 sm:h-96">
-                {/* Placeholder for image - will use proper image later */}
-                <div className="w-full h-full rounded-lg bg-white/10 shadow-2xl flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1" className="w-40 h-40 opacity-80">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
-                  </svg>
+            
+            <div className="relative animate-fade-in">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-primary-400 to-primary-600 rounded-2xl blur-2xl opacity-30 scale-105"></div>
+                <div className="relative bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
+                  <div className="flex items-center justify-center w-full h-80">
+                    <BeakerIcon className="w-32 h-32 text-white/80" />
+                  </div>
+                  <div className="absolute -bottom-4 -right-4 bg-primary-600 rounded-xl p-4">
+                    <ShieldCheckIcon className="w-8 h-8 text-white" />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Services section */}
-      <div className="bg-white py-16 sm:py-24">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Dịch vụ xét nghiệm ADN</h2>
-            <p className="mt-6 text-lg leading-8 text-gray-600">
-              Chúng tôi cung cấp đa dạng các dịch vụ xét nghiệm ADN phù hợp với nhu cầu của khách hàng.
+      <section className="section-padding bg-white">
+        <div className="container-max">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl lg:text-4xl font-bold text-secondary-900 mb-4">
+              Dịch vụ xét nghiệm ADN chuyên nghiệp
+            </h2>
+            <p className="text-xl text-secondary-600 max-w-3xl mx-auto">
+              Chúng tôi cung cấp đa dạng các dịch vụ xét nghiệm ADN với công nghệ tiên tiến nhất, 
+              đáp ứng mọi nhu cầu của khách hàng.
             </p>
           </div>
-          <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-x-8 gap-y-12 lg:mx-0 lg:max-w-none lg:grid-cols-3">
-            {services.map((service) => (
-              <div key={service.id} className="bg-white overflow-hidden shadow rounded-lg transition-all hover:shadow-lg">
-                <div className="h-48 w-full bg-gray-200 flex items-center justify-center">
-                  {/* Placeholder for image - will use proper images later */}
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-16 h-16 text-gray-400">
-                    <path fillRule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clipRule="evenodd" />
-                  </svg>
+          
+          <div className="grid lg:grid-cols-3 gap-8">
+            {services.map((service, index) => (
+              <div 
+                key={service.id} 
+                className="card-elevated p-8 group hover:scale-105 transition-all duration-300 animate-slide-up"
+                style={{animationDelay: `${index * 100}ms`}}
+              >
+                <div className="flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-primary text-white mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <BeakerIcon className="w-8 h-8" />
                 </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">{service.title}</h3>
-                  <p className="text-gray-600 mb-6">{service.description}</p>
-                  <Link href={service.href} className="text-blue-600 font-medium hover:text-blue-800">
-                    Tìm hiểu thêm <span aria-hidden="true">→</span>
+                
+                <h3 className="text-xl font-bold text-secondary-900 mb-3">{service.title}</h3>
+                <p className="text-secondary-600 mb-6 leading-relaxed">{service.description}</p>
+                
+                <div className="space-y-2 mb-6">
+                  {service.features.map((feature, featureIndex) => (
+                    <div key={featureIndex} className="flex items-center text-sm text-secondary-700">
+                      <CheckCircleIcon className="w-4 h-4 text-success-600 mr-2 flex-shrink-0" />
+                      {feature}
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="text-lg font-bold text-primary-600">{service.price}</div>
+                  <Link href={service.href} className="btn-primary text-sm py-2 px-4 group-hover:shadow-lg">
+                    Tìm hiểu thêm
                   </Link>
                 </div>
               </div>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Sample collection methods */}
-      <div className="bg-gray-50 py-16 sm:py-24">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Phương thức thu mẫu</h2>
-            <p className="mt-6 text-lg leading-8 text-gray-600">
-              Chúng tôi cung cấp nhiều phương thức thu mẫu khác nhau, giúp quá trình xét nghiệm trở nên thuận tiện nhất cho bạn.
+      <section className="section-padding bg-secondary-50">
+        <div className="container-max">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl lg:text-4xl font-bold text-secondary-900 mb-4">
+              Phương thức thu mẫu linh hoạt
+            </h2>
+            <p className="text-xl text-secondary-600 max-w-3xl mx-auto">
+              Chúng tôi cung cấp nhiều phương thức thu mẫu khác nhau, giúp quá trình xét nghiệm 
+              trở nên thuận tiện và phù hợp nhất cho từng khách hàng.
             </p>
           </div>
-          <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
-            <dl className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-3">
-              {features.map((feature) => (
-                <div key={feature.title} className="flex flex-col">
-                  <dt className="flex items-center gap-x-3 text-xl font-semibold leading-7 text-gray-900">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-600 text-white">
-                      {feature.icon}
-                    </div>
-                    {feature.title}
-                  </dt>
-                  <dd className="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600">
-                    <p className="flex-auto">{feature.description}</p>
-                  </dd>
+          
+          <div className="grid lg:grid-cols-3 gap-8">
+            {features.map((feature, index) => (
+              <div 
+                key={feature.title} 
+                className="bg-white rounded-2xl p-8 shadow-soft hover:shadow-medium transition-all duration-300 animate-slide-up"
+                style={{animationDelay: `${index * 150}ms`}}
+              >
+                <div className="flex items-center justify-center w-16 h-16 rounded-xl bg-primary-100 text-primary-600 mb-6">
+                  <feature.icon className="w-8 h-8" />
                 </div>
-              ))}
-            </dl>
+                
+                <h3 className="text-xl font-bold text-secondary-900 mb-3">{feature.title}</h3>
+                <p className="text-secondary-600 mb-6 leading-relaxed">{feature.description}</p>
+                
+                <div className="space-y-2">
+                  {feature.benefits.map((benefit, benefitIndex) => (
+                    <div key={benefitIndex} className="flex items-center text-sm text-secondary-700">
+                      <CheckCircleIcon className="w-4 h-4 text-success-600 mr-2 flex-shrink-0" />
+                      {benefit}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="section-padding bg-white">
+        <div className="container-max">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl lg:text-4xl font-bold text-secondary-900 mb-4">
+              Khách hàng nói gì về chúng tôi
+            </h2>
+            <p className="text-xl text-secondary-600 max-w-2xl mx-auto">
+              Hàng nghìn khách hàng đã tin tưởng và hài lòng với dịch vụ của chúng tôi.
+            </p>
+          </div>
+          
+          <div className="grid lg:grid-cols-3 gap-8">
+            {testimonials.map((testimonial, index) => (
+              <div 
+                key={index} 
+                className="bg-secondary-50 rounded-2xl p-8 animate-slide-up"
+                style={{animationDelay: `${index * 100}ms`}}
+              >
+                <div className="flex items-center mb-4">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <StarIcon key={i} className="w-5 h-5 text-warning-400 fill-current" />
+                  ))}
+                </div>
+                <p className="text-secondary-700 mb-6 italic leading-relaxed">&ldquo;{testimonial.content}&rdquo;</p>
+                <div>
+                  <div className="font-semibold text-secondary-900">{testimonial.name}</div>
+                  <div className="text-sm text-secondary-600">{testimonial.role}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* CTA section */}
-      <div className="bg-white">
-        <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-              Sẵn sàng đặt dịch vụ xét nghiệm?
+      <section className="section-padding gradient-primary">
+        <div className="container-max text-center">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-3xl lg:text-4xl font-bold text-white mb-6">
+              Sẵn sàng bắt đầu xét nghiệm ADN?
             </h2>
-            <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-gray-600">
-              Đăng ký tài khoản ngay hôm nay để đặt dịch vụ xét nghiệm ADN và theo dõi kết quả một cách thuận tiện.
+            <p className="text-xl text-blue-100 mb-10 leading-relaxed">
+              Đăng ký tài khoản ngay hôm nay để đặt dịch vụ xét nghiệm ADN và theo dõi kết quả 
+              một cách thuận tiện. Hoặc liên hệ với chúng tôi để được tư vấn miễn phí.
             </p>
-            <div className="mt-10 flex items-center justify-center gap-x-6">
-              <Link
-                href="/auth/register"
-                className="rounded-md bg-blue-600 px-5 py-3 text-lg font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-              >
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/auth/register" className="btn-secondary text-lg">
                 Đăng ký ngay
               </Link>
-              <Link
-                href="/services"
-                className="text-lg font-semibold leading-6 text-gray-900 hover:text-blue-600"
-              >
-                Xem dịch vụ <span aria-hidden="true">→</span>
+              <Link href="/contact" className="btn-outline border-white text-white hover:bg-white hover:text-primary-600 text-lg">
+                Tư vấn miễn phí
               </Link>
             </div>
-          </div>
-        </div>
-      </div>
+          </div>        </div>
+      </section>
     </MainLayout>
   );
 }
