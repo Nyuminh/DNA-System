@@ -98,16 +98,100 @@ export default function ServicesPage() {
   const [selectedService, setSelectedService] = useState(services[0]);
 
   return (
-    <MainLayout>
-      {/* Hero section */}
-      <div className="bg-blue-600 py-16 sm:py-24">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-white sm:text-6xl">Dịch vụ xét nghiệm ADN</h1>
-            <p className="mt-6 text-lg leading-8 text-blue-100">
+    <MainLayout>      {/* Hero section */}
+      <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 py-8 sm:py-10 overflow-hidden">
+        {/* Background image */}
+        <div className="absolute inset-0">
+          <div 
+            className="h-full w-full bg-cover bg-center bg-no-repeat opacity-20"
+            style={{ backgroundImage: "url('/images/services-banner.svg')" }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/80 via-blue-700/70 to-indigo-800/80" />
+        </div>
+        
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          {/* Floating DNA helixes */}
+          <div className="absolute top-10 left-10 w-16 h-16 opacity-15 animate-pulse">
+            <svg viewBox="0 0 100 100" className="w-full h-full text-white">
+              <path d="M20 20 Q50 10, 80 20 T20 80" stroke="currentColor" strokeWidth="2" fill="none"/>
+              <path d="M20 80 Q50 90, 80 80 T20 20" stroke="currentColor" strokeWidth="2" fill="none"/>
+              <circle cx="20" cy="20" r="2" fill="currentColor"/>
+              <circle cx="80" cy="80" r="2" fill="currentColor"/>
+            </svg>
+          </div>
+          
+          <div className="absolute top-20 right-20 w-12 h-12 opacity-10 animate-bounce">
+            <svg viewBox="0 0 100 100" className="w-full h-full text-white">
+              <circle cx="50" cy="50" r="20" stroke="currentColor" strokeWidth="2" fill="none"/>
+              <circle cx="50" cy="50" r="8" fill="currentColor" opacity="0.5"/>
+            </svg>
+          </div>
+          
+          {/* Hexagon pattern */}
+          <div className="absolute inset-0 opacity-5">
+            <svg className="w-full h-full" viewBox="0 0 400 400">
+              <defs>
+                <pattern id="hexagons" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+                  <polygon points="20,2 35,12 35,28 20,38 5,28 5,12" fill="none" stroke="white" strokeWidth="1"/>
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#hexagons)"/>
+            </svg>
+          </div>
+        </div>
+        
+        <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            {/* Service badge */}
+            <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 mb-4">
+              <svg className="w-4 h-4 mr-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              <span className="text-white font-medium text-sm">Chứng nhận ISO 15189 & CAP</span>
+            </div>
+            
+            <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent mb-4">
+              Dịch vụ xét nghiệm ADN
+            </h1>
+              <p className="mt-2 text-base leading-6 text-blue-50 max-w-2xl mx-auto">
               Chúng tôi cung cấp nhiều loại dịch vụ xét nghiệm ADN khác nhau phù hợp với nhu cầu của bạn.
-              Tất cả các xét nghiệm đều được thực hiện với độ chính xác cao và bảo mật thông tin.
+              <span className="block mt-1 text-sm text-blue-100">
+                Tất cả các xét nghiệm đều được thực hiện với độ chính xác cao và bảo mật thông tin tuyệt đối.
+              </span>
             </p>
+              {/* Key features */}
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
+                <div className="inline-flex items-center justify-center w-8 h-8 bg-white/20 rounded-lg mb-2">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-sm font-semibold text-white mb-1">Độ chính xác 99.99%</h3>
+                <p className="text-blue-100 text-xs">Công nghệ tiên tiến nhất hiện nay</p>
+              </div>
+              
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
+                <div className="inline-flex items-center justify-center w-8 h-8 bg-white/20 rounded-lg mb-2">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <h3 className="text-sm font-semibold text-white mb-1">Bảo mật tuyệt đối</h3>
+                <p className="text-blue-100 text-xs">Thông tin được mã hóa và bảo vệ</p>
+              </div>
+              
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
+                <div className="inline-flex items-center justify-center w-8 h-8 bg-white/20 rounded-lg mb-2">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <h3 className="text-sm font-semibold text-white mb-1">Kết quả nhanh</h3>
+                <p className="text-blue-100 text-xs">Từ 3-5 ngày làm việc</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

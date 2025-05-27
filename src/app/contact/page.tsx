@@ -89,105 +89,161 @@ export default function ContactPage() {
                       </div>
                     </div>
                   </div>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-8">
-                  <div className="sm:col-span-2">
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                      Họ và tên
-                    </label>
-                    <div className="mt-1">
-                      <input
-                        type="text"
-                        name="name"
-                        id="name"
-                        autoComplete="name"
-                        required
-                        value={formState.name}
-                        onChange={handleChange}
-                        className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
-                      />
+                </div>              ) : (
+                <form onSubmit={handleSubmit} className="space-y-8">
+                  {/* Personal Information Section */}
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                      <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      Thông tin cá nhân
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div>
+                        <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
+                          Họ và tên *
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            name="name"
+                            id="name"
+                            autoComplete="name"
+                            required
+                            value={formState.name}
+                            onChange={handleChange}
+                            className="w-full px-4 py-3 pl-11 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-gray-400"
+                            placeholder="Nhập họ và tên của bạn"
+                          />
+                          <svg className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div>
+                        <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-2">
+                          Số điện thoại *
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="tel"
+                            name="phone"
+                            id="phone"
+                            autoComplete="tel"
+                            required
+                            value={formState.phone}
+                            onChange={handleChange}
+                            className="w-full px-4 py-3 pl-11 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-gray-400"
+                            placeholder="Nhập số điện thoại"
+                          />
+                          <svg className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-6">
+                      <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                        Địa chỉ email *
+                      </label>
+                      <div className="relative">
+                        <input
+                          id="email"
+                          name="email"
+                          type="email"
+                          autoComplete="email"
+                          required
+                          value={formState.email}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 pl-11 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-gray-400"
+                          placeholder="example@email.com"
+                        />
+                        <svg className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                      Email
-                    </label>
-                    <div className="mt-1">
-                      <input
-                        id="email"
-                        name="email"
-                        type="email"
-                        autoComplete="email"
-                        required
-                        value={formState.email}
-                        onChange={handleChange}
-                        className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
-                      />
+
+                  {/* Message Section */}
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-100">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                      <svg className="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      Nội dung liên hệ
+                    </h3>
+                    <div className="space-y-6">
+                      <div>
+                        <label htmlFor="subject" className="block text-sm font-semibold text-gray-700 mb-2">
+                          Chủ đề *
+                        </label>
+                        <div className="relative">
+                          <select
+                            id="subject"
+                            name="subject"
+                            required
+                            value={formState.subject}
+                            onChange={handleChange}
+                            className="w-full px-4 py-3 pl-11 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-gray-400 appearance-none bg-white"
+                          >
+                            <option value="">-- Chọn chủ đề liên hệ --</option>
+                            <option value="test-info">💡 Thông tin xét nghiệm</option>
+                            <option value="appointment">📅 Đặt lịch hẹn</option>
+                            <option value="results">📊 Kết quả xét nghiệm</option>
+                            <option value="pricing">💰 Báo giá dịch vụ</option>
+                            <option value="support">🛠️ Hỗ trợ kỹ thuật</option>
+                            <option value="other">❓ Vấn đề khác</option>
+                          </select>
+                          <svg className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                          </svg>
+                          <svg className="absolute right-3 top-3.5 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div>
+                        <label htmlFor="message" className="block text-sm font-semibold text-gray-700 mb-2">
+                          Nội dung chi tiết *
+                        </label>
+                        <div className="relative">
+                          <textarea
+                            id="message"
+                            name="message"
+                            rows={6}
+                            required
+                            value={formState.message}
+                            onChange={handleChange}
+                            className="w-full px-4 py-3 pl-11 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-gray-400 resize-none"
+                            placeholder="Mô tả chi tiết nhu cầu của bạn..."
+                          />
+                          <svg className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </div>
+                        <p className="mt-2 text-sm text-gray-500">
+                          Vui lòng mô tả chi tiết để chúng tôi có thể hỗ trợ bạn tốt nhất
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                      Số điện thoại
-                    </label>
-                    <div className="mt-1">
-                      <input
-                        type="tel"
-                        name="phone"
-                        id="phone"
-                        autoComplete="tel"
-                        required
-                        value={formState.phone}
-                        onChange={handleChange}
-                        className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
-                      />
-                    </div>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label htmlFor="subject" className="block text-sm font-medium text-gray-700">
-                      Chủ đề
-                    </label>
-                    <div className="mt-1">
-                      <select
-                        id="subject"
-                        name="subject"
-                        required
-                        value={formState.subject}
-                        onChange={handleChange}
-                        className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
-                      >
-                        <option value="">-- Chọn chủ đề --</option>
-                        <option value="test-info">Thông tin xét nghiệm</option>
-                        <option value="appointment">Đặt lịch hẹn</option>
-                        <option value="results">Kết quả xét nghiệm</option>
-                        <option value="pricing">Báo giá dịch vụ</option>
-                        <option value="other">Vấn đề khác</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label htmlFor="message" className="block text-sm font-medium text-gray-700">
-                      Nội dung
-                    </label>
-                    <div className="mt-1">
-                      <textarea
-                        id="message"
-                        name="message"
-                        rows={5}
-                        required
-                        value={formState.message}
-                        onChange={handleChange}
-                        className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border border-gray-300 rounded-md"
-                      />
-                    </div>
-                  </div>
-                  <div className="sm:col-span-2">
+
+                  {/* Submit Button */}
+                  <div className="text-center">
                     <button
                       type="submit"
-                      className="w-full inline-flex items-center justify-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      className="inline-flex items-center justify-center px-8 py-4 border border-transparent text-base font-semibold rounded-xl text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-lg hover:shadow-xl transform transition-all duration-200 hover:scale-105"
                     >
-                      Gửi liên hệ
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                      </svg>
+                      Gửi thông tin liên hệ
                     </button>
+                    <p className="mt-3 text-sm text-gray-500">
+                      Chúng tôi sẽ phản hồi trong vòng 24 giờ
+                    </p>
                   </div>
                 </form>
               )}
