@@ -12,7 +12,7 @@ export default function AboutPage() {
         <div className="relative bg-blue-600">          <div className="absolute inset-0">
             <Image
               className="h-full w-full object-cover opacity-30"
-              src="/images/lab-background.svg"
+              src="/images/lab-background.jpg"
               alt="DNA Testing Laboratory"
               width={1920}
               height={600}
@@ -115,7 +115,7 @@ export default function AboutPage() {
             <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
               <div className="relative rounded-lg overflow-hidden">
                 <Image
-                  src="/images/lab-equipment.jpg"
+                  src="/images/may-xet-nghiem-giai-trinh-tu-gen-nextseq.jpg"
                   alt="Thiết bị phòng thí nghiệm"
                   width={500}
                   height={300}
@@ -131,7 +131,7 @@ export default function AboutPage() {
               </div>
               <div className="relative rounded-lg overflow-hidden">
                 <Image
-                  src="/images/lab-process.jpg"
+                  src="/images/quy-trinh-xet-nghiem.jpg"
                   alt="Quy trình xét nghiệm"
                   width={500}
                   height={300}
@@ -147,7 +147,7 @@ export default function AboutPage() {
               </div>
               <div className="relative rounded-lg overflow-hidden">
                 <Image
-                  src="/images/lab-team.jpg"
+                  src="/images/hinh-doi-ngu-bac-si.jpg"
                   alt="Đội ngũ chuyên gia"
                   width={500}
                   height={300}
@@ -178,7 +178,7 @@ export default function AboutPage() {
               <div className="aspect-w-3 aspect-h-2">
                 <Image
                   className="object-cover shadow-lg rounded-lg"
-                  src="/images/doctor-1.jpg"
+                  src="/images/doctor1.jpg"
                   alt="GS.TS. Nguyễn Văn A"
                   width={400}
                   height={300}
@@ -198,7 +198,7 @@ export default function AboutPage() {
               <div className="aspect-w-3 aspect-h-2">
                 <Image
                   className="object-cover shadow-lg rounded-lg"
-                  src="/images/doctor-2.jpg"
+                  src="/images/doctor2.jpg"
                   alt="TS. Trần Thị B"
                   width={400}
                   height={300}
@@ -218,7 +218,7 @@ export default function AboutPage() {
               <div className="aspect-w-3 aspect-h-2">
                 <Image
                   className="object-cover shadow-lg rounded-lg"
-                  src="/images/doctor-3.jpg"
+                  src="/images/doctor3.jpg"
                   alt="ThS. Lê Văn C"
                   width={400}
                   height={300}
