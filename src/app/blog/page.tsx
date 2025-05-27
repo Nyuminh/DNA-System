@@ -15,7 +15,7 @@ const blogPosts = [
     author: 'TS. Nguyễn Văn A',
     authorRole: 'Giám đốc Phòng xét nghiệm',
     readTime: '8 phút đọc',
-    imageUrl: '/images/blog/dna-basics.jpg',
+    imageUrl: '/images/blog/blog-1.jpg',
     featured: true,
     content: '',
   },
@@ -28,7 +28,7 @@ const blogPosts = [
     author: 'ThS. Lê Văn C',
     authorRole: 'Chuyên gia Tư vấn Di truyền',
     readTime: '10 phút đọc',
-    imageUrl: '/images/blog/paternity-test.jpg',
+    imageUrl: '/images/blog/xet-nghiem-adn-cha-con.jpg',
     featured: true,
     content: '',
   },
@@ -41,7 +41,7 @@ const blogPosts = [
     author: 'TS. Trần Thị B',
     authorRole: 'Trưởng phòng Xét nghiệm ADN',
     readTime: '7 phút đọc',
-    imageUrl: '/images/blog/immigration-dna.jpg',
+    imageUrl: '/images/blog/xet-nghiem-adn-hanh-chinh.jpg',
     featured: false,
     content: '',
   },
@@ -54,7 +54,7 @@ const blogPosts = [
     author: 'TS. Nguyễn Văn A',
     authorRole: 'Giám đốc Phòng xét nghiệm',
     readTime: '6 phút đọc',
-    imageUrl: '/images/blog/dna-privacy.jpg',
+    imageUrl: '/images/blog/bao-mat-adn.jpg',
     featured: false,
     content: '',
   },
@@ -67,7 +67,7 @@ const blogPosts = [
     author: 'TS. Trần Thị B',
     authorRole: 'Trưởng phòng Xét nghiệm ADN',
     readTime: '5 phút đọc',
-    imageUrl: '/images/blog/collection-methods.jpg',
+    imageUrl: '/images/blog/cac-phuong-phap-xet-nghiem.jpg',
     featured: false,
     content: '',
   },
@@ -80,7 +80,7 @@ const blogPosts = [
     author: 'ThS. Lê Văn C',
     authorRole: 'Chuyên gia Tư vấn Di truyền',
     readTime: '8 phút đọc',
-    imageUrl: '/images/blog/dna-myths.jpg',
+    imageUrl: '/images/blog/kien-thuc-adn.jpg',
     featured: false,
     content: '',
   },
@@ -138,13 +138,14 @@ export default function BlogPage() {
               <h2 className="text-2xl font-extrabold tracking-tight text-gray-900 mb-8">Bài viết nổi bật</h2>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-12">
                 {featuredPosts.map((post) => (
-                  <div key={post.id} className="group relative">
-                    <div className="relative h-80 w-full overflow-hidden rounded-lg bg-gray-200 group-hover:opacity-90 sm:aspect-w-2 sm:aspect-h-1 sm:h-64 lg:aspect-w-1 lg:aspect-h-1">
-                      <div className="h-full w-full bg-gray-200 flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-16 h-16 text-gray-400">
-                          <path fillRule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clipRule="evenodd" />
-                        </svg>
-                      </div>
+                  <div key={post.id} className="group relative">                    <div className="relative h-80 w-full overflow-hidden rounded-lg bg-gray-200 group-hover:opacity-90 sm:aspect-w-2 sm:aspect-h-1 sm:h-64 lg:aspect-w-1 lg:aspect-h-1">
+                      <Image
+                        src={post.imageUrl}
+                        alt={post.title}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      />
                     </div>
                     <div className="mt-4 flex items-center space-x-2 text-sm text-gray-500">
                       <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">{post.category}</span>
@@ -240,13 +241,14 @@ export default function BlogPage() {
           ) : (
             <div className="grid grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-3">
               {filteredPosts.map((post) => (
-                <div key={post.id} className="group relative">
-                  <div className="relative h-60 w-full overflow-hidden rounded-lg bg-gray-200 group-hover:opacity-90">
-                    <div className="h-full w-full bg-gray-200 flex items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-12 h-12 text-gray-400">
-                        <path fillRule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clipRule="evenodd" />
-                      </svg>
-                    </div>
+                <div key={post.id} className="group relative">                  <div className="relative h-60 w-full overflow-hidden rounded-lg bg-gray-200 group-hover:opacity-90">
+                    <Image
+                      src={post.imageUrl}
+                      alt={post.title}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
                   </div>
                   <div className="mt-4 flex items-center space-x-2 text-sm text-gray-500">
                     <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">{post.category}</span>
