@@ -36,7 +36,8 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
 ## Concept Diagram
-https://app.diagrams.net/#G1SKFOfrTQoccVk-UzYPPtAwg7NVrxOUnJ#%7B%22pageId%22%3A%22a6mbGnwGvX9pmkE2TlM8%22%7D
 
-![alt text](image.png)
+📊 [Xem sơ đồ hệ thống trên Draw.io](https://app.diagrams.net/#G1SKFOfrTQoccVk-UzYPPtAwg7NVrxOUnJ#%7B%22pageId%22%3A%22a6mbGnwGvX9pmkE2TlM8%22%7D)
+
+![DNA Testing System Diagram](image.png)
 
