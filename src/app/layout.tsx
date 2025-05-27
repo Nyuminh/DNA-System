@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -13,7 +13,11 @@ export const metadata: Metadata = {
   description: "Professional DNA testing services for paternity, ancestry, and genetic health. Schedule your appointment or order a home test kit today.",
   keywords: "DNA testing, paternity test, genetic testing, ancestry, health screening",
   authors: [{ name: "DNA Testing VN" }],
-  viewport: "width=device-width, initial-scale=1",
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default function RootLayout({

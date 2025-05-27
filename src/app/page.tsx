@@ -18,7 +18,7 @@ export default function Home() {
       id: 'paternity',
       title: 'Xét nghiệm Huyết thống',
       description: 'Xác định mối quan hệ cha con, mẹ con thông qua xét nghiệm ADN với độ chính xác cao lên đến 99.9999%.',
-      imageUrl: '/images/paternity-testing.svg',
+      imageUrl: '/images/cau-truc-xoan-kep-cua-DNA_.png',
       href: '/services#paternity',
       features: ['Kết quả chính xác', 'Bảo mật tuyệt đối', 'Tư vấn miễn phí'],
       price: 'Từ 2.500.000đ',
@@ -27,7 +27,7 @@ export default function Home() {
       id: 'legal',
       title: 'Xét nghiệm ADN Hành chính',
       description: 'Dịch vụ xét nghiệm ADN được công nhận bởi cơ quan pháp lý, phục vụ các mục đích hành chính và pháp lý.',
-      imageUrl: '/images/legal-dna.svg',
+      imageUrl: '/images/adn-hanh-chinh.jpg',
       href: '/services#legal',
       features: ['Giá trị pháp lý', 'Quy trình chuẩn', 'Chứng nhận hợp lệ'],
       price: 'Từ 3.500.000đ',
@@ -36,7 +36,7 @@ export default function Home() {
       id: 'private',
       title: 'Xét nghiệm ADN Dân sự',
       description: 'Dịch vụ xét nghiệm ADN bảo mật, không cần thiết phải cung cấp thông tin cá nhân của người tham gia.',
-      imageUrl: '/images/private-dna.svg',
+      imageUrl: '/images/128d5103151t89325l0.jpg',
       href: '/services#private',
       features: ['Hoàn toàn bảo mật', 'Ẩn danh tùy chọn', 'Nhanh chóng'],
       price: 'Từ 2.200.000đ',
@@ -70,25 +70,27 @@ export default function Home() {
     { number: '50,000+', label: 'Khách hàng tin tưởng' },
     { number: '24/7', label: 'Hỗ trợ khách hàng' },
   ];
-
   const testimonials = [
     {
       name: 'Chị Nguyễn Thị Lan',
       role: 'Khách hàng',
       content: 'Dịch vụ rất chuyên nghiệp, kết quả chính xác và nhanh chóng. Nhân viên tư vấn nhiệt tình, hỗ trợ tận tình.',
       rating: 5,
+      imageUrl: '/images/customer-1.jpg',
     },
     {
-      name: 'Anh Trần Văn Nam',
+      name: 'Anh Charles Leclerc',
       role: 'Khách hàng',
-      content: 'Quy trình làm việc minh bạch, kết quả được giải thích rõ ràng. Rất hài lòng với dịch vụ.',
-      rating: 5,
+      content: 'i am very dissapointed with this service because they do not speak english so i cannot understand anything.',
+      rating: 1,
+      imageUrl: '/images/customer-2.jpg',
     },
     {
-      name: 'Chị Lê Thị Hoa',
+      name: 'Sir Lewis Hamilton',
       role: 'Khách hàng',
       content: 'Bảo mật thông tin tuyệt đối, dịch vụ chu đáo. Tôi sẽ giới thiệu cho bạn bè khi cần.',
       rating: 5,
+      imageUrl: '/images/customer-3.jpg',
     },
   ];
 
@@ -170,9 +172,17 @@ export default function Home() {
                 key={service.id} 
                 className="card-elevated p-8 group hover:scale-105 transition-all duration-300 animate-slide-up"
                 style={{animationDelay: `${index * 100}ms`}}
-              >
-                <div className="flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-primary text-white mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <BeakerIcon className="w-8 h-8" />
+              >                <div className="relative w-full h-48 rounded-xl mb-6 overflow-hidden group-hover:scale-105 transition-transform duration-300">
+                  <img 
+                    src={service.imageUrl} 
+                    alt={service.title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/images/lab-equipment.svg';
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                 </div>
                 
                 <h3 className="text-xl font-bold text-secondary-900 mb-3">{service.title}</h3>
@@ -251,24 +261,38 @@ export default function Home() {
               Hàng nghìn khách hàng đã tin tưởng và hài lòng với dịch vụ của chúng tôi.
             </p>
           </div>
-          
-          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="grid lg:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
               <div 
                 key={index} 
                 className="bg-secondary-50 rounded-2xl p-8 animate-slide-up"
                 style={{animationDelay: `${index * 100}ms`}}
               >
+                <div className="flex items-center mb-6">
+                  <div className="relative w-16 h-16 rounded-full overflow-hidden mr-4 flex-shrink-0">
+                    <img 
+                      src={testimonial.imageUrl} 
+                      alt={testimonial.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = '/images/lab-equipment.svg';
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-secondary-900">{testimonial.name}</div>
+                    <div className="text-sm text-secondary-600">{testimonial.role}</div>
+                  </div>
+                </div>
+                
                 <div className="flex items-center mb-4">
                   {[...Array(testimonial.rating)].map((_, i) => (
                     <StarIcon key={i} className="w-5 h-5 text-warning-400 fill-current" />
                   ))}
                 </div>
-                <p className="text-secondary-700 mb-6 italic leading-relaxed">&ldquo;{testimonial.content}&rdquo;</p>
-                <div>
-                  <div className="font-semibold text-secondary-900">{testimonial.name}</div>
-                  <div className="text-sm text-secondary-600">{testimonial.role}</div>
-                </div>
+                
+                <p className="text-secondary-700 italic leading-relaxed">&ldquo;{testimonial.content}&rdquo;</p>
               </div>
             ))}
           </div>
