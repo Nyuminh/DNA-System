@@ -7,21 +7,19 @@ import MainLayout from '@/components/layout/MainLayout';
 export default function AboutPage() {
   return (
     <MainLayout>
-      <div className="bg-white">
-        {/* Hero section */}
-        <div className="relative bg-blue-600">          <div className="absolute inset-0">
+      <div className="bg-white">        {/* Hero section */}        <div className="relative hero-section h-[400px]">
+          <div className="absolute inset-0">
             <Image
-              className="h-full w-full object-cover opacity-30"
-              src="/images/lab-background.jpg"
+              className="h-full w-full object-cover object-center"
+              src="/images/banner_about.jpg"
               alt="DNA Testing Laboratory"
               width={1920}
-              height={600}
+              height={400}
+              priority
             />
-            <div className="absolute inset-0 bg-blue-600 mix-blend-multiply" />
-          </div>
-          <div className="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8">
-            <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">Về chúng tôi</h1>
-            <p className="mt-6 text-xl text-blue-100 max-w-3xl">
+          </div>          <div className="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8">
+            <h1 className="text-4xl font-extrabold tracking-tight text-blue-800 drop-shadow-xl sm:text-5xl lg:text-6xl">Về chúng tôi</h1>
+            <p className="mt-6 text-xl text-blue-700 max-w-3xl drop-shadow-xl font-bold">
               Chúng tôi cung cấp dịch vụ xét nghiệm ADN chất lượng cao, độ chính xác tuyệt đối và bảo mật thông tin khách hàng.
             </p>
           </div>
