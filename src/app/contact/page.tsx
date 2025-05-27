@@ -247,15 +247,50 @@ export default function ContactPage() {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Google Map (placeholder) */}
+        </div>        {/* Google Map */}
         <div className="bg-gray-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="py-16">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Bản đồ</h2>
-              <div className="h-96 w-full bg-gray-300 rounded-lg flex items-center justify-center">
-                <p className="text-gray-600">Bản đồ Google sẽ được hiển thị ở đây</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Vị trí của chúng tôi</h2>
+              <div className="h-96 w-full rounded-lg overflow-hidden shadow-lg">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3724.0965203846996!2d105.7947454147709!3d21.03023918599462!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135ab4cd0c66f05%3A0xea31563511af2e54!2zMTIzIFAuIEPhuqd1IEdp4bqleSBI4bqhZCwgQ-G6p3UgR2nhuqV5LCBIw6AgTuG7mWksIFZp4buHdCBOYW0!5e0!3m2!1svi!2s!4v1709123456789!5m2!1svi!2s"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Vị trí DNA Testing Center"
+                ></iframe>
+              </div>
+              <div className="mt-6 text-center">
+                <p className="text-gray-600 mb-2">
+                  <strong>Địa chỉ:</strong> 123 Đường Cầu Giấy, Quận Cầu Giấy, Hà Nội
+                </p>
+                <div className="flex flex-col sm:flex-row justify-center gap-4">
+                  <a
+                    href="https://www.google.com/maps/dir//123+P.+C%E1%BA%A7u+Gi%E1%BA%A5y+H%C3%A0+%C4%90%C3%B4ng,+C%E1%BA%A7u+Gi%E1%BA%A5y,+H%C3%A0+N%E1%BB%99i,+Vietnam/@21.03023918599462,105.7947454147709,17z"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Chỉ đường
+                  </a>
+                  <a
+                    href="tel:19001234"
+                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                    Gọi ngay
+                  </a>
+                </div>
               </div>
             </div>
           </div>
