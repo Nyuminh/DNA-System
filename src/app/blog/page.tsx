@@ -120,10 +120,18 @@ export default function BlogPage() {
         {/* Hero section */}
         <div className="relative bg-blue-600">
           <div className="absolute inset-0">
-            <div className="h-full w-full object-cover opacity-30 bg-blue-800" />
-            <div className="absolute inset-0 bg-blue-600 mix-blend-multiply" />
-          </div>
-          <div className="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8">
+            <div className="h-full w-full object-cover opacity-20 bg-blue-500" />
+            <div className="absolute inset-0 bg-blue-600 mix-blend-multiply" /></div>    
+            <div className="relative max-w-7xl mx-auto py-22 sm:py-31   ">
+            <div className="relative w-auto h-[400px] mb-8 mx-auto">
+              <Image
+                src="/images/blog/banner.png"
+                alt="Blog Banner"
+                fill
+                className="object-cover rounded-lg"
+                priority
+              />
+            </div>
             <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">Blog</h1>
             <p className="mt-6 text-xl text-blue-100 max-w-3xl">
               Khám phá kiến thức về xét nghiệm ADN, hướng dẫn và thông tin mới nhất trong lĩnh vực di truyền.

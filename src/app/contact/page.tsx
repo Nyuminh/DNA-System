@@ -38,7 +38,16 @@ export default function ContactPage() {
             <div className="h-full w-full object-cover opacity-30 bg-blue-800" />
             <div className="absolute inset-0 bg-blue-600 mix-blend-multiply" />
           </div>
-          <div className="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8">
+          <div className="relative max-w-7xl mx-auto py-18 px-2 sm:py-27 sm:px-3 lg:px-4">
+            <div className="relative w-auto h-[400px] mb-8 mx-auto">
+                          <Image
+                            src="/images/contact.jpg"
+                            alt="Contact Banner"
+                            fill
+                            className="object-cover rounded-lg"
+                            priority
+                          />
+                        </div>
             <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">Liên hệ</h1>
             <p className="mt-6 text-xl text-blue-100 max-w-3xl">
               Hãy liên hệ với chúng tôi để được tư vấn và hỗ trợ về dịch vụ xét nghiệm ADN.
