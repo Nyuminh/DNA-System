@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Bars3Icon, XMarkIcon, BeakerIcon } from '@heroicons/react/24/outline';
+import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import Logo from '@/components/common/Logo';
 
 const navigation = [
   { name: 'Trang chủ', href: '/' },
@@ -20,16 +21,14 @@ export default function Header() {
 
   return (
     <header className="bg-white/95 backdrop-blur-md border-b border-secondary-200 sticky top-0 z-50">
-      <nav className="container-max flex items-center justify-between py-4" aria-label="Global">
-        <div className="flex lg:flex-1">
-          <Link href="/" className="flex items-center group">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-primary text-white group-hover:scale-105 transition-transform duration-200">
-              <BeakerIcon className="w-6 h-6" />
-            </div>
-            <div className="ml-3">
-              <span className="text-xl font-bold text-secondary-900">DNA Testing VN</span>
-              <div className="text-xs text-secondary-600 font-medium">Chuyên nghiệp • Uy tín</div>
-            </div>
+      <nav className="container-max flex items-center justify-between py-4" aria-label="Global">        <div className="flex lg:flex-1">
+          <Link href="/" className="group">            <Logo 
+              variant="full" 
+              size="md"
+              useCustomLogo={true}
+              customLogoPath="/images/logo.jpg"
+              className="group-hover:scale-105 transition-transform duration-200"
+            />
           </Link>
         </div>
         
@@ -97,11 +96,13 @@ export default function Header() {
         <div className="lg:hidden">
           <div className="fixed inset-0 z-50 bg-secondary-900/50 backdrop-blur-sm animate-fade-in" onClick={() => setMobileMenuOpen(false)}>
             <div className="fixed inset-y-0 right-0 z-50 w-full max-w-sm bg-white shadow-large animate-slide-up" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between px-6 py-4 border-b border-secondary-200">
-                <Link href="/" className="flex items-center" onClick={() => setMobileMenuOpen(false)}>
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-primary text-white">
-                    <BeakerIcon className="w-5 h-5" />
-                  </div>
+              <div className="flex items-center justify-between px-6 py-4 border-b border-secondary-200">                <Link href="/" className="flex items-center" onClick={() => setMobileMenuOpen(false)}>
+                  <Logo 
+                    variant="icon" 
+                    size="sm"
+                    useCustomLogo={true}
+                    customLogoPath="/images/logo.jpg"
+                  />
                   <span className="ml-2 text-lg font-bold text-secondary-900">DNA Testing VN</span>
                 </Link>
                 <button

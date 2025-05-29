@@ -1,23 +1,32 @@
 import React from 'react';
+import Image from 'next/image';
 
 interface LogoProps {
   variant?: 'full' | 'icon' | 'text';
   size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
   showTagline?: boolean;
+  useCustomLogo?: boolean;
+  customLogoPath?: string;
 }
 
 const Logo: React.FC<LogoProps> = ({ 
   variant = 'full', 
   size = 'md', 
   className = '',
-  showTagline = false 
-}) => {
-  const sizeClasses = {
+  showTagline = false,
+  useCustomLogo = false,
+  customLogoPath = '/images/logo.jpg'
+}) => {  const sizeClasses = {
     sm: 'h-8',
     md: 'h-10',
     lg: 'h-12',
     xl: 'h-16'
+  };const imageSizeMapping = {
+    sm: { width: 40, height: 32 },
+    md: { width: 50, height: 40 },
+    lg: { width: 60, height: 48 },
+    xl: { width: 80, height: 64 }
   };
 
   const textSizeClasses = {
@@ -33,6 +42,20 @@ const Logo: React.FC<LogoProps> = ({
     lg: 'text-sm',
     xl: 'text-base'
   };
+
+  // Custom Image Logo
+  const CustomImageLogo = () => (
+    <div className={`${sizeClasses[size]} w-auto flex items-center`}>
+      <Image
+        src={customLogoPath}
+        alt="DNA Testing VN Logo"
+        width={imageSizeMapping[size].width}
+        height={imageSizeMapping[size].height}
+        className="object-contain"
+        priority
+      />
+    </div>
+  );
 
   // DNA Helix SVG Icon
   const DNAIcon = () => (
@@ -76,54 +99,12 @@ const Logo: React.FC<LogoProps> = ({
           <stop offset="100%" stopColor="#1E40AF" />
         </linearGradient>
       </defs>
-    </svg>
-  );
-
-  // Lab Flask SVG Icon (Alternative)
-  const FlaskIcon = () => (
-    <svg 
-      className={`${sizeClasses[size]} w-auto`}
-      viewBox="0 0 40 40" 
-      fill="none" 
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <circle cx="20" cy="20" r="20" fill="url(#gradient2)" />
-      
-      {/* Flask Body */}
-      <path 
-        d="M15 12V16L10 28C9.5 29 10.2 30 11.5 30H28.5C29.8 30 30.5 29 30 28L25 16V12H23V10H17V12H15Z" 
-        fill="white"
-      />
-      
-      {/* Flask Content (DNA Sample) */}
-      <path 
-        d="M12 26C12 26 16 24 20 26C24 28 28 26 28 26V28C28 28.5 27.5 29 27 29H13C12.5 29 12 28.5 12 28V26Z" 
-        fill="#3B82F6" 
-        opacity="0.7"
-      />
-      
-      {/* Flask Neck */}
-      <rect x="17" y="10" width="6" height="2" fill="white" />
-      
-      {/* DNA Particles */}
-      <circle cx="16" cy="24" r="1" fill="#1D4ED8" />
-      <circle cx="20" cy="22" r="1" fill="#1D4ED8" />
-      <circle cx="24" cy="24" r="1" fill="#1D4ED8" />
-      
-      <defs>
-        <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#10B981" />
-          <stop offset="50%" stopColor="#059669" />
-          <stop offset="100%" stopColor="#047857" />
-        </linearGradient>
-      </defs>
-    </svg>
-  );
+    </svg>  );
 
   if (variant === 'icon') {
     return (
       <div className={className}>
-        <DNAIcon />
+        {useCustomLogo ? <CustomImageLogo /> : <DNAIcon />}
       </div>
     );
   }
@@ -142,11 +123,10 @@ const Logo: React.FC<LogoProps> = ({
       </div>
     );
   }
-
   // Full logo (icon + text)
   return (
     <div className={`flex items-center space-x-3 ${className}`}>
-      <DNAIcon />
+      {useCustomLogo ? <CustomImageLogo /> : <DNAIcon />}
       <div className="flex flex-col">
         <span className={`font-bold text-secondary-900 ${textSizeClasses[size]}`}>
           DNA Testing VN
