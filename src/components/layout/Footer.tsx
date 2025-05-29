@@ -1,21 +1,21 @@
 import Link from 'next/link';
-import { BeakerIcon, PhoneIcon, EnvelopeIcon, MapPinIcon } from '@heroicons/react/24/outline';
+import { PhoneIcon, EnvelopeIcon, MapPinIcon } from '@heroicons/react/24/outline';
+import Logo from '@/components/common/Logo';
 
 export default function Footer() {
   return (
     <footer className="bg-secondary-900">
       <div className="container-max">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 py-16">
-          {/* Company Info */}
-          <div className="lg:col-span-2">
-            <div className="flex items-center mb-4">
-              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-primary text-white">
-                <BeakerIcon className="w-6 h-6" />
-              </div>
-              <div className="ml-3">
-                <span className="text-xl font-bold text-white">DNA Testing VN</span>
-                <div className="text-sm text-secondary-400 font-medium">Chuyên nghiệp • Uy tín</div>
-              </div>
+          {/* Company Info */}          <div className="lg:col-span-2">
+            <div className="[&_span]:!text-white mb-4">
+              <Logo 
+                variant="full" 
+                size="md"
+                useCustomLogo={true}
+                customLogoPath="/images/logo.jpg"
+                showTagline={true}
+              />
             </div>
             <p className="text-secondary-300 mb-6 max-w-md leading-relaxed">
               Trung tâm xét nghiệm ADN hàng đầu Việt Nam với hơn 10 năm kinh nghiệm. 
