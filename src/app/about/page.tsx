@@ -12,7 +12,7 @@ export default function AboutPage() {
           <div className="absolute inset-0">
             <Image
               className="h-full w-full object-cover object-center"
-              src="/images/banner_about.jpg"
+              src="/images/banner_about.jpeg"
               alt="DNA Testing Laboratory"
               width={1920}
               height={400}

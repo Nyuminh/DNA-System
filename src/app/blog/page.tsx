@@ -116,19 +116,30 @@ export default function BlogPage() {
 
   return (
     <MainLayout>
-      <div className="bg-white">
-        {/* Hero section */}
+      <div className="bg-white">        {/* Hero section */}
         <div className="relative hero-section h-[400px]">
           <div className="absolute inset-0">
               <Image
-                src="/images/blog/banner.png"
+                src="/images/blog/blog_banner.jpg"
                 alt="Blog Banner"
                 className="h-full w-full object-cover object-center"
                 width={1920}
-              height={400}
-              priority
+                height={400}
+                priority
               />
+              {/* Dark overlay */}
+              <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+          </div>          {/* Hero content */}
+          <div className="relative h-full flex items-center justify-center text-center px-4 sm:px-6 lg:px-8">
+            <div>
+              <h1 className="text-4xl font-bold tracking-tight text-blue-400 sm:text-5xl md:text-6xl">
+                Blog DNA Testing VN
+              </h1>
+              <p className="mt-4 text-xl text-blue-200">
+                Khám phá kiến thức về xét nghiệm ADN và di truyền học
+              </p>
             </div>
+          </div>
           </div>
 
         {/* Featured posts */}
