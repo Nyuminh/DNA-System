@@ -84,11 +84,10 @@ export default function Home() {
       content: 'i am very dissapointed with this service because they do not speak english so i cannot understand anything.',
       rating: 1,
       imageUrl: '/images/customer-2.jpg',
-    },
-    {
+    },    {
       name: 'Sir Lewis Hamilton',
-      role: 'Khách hàng',
-      content: 'Bảo mật thông tin tuyệt đối, dịch vụ chu đáo. Tôi sẽ giới thiệu cho bạn bè khi cần.',
+      role: 'Customer',
+      content: 'Excellent privacy protection and outstanding service. I will definitely recommend this to my friends when needed.',
       rating: 5,
       imageUrl: '/images/customer-3.jpg',
     },
