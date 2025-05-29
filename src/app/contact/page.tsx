@@ -33,13 +33,8 @@ export default function ContactPage() {
     <MainLayout>
       <div className="bg-white">
         {/* Hero section */}
-        <div className="relative bg-blue-600">
+        <div className="relative hero-section h-[400px]">
           <div className="absolute inset-0">
-            <div className="h-full w-full object-cover opacity-30 bg-blue-800" />
-            <div className="absolute inset-0 bg-blue-600 mix-blend-multiply" />
-          </div>
-          <div className="relative max-w-7xl mx-auto py-18 px-2 sm:py-27 sm:px-3 lg:px-4">
-            <div className="relative w-auto h-[400px] mb-8 mx-auto">
                           <Image
                             src="/images/contact.jpg"
                             alt="Contact Banner"
@@ -48,12 +43,7 @@ export default function ContactPage() {
                             priority
                           />
                         </div>
-            <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">Liên hệ</h1>
-            <p className="mt-6 text-xl text-blue-100 max-w-3xl">
-              Hãy liên hệ với chúng tôi để được tư vấn và hỗ trợ về dịch vụ xét nghiệm ADN.
-            </p>
           </div>
-        </div>
 
         {/* Contact info + form */}
         <div className="bg-white py-16 px-4 overflow-hidden sm:px-6 lg:px-8 lg:py-24">

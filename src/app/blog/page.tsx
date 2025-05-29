@@ -118,26 +118,18 @@ export default function BlogPage() {
     <MainLayout>
       <div className="bg-white">
         {/* Hero section */}
-        <div className="relative bg-blue-600">
+        <div className="relative hero-section h-[400px]">
           <div className="absolute inset-0">
-            <div className="h-full w-full object-cover opacity-20 bg-blue-500" />
-            <div className="absolute inset-0 bg-blue-600 mix-blend-multiply" /></div>    
-            <div className="relative max-w-7xl mx-auto py-22 sm:py-31   ">
-            <div className="relative w-auto h-[400px] mb-8 mx-auto">
               <Image
                 src="/images/blog/banner.png"
                 alt="Blog Banner"
-                fill
-                className="object-cover rounded-lg"
-                priority
+                className="h-full w-full object-cover object-center"
+                width={1920}
+              height={400}
+              priority
               />
             </div>
-            <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">Blog</h1>
-            <p className="mt-6 text-xl text-blue-100 max-w-3xl">
-              Khám phá kiến thức về xét nghiệm ADN, hướng dẫn và thông tin mới nhất trong lĩnh vực di truyền.
-            </p>
           </div>
-        </div>
 
         {/* Featured posts */}
         {featuredPosts.length > 0 && (
