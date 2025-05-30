@@ -335,37 +335,7 @@ export default function BookServicePage() {
                 <div className="bg-white shadow-sm rounded-lg p-6 border border-gray-200">
                   <h3 className="text-lg font-medium text-gray-900 mb-4">Phương thức thu mẫu</h3>
                   <div className="grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-4">
-                    <div className="relative flex border rounded-lg overflow-hidden">
-                      <input
-                        type="radio"
-                        name="collectionMethod"
-                        id="self-collection"
-                        value="self"
-                        className="sr-only"
-                        checked={formData.collectionMethod === 'self'}
-                        onChange={handleInputChange}
-                      />
-                      <label
-                        htmlFor="self-collection"
-                        className={`flex-1 cursor-pointer p-4 ${
-                          formData.collectionMethod === 'self'
-                            ? 'bg-blue-50 border-blue-500'
-                            : 'border-transparent'
-                        }`}
-                      >
-                        <span className="flex items-center">
-                          <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full border border-gray-300 mr-2">
-                            {formData.collectionMethod === 'self' && (
-                              <span className="w-2.5 h-2.5 bg-blue-600 rounded-full" />
-                            )}
-                          </span>
-                          <span className="text-sm font-medium text-gray-900">Tự thu mẫu</span>
-                        </span>
-                        <span className="block mt-1 text-sm text-gray-500">
-                          Nhận kit và tự thu mẫu tại nhà
-                        </span>
-                      </label>
-                    </div>
+                    
 
                     <div className="relative flex border rounded-lg overflow-hidden">
                       <input
@@ -423,10 +393,10 @@ export default function BookServicePage() {
                               <span className="w-2.5 h-2.5 bg-blue-600 rounded-full" />
                             )}
                           </span>
-                          <span className="text-sm font-medium text-gray-900">Thu mẫu tận nơi</span>
+                          <span className="text-sm font-medium text-gray-900">Tự Thu mẫu </span>
                         </span>
                         <span className="block mt-1 text-sm text-gray-500">
-                          Nhân viên y tế đến tận nhà thu mẫu
+                          Nhận kit và tự thu mẫu tại nhà
                         </span>
                       </label>
                     </div>
