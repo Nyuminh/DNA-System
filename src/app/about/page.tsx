@@ -6,8 +6,7 @@ import MainLayout from '@/components/layout/MainLayout';
 
 export default function AboutPage() {
   return (
-    <MainLayout>
-      <div className="bg-white">        {/* Hero section */}        
+    <MainLayout>      <div className="bg-white">        {/* Hero section */}        
         <div className="relative hero-section h-[400px]">
           <div className="absolute inset-0">
             <Image
@@ -18,12 +17,15 @@ export default function AboutPage() {
               height={400}
               priority
             />
-          </div>          
-          <div className="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8">
-            <h1 className="text-4xl font-extrabold tracking-tight text-blue-800 drop-shadow-xl sm:text-5xl lg:text-6xl">Về chúng tôi</h1>
-            <p className="mt-6 text-xl text-blue-700 max-w-3xl drop-shadow-xl font-bold">
-              Chúng tôi cung cấp dịch vụ xét nghiệm ADN chất lượng cao, độ chính xác tuyệt đối và bảo mật thông tin khách hàng.
-            </p>
+            {/* Dark overlay */}
+            <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+          </div>            <div className="relative h-full flex items-center justify-center text-center px-4 sm:px-6 lg:px-8">
+            <div>
+              <h1 className="text-4xl font-bold tracking-tight text-white drop-shadow-lg sm:text-5xl md:text-6xl">Về chúng tôi</h1>
+              <p className="mt-4 text-xl text-gray-100 drop-shadow-lg font-medium">
+                Chúng tôi cung cấp dịch vụ xét nghiệm ADN chất lượng cao, độ chính xác tuyệt đối và bảo mật thông tin khách hàng.
+              </p>
+            </div>
           </div>
         </div>
 
