@@ -76,13 +76,7 @@ const services = [
         price: '3.500.000 VNĐ',
         duration: '3-5 ngày làm việc',
       },
-      {
-        id: 'home-kit',
-        name: 'Bộ kit xét nghiệm tại nhà',
-        description: 'Khách hàng tự thu thập mẫu tại nhà và gửi đến phòng xét nghiệm.',
-        price: '3.800.000 VNĐ',
-        duration: '7-10 ngày làm việc',
-      },
+      
       {
         id: 'prenatal',
         name: 'Xét nghiệm ADN trước sinh không xâm lấn',

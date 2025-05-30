@@ -6,7 +6,18 @@ import Link from 'next/link';
 import MainLayout from '@/components/layout/MainLayout';
 
 // Mock data for test types - would come from API in real implementation
-const testTypes = {
+const testTypes: Record<string, {
+  id: string;
+  name: string;
+  description: string;
+  price: string;
+  duration: string;
+  expedited: {
+    available: boolean;
+    price?: string;
+    duration?: string;
+  };
+}> = {
   'father-child': {
     id: 'father-child',
     name: 'Xét nghiệm cha con',
@@ -52,29 +63,63 @@ const testTypes = {
     expedited: {
       available: false,
     },
-  },
-  'legal': {
-    id: 'legal',
-    name: 'Xét nghiệm ADN hành chính',
-    description: 'Xét nghiệm ADN được công nhận bởi cơ quan pháp lý, phục vụ các mục đích hành chính.',
+  },  'immigration': {
+    id: 'immigration',
+    name: 'Xét nghiệm ADN cho di trú',
+    description: 'Chứng minh mối quan hệ huyết thống cho mục đích xin visa, quốc tịch, định cư nước ngoài.',
     price: '6.500.000 VNĐ',
-    duration: '7-10 ngày làm việc',
+    duration: '5-7 ngày làm việc',
     expedited: {
       available: true,
       price: '10.000.000 VNĐ',
       duration: '3-5 ngày làm việc',
     },
   },
-  'private': {
-    id: 'private',
-    name: 'Xét nghiệm ADN dân sự',
-    description: 'Dịch vụ xét nghiệm ADN bảo mật, không cần thiết phải cung cấp thông tin cá nhân của người tham gia.',
-    price: '4.000.000 VNĐ',
+  'birth-certificate': {
+    id: 'birth-certificate',
+    name: 'Xét nghiệm ADN cho khai sinh',
+    description: 'Xác định mối quan hệ huyết thống cho việc đăng ký khai sinh.',
+    price: '5.500.000 VNĐ',
     duration: '3-5 ngày làm việc',
     expedited: {
       available: true,
-      price: '6.000.000 VNĐ',
+      price: '8.000.000 VNĐ',
       duration: '24-48 giờ',
+    },
+  },
+  'legal-inheritance': {
+    id: 'legal-inheritance',
+    name: 'Xét nghiệm ADN cho thừa kế',
+    description: 'Xác định mối quan hệ huyết thống cho mục đích pháp lý liên quan đến thừa kế.',
+    price: '6.000.000 VNĐ',
+    duration: '3-5 ngày làm việc',
+    expedited: {
+      available: true,
+      price: '9.000.000 VNĐ',
+      duration: '24-48 giờ',
+    },
+  },  'anonymous-paternity': {
+    id: 'anonymous-paternity',
+    name: 'Xét nghiệm cha con ẩn danh',
+    description: 'Xác định mối quan hệ cha con thông qua ADN mà không cần cung cấp thông tin cá nhân.',
+    price: '3.500.000 VNĐ',
+    duration: '3-5 ngày làm việc',
+    expedited: {
+      available: true,
+      price: '5.500.000 VNĐ',
+      duration: '24-48 giờ',
+    },
+  },
+  'prenatal': {
+    id: 'prenatal',
+    name: 'Xét nghiệm ADN trước sinh không xâm lấn',
+    description: 'Xét nghiệm ADN thai nhi thông qua máu mẹ, không xâm lấn.',
+    price: '15.000.000 VNĐ',
+    duration: '7-12 ngày làm việc',
+    expedited: {
+      available: true,
+      price: '20.000.000 VNĐ',
+      duration: '5-7 ngày làm việc',
     },
   },
 };
@@ -106,8 +151,7 @@ export default function BookServicePage() {
     if (testType in testTypes) {
       setSelectedTest(testTypes[testType]);
     }
-  }, [testType]);
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  }, [testType]);  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined;
     
@@ -123,7 +167,7 @@ export default function BookServicePage() {
       setFormData({
         ...formData,
         [parent]: {
-          ...formData[parent],
+          ...(formData as any)[parent],
           [child]: value
         }
       });
