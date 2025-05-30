@@ -65,3 +65,6 @@
 
 ![DNA Testing System Diagram](Concept Diagram.png)
 
+![image](https://github.com/user-attachments/assets/4766c193-3438-4391-8a5e-d5138c8311cf)
+
+
