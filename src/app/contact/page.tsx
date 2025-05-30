@@ -36,7 +36,7 @@ export default function ContactPage() {
         <div className="relative hero-section h-[400px]">
           <div className="absolute inset-0">
                           <Image
-                            src="/images/contact.jpg"
+                            src="/images/contact_banner.jpg"
                             alt="Contact Banner"
                             fill
                             className="object-cover rounded-lg"
