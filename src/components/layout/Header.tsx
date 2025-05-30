@@ -24,7 +24,7 @@ export default function Header() {
       <nav className="container-max flex items-center justify-between py-4" aria-label="Global">        <div className="flex lg:flex-1">
           <Link href="/" className="group">            <Logo 
               variant="full" 
-              size="md"
+              size="lg"
               useCustomLogo={true}
               customLogoPath="/images/logo.jpg"
               className="group-hover:scale-105 transition-transform duration-200"
