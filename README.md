@@ -61,10 +61,78 @@
 
 ## Concept Diagram
 
-📊 [Xem sơ đồ hệ thống trên Draw.io](https://app.diagrams.net/#G1SKFOfrTQoccVk-UzYPPtAwg7NVrxOUnJ#%7B%22pageId%22%3A%22a6mbGnwGvX9pmkE2TlM8%22%7D)
+📊 [View system diagram on Draw.io](https://app.diagrams.net/#G1SKFOfrTQoccVk-UzYPPtAwg7NVrxOUnJ#%7B%22pageId%22%3A%22a6mbGnwGvX9pmkE2TlM8%22%7D)
 
 ![DNA Testing System Diagram](Concept Diagram.png)
 
 ![image](https://github.com/user-attachments/assets/4766c193-3438-4391-8a5e-d5138c8311cf)
+
+## APIs List
+
+### Authorization:
+1. **POST**: `/api/auth/login` (User login)
+2. **POST**: `/api/auth/register` (Register a new account)
+3. **POST**: `/api/auth/logout` (Logout)
+4. **POST**: `/api/auth/refresh` (Refresh access token)
+
+### Users API:
+1. **GET**: `/api/users` (Retrieve list of users (Admin))
+2. **POST**: `/api/users` (Create a new user (Admin))
+3. **GET**: `/api/users/{id}` (Retrieve user information by ID)
+4. **PUT**: `/api/users/{id}` (Update user information)
+5. **DELETE**: `/api/user/{id}` (Delete user)
+6. **GET**: `/api/users/profile` (View current user's information)
+
+### Services API:
+1. **GET**: `/api/services` (Retrieve list of services)
+2. **POST**: `/api/service` (Create a new service (Admin))
+3. **GET**: `/api/services/{id}` (Retrieve service information by ID)
+4. **PUT**: `/api/services/{id}` (Update service (Admin))
+5. **DELETE**: `/api/services/{id}` (Delete service (Admin))
+
+### Appointments API:
+1. **GET**: `/api/appointments` (Retrieve list of appointments)
+2. **POST**: `/api/appointments` (Create a new appointment)
+3. **GET**: `/api/appointments/{id}` (Retrieve appointment information by ID)
+4. **PUT**: `/api/appointments/{id}` (Update appointment)
+5. **DELETE**: `/api/appointments/{id}` (Delete appointment)
+6. **GET**: `/api/appointments/schedule` (Retrieve available schedule for booking)
+
+### Samples API:
+1. **GET**: `/api/samples` (Retrieve list of test samples)
+2. **POST**: `/api/samples` (Create a new test sample)
+3. **GET**: `/api/samples/{id}` (Retrieve test sample information by ID)
+4. **PUT**: `/api/samples/{id}` (Update test sample)
+5. **GET**: `/api/samples/tracking` (Track sample status)
+
+### Results API:
+1. **GET**: `/api/results` (Retrieve list of results)
+2. **POST**: `/api/results` (Create a new result (Lab))
+3. **GET**: `/api/results/{id}` (Retrieve result information by ID)
+4. **PUT**: `/api/results/{id}` (Update result (Lab))
+5. **DELETE**: `/api/results/{id}/download` (Download result file PDF)
+
+### Reviews API:
+1. **GET**: `/api/reviews` (Retrieve list of reviews)
+2. **POST**: `/api/reviews` (Create a new review)
+3. **GET**: `/api/reviews/{id}` (Retrieve review details)
+4. **PUT**: `/api/reviews/{id}` (Update review)
+5. **DELETE**: `/api/reviews/{id}` (Delete review)
+
+### Notifications API: (Optional)
+1. **GET**: `/api/notifications` (Retrieve list of notifications)
+2. **POST**: `/api/notifications` (Create a new notification (System))
+3. **PUT**: `/api/notifications/{id}` (Mark notification as read)
+
+### Admins API:
+1. **GET**: `/api/admin/dashboard` (Retrieve admin dashboard statistics)
+2. **GET**: `/api/admin/reports` (Retrieve statistical reports)
+3. **GET**: `/api/admin/services` (Manage services (Admin))
+
+### Payments API:
+1. **GET**: `/api/payments` (Retrieve list of payments)
+2. **POST**: `/api/payments` (Create a new payment)
+3. **GET**: `/api/payments/{id}` (Retrieve payment details)
+4. **POST**: `/api/payments/{id}/confirm` (Confirm payment)
 
 
