@@ -5,7 +5,52 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import MainLayout from '@/components/layout/MainLayout';
 
+interface TestType {
+  id: string;
+  name: string;
+  description: string;
+  price: string;
+  duration: string;
+  expedited: {
+    available: boolean;
+    price: string;
+    duration: string;
+  };
+}
+
+interface Participant {
+  role: string;
+  name: string;
+  dob: string;
+  gender: string;
+  relationship?: string;
+  sampleType: string;
+}
+
+interface ContactInfo {
+  name: string;
+  phone: string;
+  email: string;
+}
+
+interface FormData {
+  serviceType: string;
+  collectionMethod: string;
+  appointmentDate: string;
+  appointmentTime: string;
+  address: string;
+  cityProvince: string;
+  participants: Participant[];
+  contactInfo: ContactInfo;
+  termsAccepted: boolean;
+}
+
+type TestTypes = {
+  [key: string]: TestType;
+};
+
 // Mock data for test types - would come from API in real implementation
+<<<<<<< Updated upstream:frontend/src/app/services/book/page.tsx
 const testTypes: Record<string, {
   id: string;
   name: string;
@@ -18,38 +63,42 @@ const testTypes: Record<string, {
     duration?: string;
   };
 }> = {
+=======
+const testTypes: TestTypes = {
+>>>>>>> Stashed changes:src/app/services/book/page.tsx
   'father-child': {
     id: 'father-child',
-    name: 'Xét nghiệm cha con',
-    description: 'Xác định mối quan hệ cha con thông qua ADN, độ chính xác 99.9999%.',
-    price: '4.000.000 VNĐ',
+    name: 'Xét nghiệm Huyết thống Cha - Con',
+    description: 'Xác định mối quan hệ huyết thống giữa cha và con',
+    price: '4,000,000 VNĐ',
     duration: '3-5 ngày làm việc',
     expedited: {
       available: true,
-      price: '6.000.000 VNĐ',
-      duration: '24-48 giờ',
-    },
+      price: '6,000,000 VNĐ',
+      duration: '24-48 giờ'
+    }
   },
   'mother-child': {
     id: 'mother-child',
-    name: 'Xét nghiệm mẹ con',
-    description: 'Xác định mối quan hệ mẹ con thông qua ADN, độ chính xác 99.9999%.',
-    price: '4.000.000 VNĐ',
+    name: 'Xét nghiệm Huyết thống Mẹ - Con',
+    description: 'Xác định mối quan hệ huyết thống giữa mẹ và con',
+    price: '4,000,000 VNĐ',
     duration: '3-5 ngày làm việc',
     expedited: {
       available: true,
-      price: '6.000.000 VNĐ',
-      duration: '24-48 giờ',
-    },
+      price: '6,000,000 VNĐ',
+      duration: '24-48 giờ'
+    }
   },
   'siblings': {
     id: 'siblings',
-    name: 'Xét nghiệm anh chị em ruột',
-    description: 'Xác định mối quan hệ anh chị em ruột thông qua ADN, độ chính xác 99.9%.',
-    price: '5.500.000 VNĐ',
+    name: 'Xét nghiệm Anh Chị Em',
+    description: 'Xác định mối quan hệ huyết thống giữa anh chị em ruột',
+    price: '5,000,000 VNĐ',
     duration: '5-7 ngày làm việc',
     expedited: {
       available: true,
+<<<<<<< Updated upstream:frontend/src/app/services/book/page.tsx
       price: '8.000.000 VNĐ',
       duration: '48-72 giờ',
     },
@@ -122,13 +171,19 @@ const testTypes: Record<string, {
       duration: '5-7 ngày làm việc',
     },
   },
+=======
+      price: '7,500,000 VNĐ',
+      duration: '48-72 giờ'
+    }
+  }
+>>>>>>> Stashed changes:src/app/services/book/page.tsx
 };
 
 export default function BookServicePage() {
   const searchParams = useSearchParams();
   const testType = searchParams.get('type') || 'father-child';
-  const [selectedTest, setSelectedTest] = useState(testTypes[testType] || testTypes['father-child']);
-  const [formData, setFormData] = useState({
+  const [selectedTest, setSelectedTest] = useState<TestType>(testTypes[testType as keyof typeof testTypes] || testTypes['father-child']);
+  const [formData, setFormData] = useState<FormData>({
     serviceType: 'standard', // standard or expedited
     collectionMethod: 'self', // self, facility, or home
     appointmentDate: '',
@@ -160,9 +215,9 @@ export default function BookServicePage() {
       setFormData({ ...formData, [name]: checked });
       return;
     }
-    
-    // Handle nested fields (contactInfo)
+      // Handle nested fields (contactInfo)
     if (name.includes('.')) {
+<<<<<<< Updated upstream:frontend/src/app/services/book/page.tsx
       const [parent, child] = name.split('.');
       setFormData({
         ...formData,
@@ -171,6 +226,18 @@ export default function BookServicePage() {
           [child]: value
         }
       });
+=======
+      const [parent, child] = name.split('.') as [keyof FormData, string];
+      if (parent === 'contactInfo') {
+        setFormData({
+          ...formData,
+          contactInfo: {
+            ...formData.contactInfo,
+            [child]: value
+          }
+        });
+      }
+>>>>>>> Stashed changes:src/app/services/book/page.tsx
       return;
     }
     
@@ -377,9 +444,38 @@ export default function BookServicePage() {
 
                 {/* Collection method */}
                 <div className="bg-white shadow-sm rounded-lg p-6 border border-gray-200">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Phương thức thu mẫu</h3>
-                  <div className="grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-4">
-                    
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Phương thức thu mẫu</h3>                  <div className="grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-4">
+                    <div className="relative flex border rounded-lg overflow-hidden">
+                      <input
+                        type="radio"
+                        name="collectionMethod"
+                        id="self-collection"
+                        value="self"
+                        className="sr-only"
+                        checked={formData.collectionMethod === 'self'}
+                        onChange={handleInputChange}
+                      />
+                      <label
+                        htmlFor="self-collection"
+                        className={`flex-1 cursor-pointer p-4 ${
+                          formData.collectionMethod === 'self'
+                            ? 'bg-blue-50 border-blue-500'
+                            : 'border-transparent'
+                        }`}
+                      >
+                        <span className="flex items-center">
+                          <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full border border-gray-300 mr-2">
+                            {formData.collectionMethod === 'self' && (
+                              <span className="w-2.5 h-2.5 bg-blue-600 rounded-full" />
+                            )}
+                          </span>
+                          <span className="text-sm font-medium text-gray-900">Tự thu mẫu</span>
+                        </span>
+                        <span className="block mt-1 text-sm text-gray-500">
+                          Nhận kit và tự thu mẫu tại nhà
+                        </span>
+                      </label>
+                    </div>
 
                     <div className="relative flex border rounded-lg overflow-hidden">
                       <input
@@ -491,13 +587,11 @@ export default function BookServicePage() {
                         </div>
                       </div>
                     </div>
-                  )}
-
-                  {formData.collectionMethod === 'home' && (
+                  )}                  {(formData.collectionMethod === 'home' || formData.collectionMethod === 'self') && (
                     <div className="mt-6 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
                       <div className="sm:col-span-2">
                         <label htmlFor="address" className="block text-sm font-medium text-gray-700">
-                          Địa chỉ
+                          Địa chỉ {formData.collectionMethod === 'self' ? 'nhận kit xét nghiệm' : 'lấy mẫu'}
                         </label>
                         <div className="mt-1">
                           <input
@@ -508,7 +602,7 @@ export default function BookServicePage() {
                             placeholder="Số nhà, đường, phường/xã"
                             value={formData.address}
                             onChange={handleInputChange}
-                            required={formData.collectionMethod === 'home'}
+                            required={formData.collectionMethod === 'home' || formData.collectionMethod === 'self'}
                           />
                         </div>
                       </div>
@@ -530,10 +624,9 @@ export default function BookServicePage() {
                           />
                         </div>
                       </div>
-                      
-                      <div>
+                        <div>
                         <label htmlFor="appointmentDate" className="block text-sm font-medium text-gray-700">
-                          Ngày lấy mẫu
+                          Ngày {formData.collectionMethod === 'self' ? 'nhận kit' : 'lấy mẫu'}
                         </label>
                         <div className="mt-1">
                           <input
@@ -543,13 +636,14 @@ export default function BookServicePage() {
                             className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
                             value={formData.appointmentDate}
                             onChange={handleInputChange}
-                            required={formData.collectionMethod === 'home'}
+                            min={new Date().toISOString().split('T')[0]}
+                            required={formData.collectionMethod === 'home' || formData.collectionMethod === 'self'}
                           />
                         </div>
                       </div>
                       <div>
                         <label htmlFor="appointmentTime" className="block text-sm font-medium text-gray-700">
-                          Thời gian lấy mẫu
+                          Thời gian {formData.collectionMethod === 'self' ? 'nhận kit' : 'lấy mẫu'}
                         </label>
                         <div className="mt-1">
                           <select
@@ -558,13 +652,22 @@ export default function BookServicePage() {
                             className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
                             value={formData.appointmentTime}
                             onChange={handleInputChange}
-                            required={formData.collectionMethod === 'home'}
+                            required={formData.collectionMethod === 'home' || formData.collectionMethod === 'self'}
                           >
                             <option value="">Chọn thời gian</option>
-                            <option value="08:00-10:00">08:00 - 10:00</option>
-                            <option value="10:00-12:00">10:00 - 12:00</option>
-                            <option value="13:30-15:30">13:30 - 15:30</option>
-                            <option value="15:30-17:30">15:30 - 17:30</option>
+                            {formData.collectionMethod === 'self' ? (
+                              <>
+                                <option value="buổi sáng">Buổi sáng (8:00 - 12:00)</option>
+                                <option value="buổi chiều">Buổi chiều (13:30 - 17:30)</option>
+                              </>
+                            ) : (
+                              <>
+                                <option value="08:00-10:00">08:00 - 10:00</option>
+                                <option value="10:00-12:00">10:00 - 12:00</option>
+                                <option value="13:30-15:30">13:30 - 15:30</option>
+                                <option value="15:30-17:30">15:30 - 17:30</option>
+                              </>
+                            )}
                           </select>
                         </div>
                       </div>
