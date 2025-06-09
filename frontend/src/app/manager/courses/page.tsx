@@ -110,9 +110,14 @@ export default function CoursesList() {  const [courses, setCourses] = useState<
                     }`}>
                       {course.status === 'active' ? 'Hoạt động' : 'Tạm dừng'}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  </td>                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-3">
+                      <Link
+                        href={`/manager/courses/${course.id}`}
+                        className="text-blue-600 hover:text-blue-900 font-medium"
+                      >
+                        Chi tiết
+                      </Link>
                       <Link
                         href={`/manager/courses/edit/${course.id}`}
                         className="text-indigo-600 hover:text-indigo-900 font-medium"

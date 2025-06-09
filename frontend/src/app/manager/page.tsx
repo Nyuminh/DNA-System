@@ -143,7 +143,7 @@ export default function ManagerManagerDashboard() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>              {isCourseMenuOpen && (                <div className="pl-12 mt-2 space-y-2">
-                  <Link href="/manager/course-list" className="block py-2 px-4 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors">
+                  <Link href="/manager/courses" className="block py-2 px-4 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors">
                     Danh sách Khóa học
                   </Link>
                   <Link href="/manager/add-course" className="block py-2 px-4 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors">

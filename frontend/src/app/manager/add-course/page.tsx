@@ -165,9 +165,8 @@ export default function AddNewCourse() {  const [formData, setFormData] = useSta
                 <h1 className="text-3xl font-bold">Thêm Khóa Học Mới</h1>
                 <p className="text-purple-100 mt-2">Tạo khóa học đào tạo chuyên nghiệp</p>
               </div>
-            </div>
-            <Link
-              href="/manager/course-list"
+            </div>            <Link
+              href="/manager/courses"
               className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition-all duration-200 backdrop-blur-sm"
             >
               Danh sách khóa học
