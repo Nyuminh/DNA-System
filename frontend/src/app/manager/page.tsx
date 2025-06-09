@@ -48,7 +48,6 @@ export default function ManagerManagerDashboard() {
       status: "active",
     }
   ]);
-
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([
     {
       id: "1",
@@ -65,8 +64,7 @@ export default function ManagerManagerDashboard() {
       author: "Dr. Trần Thị B",
       publishDate: "2025-05-28",
       status: "draft",
-    }
-  ]);
+    }  ]);
 
   const toggleServiceStatus = (id: string) => {
     setServices(services.map(service => 
@@ -152,13 +150,7 @@ export default function ManagerManagerDashboard() {
                     Thêm Khóa học mới
                   </Link>
                 </div>
-              )}
-            </div>
-
-            <Link href="/manager/test-history" className="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors">
-              <ClipboardDocumentListIcon className="h-5 w-5 mr-3" />
-              <span>Lịch sử xét nghiệm</span>
-            </Link>
+              )}            </div>
 
             <Link href="/manager/settings" className="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors">
               <Cog6ToothIcon className="h-5 w-5 mr-3" />
@@ -168,14 +160,12 @@ export default function ManagerManagerDashboard() {
             <Link href="/manager/notifications" className="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors">
               <BellIcon className="h-5 w-5 mr-3" />
               <span>Thông báo</span>
-            </Link>
+            </Link>            <div className="border-t border-gray-200 my-4"></div>
 
-            <div className="border-t border-gray-200 my-4"></div>
-
-            <button className="flex w-full items-center px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors">
+            <Link href="/" className="flex items-center px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors">
               <ArrowRightOnRectangleIcon className="h-5 w-5 mr-3" />
               <span>Đăng xuất</span>
-            </button>
+            </Link>
           </nav>
         </div>
       </div>      {/* Main Content */}
