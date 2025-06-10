@@ -7,7 +7,8 @@ import {
   UserIcon, 
   ChartBarIcon, 
   ArrowRightOnRectangleIcon,
-  UsersIcon
+  UsersIcon,
+  HomeIcon
 } from '@heroicons/react/24/outline';
 
 interface AdminLayoutProps {
@@ -28,8 +29,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-slate-200/60 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
+          <div className="flex items-center justify-between h-16">            <div className="flex items-center space-x-4">
               <div className="flex-shrink-0">
                 <Link href="/admin" className="flex items-center space-x-3 group">
                   <div className="h-10 w-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-200">
@@ -43,9 +43,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   </div>
                 </Link>
               </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
+            </div>            <div className="flex items-center space-x-4">
               {/* Quick Stats */}
               <div className="hidden lg:flex items-center space-x-4 px-4 py-2 bg-slate-50 rounded-lg">
                 <div className="text-center">
@@ -77,12 +75,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 </button>
                 
                 {isAccountMenuOpen && (
-                  <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-xl shadow-lg bg-white/95 backdrop-blur-md ring-1 ring-slate-200 z-50">
-                    <div className="py-2">
+                  <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-xl shadow-lg bg-white/95 backdrop-blur-md ring-1 ring-slate-200 z-50">                  <div className="py-2">
                       <div className="px-4 py-3 border-b border-slate-100">
                         <p className="text-sm font-medium text-slate-700">Admin User</p>
                         <p className="text-xs text-slate-500">admin@dnatesting.com</p>
                       </div>
+                      <Link
+                        href="/"
+                        className="flex items-center px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                      >
+                        <HomeIcon className="h-4 w-4 mr-3 text-slate-400" />
+                        Về trang chủ
+                      </Link>
                       <Link
                         href="/admin/profile"
                         className="flex items-center px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
@@ -107,9 +111,19 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       <div className="flex">
         {/* Sidebar */}
-        <div className="w-64 bg-white shadow-sm h-screen sticky top-0">
-          <nav className="mt-8 px-4">
+        <div className="w-64 bg-white shadow-sm h-screen sticky top-0">          <nav className="mt-8 px-4">
             <ul className="space-y-2">
+              {/* Home Button in Sidebar */}
+              <li>
+                <Link
+                  href="/"
+                  className="flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors text-blue-600 hover:bg-blue-50 hover:text-blue-700 border border-blue-100 mb-4"
+                >
+                  <HomeIcon className="mr-3 h-5 w-5" />
+                  <span>Về trang chủ</span>
+                </Link>
+              </li>
+              
               <li>
                 <Link
                   href="/admin/dashboard"
