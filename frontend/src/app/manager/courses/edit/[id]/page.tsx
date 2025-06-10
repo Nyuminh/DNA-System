@@ -137,8 +137,7 @@ export default function EditCoursePage() {
     setFormData(mockCourse);
     setIsLoading(false);
   }, [courseId]);
-
-  const handleInputChange = (field: keyof CourseForm, value: any) => {
+  const handleInputChange = (field: keyof CourseForm, value: string | number) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -190,14 +189,12 @@ export default function EditCoursePage() {
         [field]: newArray
       }));
     }
-  };
-
-  const handleModuleChange = (moduleIndex: number, field: keyof CourseModule, value: any) => {
+  };  const handleModuleChange = (moduleIndex: number, field: keyof CourseModule, value: string | string[]) => {
     const newCurriculum = [...formData.curriculum];
     if (field === 'lessons') {
       newCurriculum[moduleIndex] = {
         ...newCurriculum[moduleIndex],
-        [field]: value
+        lessons: value as string[]
       };
     } else {
       newCurriculum[moduleIndex] = {

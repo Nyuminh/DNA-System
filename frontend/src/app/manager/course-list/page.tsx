@@ -8,8 +8,6 @@ import {
   EyeIcon,
   PencilIcon,
   TrashIcon,
-  FunnelIcon,
-  ChartBarIcon,
   ArrowLeftIcon,
   AcademicCapIcon,
   ClockIcon,
@@ -100,21 +98,12 @@ export default function CourseList() {
     
     return matchesSearch && matchesStatus && matchesCategory;
   });
-
   // Statistics
   const stats = {
     total: courses.length,
     active: courses.filter(c => c.status === 'active').length,
     totalStudents: courses.reduce((sum, c) => sum + c.students, 0),
     avgRating: (courses.reduce((sum, c) => sum + c.rating, 0) / courses.length).toFixed(1)
-  };
-
-  const toggleStatus = (id: string) => {
-    setCourses(courses.map(course => 
-      course.id === id 
-        ? { ...course, status: course.status === 'active' ? 'inactive' : 'active' }
-        : course
-    ));
   };
 
   const handleDeleteCourse = (id: string) => {

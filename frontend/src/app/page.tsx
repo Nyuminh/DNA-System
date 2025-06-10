@@ -7,7 +7,6 @@ import {
   ShieldCheckIcon, 
   HomeIcon,
   BuildingOfficeIcon,
-  TruckIcon,
   BeakerIcon,
   StarIcon
 } from '@heroicons/react/24/outline';
@@ -42,7 +41,6 @@ export default function Home() {
       price: 'Từ 2.200.000đ',
     },
   ];
-
   const features = [
     {
       title: 'Tự thu mẫu tại nhà',
@@ -55,12 +53,6 @@ export default function Home() {
       description: 'Đặt lịch hẹn và đến cơ sở y tế của chúng tôi để được nhân viên y tế chuyên nghiệp lấy mẫu xét nghiệm.',
       icon: BuildingOfficeIcon,
       benefits: ['Nhân viên chuyên nghiệp', 'Trang thiết bị hiện đại', 'An toàn tuyệt đối']
-    },
-    {
-      title: 'Thu mẫu tận nơi',
-      description: 'Nhân viên y tế của chúng tôi sẽ đến tận nhà hoặc địa điểm yêu cầu để thực hiện việc lấy mẫu xét nghiệm một cách thuận tiện.',
-      icon: TruckIcon,
-      benefits: ['Phục vụ tận nơi', 'Tiết kiệm thời gian', 'Linh hoạt địa điểm']
     },
   ];
 
@@ -220,8 +212,7 @@ export default function Home() {
               trở nên thuận tiện và phù hợp nhất cho từng khách hàng.
             </p>
           </div>
-          
-          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="grid lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {features.map((feature, index) => (
               <div 
                 key={feature.title} 

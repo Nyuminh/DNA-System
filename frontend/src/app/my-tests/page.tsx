@@ -8,7 +8,6 @@ import {
   CalendarIcon, 
   ClockIcon, 
   DocumentTextIcon,
-  ArrowRightIcon,
   PowerIcon,
   MagnifyingGlassIcon,
   FunnelIcon,

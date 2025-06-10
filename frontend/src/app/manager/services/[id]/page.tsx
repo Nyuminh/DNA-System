@@ -10,7 +10,6 @@ import {
   EyeIcon,
   StarIcon,
   CalendarIcon,
-  CurrencyDollarIcon,
   UserGroupIcon,
   ClockIcon,
   DocumentTextIcon,

@@ -8,8 +8,7 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
   InformationCircleIcon,
-  XMarkIcon,
-  EllipsisVerticalIcon
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 
 interface Notification {

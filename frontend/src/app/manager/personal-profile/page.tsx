@@ -4,9 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { 
   UserCircleIcon, 
-  KeyIcon, 
-  BellIcon, 
-  ShieldCheckIcon,
   CameraIcon,
   CheckIcon,
   ArrowLeftIcon

@@ -5,8 +5,7 @@ import { useForm } from 'react-hook-form';
 import MainLayout from '@/components/layout/MainLayout';
 
 type RegisterFormInputs = {
-  firstName: string;
-  lastName: string;
+  fullName: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -46,47 +45,29 @@ export default function RegisterPage() {
         </div>
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="bg-white px-4 py-8 shadow sm:rounded-lg sm:px-10">
-            <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-              <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium leading-6 text-gray-900">
-                    Họ
-                  </label>
-                  <div className="mt-2">
-                    <input
-                      id="firstName"
-                      type="text"
-                      autoComplete="given-name"
-                      className={`block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ${
-                        errors.firstName ? 'ring-red-300' : 'ring-gray-300'
-                      } placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6`}
-                      {...register('firstName', {
-                        required: 'Họ là bắt buộc',
-                      })}
-                    />
-                    {errors.firstName && <p className="mt-2 text-sm text-red-600">{errors.firstName.message}</p>}
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium leading-6 text-gray-900">
-                    Tên
-                  </label>
-                  <div className="mt-2">
-                    <input
-                      id="lastName"
-                      type="text"
-                      autoComplete="family-name"
-                      className={`block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ${
-                        errors.lastName ? 'ring-red-300' : 'ring-gray-300'
-                      } placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6`}
-                      {...register('lastName', {
-                        required: 'Tên là bắt buộc',
-                      })}
-                    />
-                    {errors.lastName && <p className="mt-2 text-sm text-red-600">{errors.lastName.message}</p>}
-                  </div>
+          <div className="bg-white px-4 py-8 shadow sm:rounded-lg sm:px-10">            <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+              <div>
+                <label htmlFor="fullName" className="block text-sm font-medium leading-6 text-gray-900">
+                  Họ và tên
+                </label>
+                <div className="mt-2">
+                  <input
+                    id="fullName"
+                    type="text"
+                    autoComplete="name"
+                    // placeholder="Nhập họ và tên đầy đủ"
+                    className={`block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ${
+                      errors.fullName ? 'ring-red-300' : 'ring-gray-300'
+                    } placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6`}
+                    {...register('fullName', {
+                      required: 'Họ và tên là bắt buộc',
+                      minLength: {
+                        value: 2,
+                        message: 'Họ và tên phải có ít nhất 2 ký tự',
+                      },
+                    })}
+                  />
+                  {errors.fullName && <p className="mt-2 text-sm text-red-600">{errors.fullName.message}</p>}
                 </div>
               </div>
 

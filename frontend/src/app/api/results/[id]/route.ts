@@ -3,10 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 // GET /api/results/[id] - Lấy kết quả xét nghiệm
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     
     // TODO: Get from database
     // TODO: Check user permission

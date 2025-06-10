@@ -7,11 +7,9 @@ import {
   Cog6ToothIcon,
   UserIcon,
   BellIcon,
-  ShieldCheckIcon,
-  KeyIcon,
+  ShieldCheckIcon,  KeyIcon,
   GlobeAltIcon,
   DocumentTextIcon,
-  CreditCardIcon,
   ChevronRightIcon,
   CheckIcon,
   EyeIcon,
@@ -29,9 +27,8 @@ interface SettingsSection {
 interface SettingItem {
   id: string;
   label: string;
-  description: string;
-  type: "toggle" | "select" | "input" | "password" | "action";
-  value?: any;
+  description: string;  type: "toggle" | "select" | "input" | "password" | "action";
+  value?: string | boolean;
   options?: { value: string; label: string }[];
   action?: () => void;
 }
@@ -74,8 +71,7 @@ export default function SettingsPage() {
   });
 
   const [activeTab, setActiveTab] = useState("profile");
-
-  const handleSettingChange = (key: string, value: any) => {
+  const handleSettingChange = (key: string, value: string | boolean | number) => {
     setSettings(prev => ({
       ...prev,
       [key]: value
@@ -354,15 +350,13 @@ export default function SettingsPage() {
               />
             </button>
           </div>
-        );
-
-      case "select":
+        );      case "select":
         return (
           <div>
             <label className="block text-sm font-medium text-gray-900 mb-1">{item.label}</label>
             <p className="text-sm text-gray-500 mb-2">{item.description}</p>
             <select
-              value={item.value}
+              value={typeof item.value === 'string' ? item.value : ''}
               onChange={(e) => handleSettingChange(item.id, e.target.value)}
               className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             >
@@ -382,7 +376,7 @@ export default function SettingsPage() {
             <p className="text-sm text-gray-500 mb-2">{item.description}</p>
             <input
               type="text"
-              value={item.value}
+              value={typeof item.value === 'string' ? item.value : ''}
               onChange={(e) => handleSettingChange(item.id, e.target.value)}
               className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             />
@@ -397,7 +391,7 @@ export default function SettingsPage() {
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
-                value={item.value}
+                value={typeof item.value === 'string' ? item.value : ''}
                 onChange={(e) => handleSettingChange(item.id, e.target.value)}
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm pr-10"
               />

@@ -47,7 +47,7 @@ export interface TestResult {
   id: string;
   bookingId: string;
   userId: string;
-  resultData: any;
+  resultData: Record<string, unknown>;
   conclusion: string;
   completedAt: Date;
   downloadUrl?: string;

@@ -280,21 +280,18 @@ export default function ServicesManagement() {
             
             <div className="flex gap-4">
               <div className="flex items-center gap-2">
-                <FunnelIcon className="h-5 w-5 text-gray-400" />
-                <select
+                <FunnelIcon className="h-5 w-5 text-gray-400" />                <select
                   value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as any)}
+                  onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "inactive")}
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="all">Tất cả trạng thái</option>
                   <option value="active">Hoạt động</option>
                   <option value="inactive">Tạm dừng</option>
                 </select>
-              </div>
-              
-              <select
+              </div>                <select
                 value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value as any)}
+                onChange={(e) => setCategoryFilter(e.target.value as "all" | "paternity" | "forensic" | "ancestry" | "health")}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">Tất cả danh mục</option>
@@ -434,9 +431,8 @@ export default function ServicesManagement() {
 
             <div className="p-6">
               {modalType === 'delete' ? (
-                <div>
-                  <p className="text-gray-700 mb-4">
-                    Bạn có chắc chắn muốn xóa dịch vụ "{selectedService?.name}"? 
+                <div>                  <p className="text-gray-700 mb-4">
+                    Bạn có chắc chắn muốn xóa dịch vụ &ldquo;{selectedService?.name}&rdquo;? 
                     Hành động này không thể hoàn tác.
                   </p>
                   <div className="flex justify-end space-x-4">
@@ -553,10 +549,9 @@ export default function ServicesManagement() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Danh mục</label>
-                      <select
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Danh mục</label>                      <select
                         value={formData.category || 'paternity'}
-                        onChange={(e) => setFormData({...formData, category: e.target.value as any})}
+                        onChange={(e) => setFormData({...formData, category: e.target.value as "paternity" | "forensic" | "ancestry" | "health"})}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         required
                       >
@@ -590,10 +585,9 @@ export default function ServicesManagement() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
-                    <select
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>                    <select
                       value={formData.status || 'active'}
-                      onChange={(e) => setFormData({...formData, status: e.target.value as any})}
+                      onChange={(e) => setFormData({...formData, status: e.target.value as "active" | "inactive"})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="active">Hoạt động</option>

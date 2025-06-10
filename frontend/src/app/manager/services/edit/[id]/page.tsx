@@ -99,8 +99,7 @@ export default function EditServicePage() {
     setFormData(mockService);
     setIsLoading(false);
   }, [serviceId]);
-
-  const handleInputChange = (field: keyof ServiceForm, value: any) => {
+  const handleInputChange = (field: keyof ServiceForm, value: string | number | boolean) => {
     setFormData(prev => ({
       ...prev,
       [field]: value

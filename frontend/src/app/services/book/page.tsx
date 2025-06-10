@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import MainLayout from '@/components/layout/MainLayout';
@@ -13,8 +13,8 @@ interface TestType {
   duration: string;
   expedited: {
     available: boolean;
-    price: string;
-    duration: string;
+    price?: string;
+    duration?: string;
   };
 }
 
@@ -50,22 +50,7 @@ type TestTypes = {
 };
 
 // Mock data for test types - would come from API in real implementation
-<<<<<<< Updated upstream:frontend/src/app/services/book/page.tsx
-const testTypes: Record<string, {
-  id: string;
-  name: string;
-  description: string;
-  price: string;
-  duration: string;
-  expedited: {
-    available: boolean;
-    price?: string;
-    duration?: string;
-  };
-}> = {
-=======
 const testTypes: TestTypes = {
->>>>>>> Stashed changes:src/app/services/book/page.tsx
   'father-child': {
     id: 'father-child',
     name: 'Xét nghiệm Huyết thống Cha - Con',
@@ -98,29 +83,29 @@ const testTypes: TestTypes = {
     duration: '5-7 ngày làm việc',
     expedited: {
       available: true,
-<<<<<<< Updated upstream:frontend/src/app/services/book/page.tsx
-      price: '8.000.000 VNĐ',
-      duration: '48-72 giờ',
-    },
+      price: '7,500,000 VNĐ',
+      duration: '48-72 giờ'
+    }
   },
   'grandparent': {
     id: 'grandparent',
     name: 'Xét nghiệm ông bà cháu',
     description: 'Xác định mối quan hệ ông bà cháu thông qua ADN, độ chính xác 99.9%.',
-    price: '5.500.000 VNĐ',
+    price: '5,500,000 VNĐ',
     duration: '5-7 ngày làm việc',
     expedited: {
       available: false,
     },
-  },  'immigration': {
+  },
+  'immigration': {
     id: 'immigration',
     name: 'Xét nghiệm ADN cho di trú',
     description: 'Chứng minh mối quan hệ huyết thống cho mục đích xin visa, quốc tịch, định cư nước ngoài.',
-    price: '6.500.000 VNĐ',
+    price: '6,500,000 VNĐ',
     duration: '5-7 ngày làm việc',
     expedited: {
       available: true,
-      price: '10.000.000 VNĐ',
+      price: '10,000,000 VNĐ',
       duration: '3-5 ngày làm việc',
     },
   },
@@ -128,11 +113,11 @@ const testTypes: TestTypes = {
     id: 'birth-certificate',
     name: 'Xét nghiệm ADN cho khai sinh',
     description: 'Xác định mối quan hệ huyết thống cho việc đăng ký khai sinh.',
-    price: '5.500.000 VNĐ',
+    price: '5,500,000 VNĐ',
     duration: '3-5 ngày làm việc',
     expedited: {
       available: true,
-      price: '8.000.000 VNĐ',
+      price: '8,000,000 VNĐ',
       duration: '24-48 giờ',
     },
   },
@@ -140,22 +125,23 @@ const testTypes: TestTypes = {
     id: 'legal-inheritance',
     name: 'Xét nghiệm ADN cho thừa kế',
     description: 'Xác định mối quan hệ huyết thống cho mục đích pháp lý liên quan đến thừa kế.',
-    price: '6.000.000 VNĐ',
+    price: '6,000,000 VNĐ',
     duration: '3-5 ngày làm việc',
     expedited: {
       available: true,
-      price: '9.000.000 VNĐ',
+      price: '9,000,000 VNĐ',
       duration: '24-48 giờ',
     },
-  },  'anonymous-paternity': {
+  },
+  'anonymous-paternity': {
     id: 'anonymous-paternity',
     name: 'Xét nghiệm cha con ẩn danh',
     description: 'Xác định mối quan hệ cha con thông qua ADN mà không cần cung cấp thông tin cá nhân.',
-    price: '3.500.000 VNĐ',
+    price: '3,500,000 VNĐ',
     duration: '3-5 ngày làm việc',
     expedited: {
       available: true,
-      price: '5.500.000 VNĐ',
+      price: '5,500,000 VNĐ',
       duration: '24-48 giờ',
     },
   },
@@ -163,23 +149,25 @@ const testTypes: TestTypes = {
     id: 'prenatal',
     name: 'Xét nghiệm ADN trước sinh không xâm lấn',
     description: 'Xét nghiệm ADN thai nhi thông qua máu mẹ, không xâm lấn.',
-    price: '15.000.000 VNĐ',
+    price: '15,000,000 VNĐ',
     duration: '7-12 ngày làm việc',
     expedited: {
       available: true,
-      price: '20.000.000 VNĐ',
+      price: '20,000,000 VNĐ',
       duration: '5-7 ngày làm việc',
     },
   },
-=======
-      price: '7,500,000 VNĐ',
-      duration: '48-72 giờ'
-    }
-  }
->>>>>>> Stashed changes:src/app/services/book/page.tsx
 };
 
 export default function BookServicePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BookServiceContent />
+    </Suspense>
+  );
+}
+
+function BookServiceContent() {
   const searchParams = useSearchParams();
   const testType = searchParams.get('type') || 'father-child';
   const [selectedTest, setSelectedTest] = useState<TestType>(testTypes[testType as keyof typeof testTypes] || testTypes['father-child']);
@@ -214,19 +202,8 @@ export default function BookServicePage() {
     if (type === 'checkbox') {
       setFormData({ ...formData, [name]: checked });
       return;
-    }
-      // Handle nested fields (contactInfo)
+    }    // Handle nested fields (contactInfo)
     if (name.includes('.')) {
-<<<<<<< Updated upstream:frontend/src/app/services/book/page.tsx
-      const [parent, child] = name.split('.');
-      setFormData({
-        ...formData,
-        [parent]: {
-          ...(formData as any)[parent],
-          [child]: value
-        }
-      });
-=======
       const [parent, child] = name.split('.') as [keyof FormData, string];
       if (parent === 'contactInfo') {
         setFormData({
@@ -237,7 +214,6 @@ export default function BookServicePage() {
           }
         });
       }
->>>>>>> Stashed changes:src/app/services/book/page.tsx
       return;
     }
     
@@ -440,11 +416,9 @@ export default function BookServicePage() {
                       </div>
                     )}
                   </div>
-                </div>
-
-                {/* Collection method */}
+                </div>                {/* Collection method */}
                 <div className="bg-white shadow-sm rounded-lg p-6 border border-gray-200">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Phương thức thu mẫu</h3>                  <div className="grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-4">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Phương thức thu mẫu</h3>                  <div className="grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
                     <div className="relative flex border rounded-lg overflow-hidden">
                       <input
                         type="radio"
@@ -508,38 +482,6 @@ export default function BookServicePage() {
                         </span>
                       </label>
                     </div>
-
-                    <div className="relative flex border rounded-lg overflow-hidden">
-                      <input
-                        type="radio"
-                        name="collectionMethod"
-                        id="home-collection"
-                        value="home"
-                        className="sr-only"
-                        checked={formData.collectionMethod === 'home'}
-                        onChange={handleInputChange}
-                      />
-                      <label
-                        htmlFor="home-collection"
-                        className={`flex-1 cursor-pointer p-4 ${
-                          formData.collectionMethod === 'home'
-                            ? 'bg-blue-50 border-blue-500'
-                            : 'border-transparent'
-                        }`}
-                      >
-                        <span className="flex items-center">
-                          <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full border border-gray-300 mr-2">
-                            {formData.collectionMethod === 'home' && (
-                              <span className="w-2.5 h-2.5 bg-blue-600 rounded-full" />
-                            )}
-                          </span>
-                          <span className="text-sm font-medium text-gray-900">Tự Thu mẫu </span>
-                        </span>
-                        <span className="block mt-1 text-sm text-gray-500">
-                          Nhận kit và tự thu mẫu tại nhà
-                        </span>
-                      </label>
-                    </div>
                   </div>
 
                   {/* Conditional fields based on collection method */}
@@ -587,11 +529,11 @@ export default function BookServicePage() {
                         </div>
                       </div>
                     </div>
-                  )}                  {(formData.collectionMethod === 'home' || formData.collectionMethod === 'self') && (
+                  )}                  {(formData.collectionMethod === 'self') && (
                     <div className="mt-6 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
                       <div className="sm:col-span-2">
                         <label htmlFor="address" className="block text-sm font-medium text-gray-700">
-                          Địa chỉ {formData.collectionMethod === 'self' ? 'nhận kit xét nghiệm' : 'lấy mẫu'}
+                          Địa chỉ nhận kit xét nghiệm
                         </label>
                         <div className="mt-1">
                           <input
@@ -602,7 +544,7 @@ export default function BookServicePage() {
                             placeholder="Số nhà, đường, phường/xã"
                             value={formData.address}
                             onChange={handleInputChange}
-                            required={formData.collectionMethod === 'home' || formData.collectionMethod === 'self'}
+                            required={formData.collectionMethod === 'self'}
                           />
                         </div>
                       </div>
@@ -620,13 +562,13 @@ export default function BookServicePage() {
                             placeholder="Tỉnh/Thành phố"
                             value={formData.cityProvince}
                             onChange={handleInputChange}
-                            required={formData.collectionMethod === 'home'}
+                            required={formData.collectionMethod === 'self'}
                           />
                         </div>
                       </div>
                         <div>
                         <label htmlFor="appointmentDate" className="block text-sm font-medium text-gray-700">
-                          Ngày {formData.collectionMethod === 'self' ? 'nhận kit' : 'lấy mẫu'}
+                          Ngày nhận kit
                         </label>
                         <div className="mt-1">
                           <input
@@ -637,13 +579,13 @@ export default function BookServicePage() {
                             value={formData.appointmentDate}
                             onChange={handleInputChange}
                             min={new Date().toISOString().split('T')[0]}
-                            required={formData.collectionMethod === 'home' || formData.collectionMethod === 'self'}
+                            required={formData.collectionMethod === 'self'}
                           />
                         </div>
                       </div>
                       <div>
                         <label htmlFor="appointmentTime" className="block text-sm font-medium text-gray-700">
-                          Thời gian {formData.collectionMethod === 'self' ? 'nhận kit' : 'lấy mẫu'}
+                          Thời gian nhận kit
                         </label>
                         <div className="mt-1">
                           <select
@@ -652,22 +594,11 @@ export default function BookServicePage() {
                             className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
                             value={formData.appointmentTime}
                             onChange={handleInputChange}
-                            required={formData.collectionMethod === 'home' || formData.collectionMethod === 'self'}
+                            required={formData.collectionMethod === 'self'}
                           >
                             <option value="">Chọn thời gian</option>
-                            {formData.collectionMethod === 'self' ? (
-                              <>
-                                <option value="buổi sáng">Buổi sáng (8:00 - 12:00)</option>
-                                <option value="buổi chiều">Buổi chiều (13:30 - 17:30)</option>
-                              </>
-                            ) : (
-                              <>
-                                <option value="08:00-10:00">08:00 - 10:00</option>
-                                <option value="10:00-12:00">10:00 - 12:00</option>
-                                <option value="13:30-15:30">13:30 - 15:30</option>
-                                <option value="15:30-17:30">15:30 - 17:30</option>
-                              </>
-                            )}
+                            <option value="buổi sáng">Buổi sáng (8:00 - 12:00)</option>
+                            <option value="buổi chiều">Buổi chiều (13:30 - 17:30)</option>
                           </select>
                         </div>
                       </div>
