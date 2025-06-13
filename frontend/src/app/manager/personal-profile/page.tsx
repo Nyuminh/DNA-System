@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { 
   UserCircleIcon, 
   CameraIcon,
@@ -98,12 +99,13 @@ export default function PersonalProfile() {
           {/* Profile Card */}
           <div className="lg:w-80">
             <div className="bg-white rounded-xl shadow-md p-6 text-center sticky top-8">
-              <div className="relative inline-block mb-6">
-                <div className="w-32 h-32 mx-auto rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center overflow-hidden">
+              <div className="relative inline-block mb-6">                <div className="w-32 h-32 mx-auto rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center overflow-hidden">
                   {profile.avatar ? (
-                    <img 
+                    <Image 
                       src={profile.avatar} 
                       alt={profile.fullName}
+                      width={128}
+                      height={128}
                       className="w-full h-full object-cover"
                     />
                   ) : (

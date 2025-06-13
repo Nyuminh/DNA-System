@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { UserCircleIcon, KeyIcon, BellIcon, ShieldCheckIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
 
 interface UserProfile {
@@ -35,11 +36,12 @@ export default function ManagerProfile() {
         <div className="h-48 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg"></div>
         <div className="absolute -bottom-16 left-8 flex items-end">
           <div className="relative">
-            <div className="w-32 h-32 bg-white rounded-full border-4 border-white shadow-lg overflow-hidden">
-              {profile.avatar ? (
-                <img 
+            <div className="w-32 h-32 bg-white rounded-full border-4 border-white shadow-lg overflow-hidden">              {profile.avatar ? (
+                <Image 
                   src={profile.avatar} 
                   alt={profile.fullName}
+                  width={128}
+                  height={128}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -116,12 +118,13 @@ export default function ManagerProfile() {
       <div className="flex flex-col md:flex-row gap-8">
         {/* Profile Sidebar */}
         <div className="w-full md:w-64 space-y-4">
-          <div className="bg-white p-6 rounded-lg shadow-md text-center">
-            <div className="w-32 h-32 mx-auto rounded-full bg-gray-200 flex items-center justify-center mb-4">
+          <div className="bg-white p-6 rounded-lg shadow-md text-center">            <div className="w-32 h-32 mx-auto rounded-full bg-gray-200 flex items-center justify-center mb-4">
               {profile.avatar ? (
-                <img 
+                <Image 
                   src={profile.avatar} 
                   alt={profile.fullName}
+                  width={128}
+                  height={128}
                   className="w-full h-full rounded-full object-cover"
                 />
               ) : (

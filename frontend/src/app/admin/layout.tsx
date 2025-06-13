@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { 
   UserIcon, 
   ChartBarIcon, 
   ArrowRightOnRectangleIcon,
   UsersIcon,
-  HomeIcon
+  HomeIcon,
+  BellIcon
 } from '@heroicons/react/24/outline';
 
 interface AdminLayoutProps {
@@ -16,20 +16,38 @@ interface AdminLayoutProps {
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   const isActive = (path: string) => {
     if (path === "/admin" && pathname === "/admin") return true;
     if (path !== "/admin" && pathname.startsWith(path)) return true;
     return false;
   };
+
+  const handleLogout = async () => {
+    try {
+      // Call logout API
+      await fetch('/api/auth/logout', { method: 'POST' });
+      // Clear local storage
+      localStorage.removeItem('auth-token');
+      localStorage.removeItem('user-data');
+      // Redirect to login
+      router.push('/auth/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force redirect even if API fails
+      router.push('/auth/login');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-slate-200/60 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">            <div className="flex items-center space-x-4">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-4">
               <div className="flex-shrink-0">
                 <Link href="/admin" className="flex items-center space-x-3 group">
                   <div className="h-10 w-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-200">
@@ -43,7 +61,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   </div>
                 </Link>
               </div>
-            </div>            <div className="flex items-center space-x-4">
+            </div>
+            
+            <div className="flex items-center space-x-4">
               {/* Quick Stats */}
               <div className="hidden lg:flex items-center space-x-4 px-4 py-2 bg-slate-50 rounded-lg">
                 <div className="text-center">
@@ -57,52 +77,21 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 </div>
               </div>
 
-              <div className="relative">
-                <button
-                  onClick={() => setIsAccountMenuOpen(!isAccountMenuOpen)}
-                  className="flex items-center space-x-3 px-3 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                >
-                  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
-                    <UserIcon className="h-4 w-4 text-white" />
-                  </div>
-                  <div className="hidden sm:block text-left">
-                    <div className="text-sm font-medium text-slate-700">Admin User</div>
-                    <div className="text-xs text-slate-500">Quản trị viên</div>
-                  </div>
-                  <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                
-                {isAccountMenuOpen && (
-                  <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-xl shadow-lg bg-white/95 backdrop-blur-md ring-1 ring-slate-200 z-50">                  <div className="py-2">
-                      <div className="px-4 py-3 border-b border-slate-100">
-                        <p className="text-sm font-medium text-slate-700">Admin User</p>
-                        <p className="text-xs text-slate-500">admin@dnatesting.com</p>
-                      </div>
-                      <Link
-                        href="/"
-                        className="flex items-center px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                      >
-                        <HomeIcon className="h-4 w-4 mr-3 text-slate-400" />
-                        Về trang chủ
-                      </Link>
-                      <Link
-                        href="/admin/profile"
-                        className="flex items-center px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                      >
-                        <UserIcon className="h-4 w-4 mr-3 text-slate-400" />
-                        Hồ sơ cá nhân
-                      </Link>
-                      <button
-                        className="w-full flex items-center px-4 py-3 text-sm text-slate-700 hover:bg-red-50 hover:text-red-600 transition-colors"
-                      >
-                        <ArrowRightOnRectangleIcon className="h-4 w-4 mr-3 text-slate-400" />
-                        Đăng xuất
-                      </button>
-                    </div>
-                  </div>
-                )}
+              {/* Notifications */}
+              <button className="relative p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+                <BellIcon className="h-6 w-6" />
+                <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+              </button>
+
+              {/* Admin Profile - Simplified */}
+              <div className="flex items-center space-x-3 px-3 py-2 rounded-xl bg-slate-50">
+                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
+                  <UserIcon className="h-4 w-4 text-white" />
+                </div>
+                <div className="hidden sm:block text-left">
+                  <div className="text-sm font-medium text-slate-700">Admin User</div>
+                  <div className="text-xs text-slate-500">Quản trị viên</div>
+                </div>
               </div>
             </div>
           </div>
@@ -110,48 +99,68 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </header>
 
       <div className="flex">
-        {/* Sidebar */}
-        <div className="w-64 bg-white shadow-sm h-screen sticky top-0">          <nav className="mt-8 px-4">
-            <ul className="space-y-2">
-              {/* Home Button in Sidebar */}
-              <li>
-                <Link
-                  href="/"
-                  className="flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors text-blue-600 hover:bg-blue-50 hover:text-blue-700 border border-blue-100 mb-4"
-                >
-                  <HomeIcon className="mr-3 h-5 w-5" />
-                  <span>Về trang chủ</span>
-                </Link>
-              </li>
-              
-              <li>
-                <Link
-                  href="/admin/dashboard"
-                  className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                    isActive("/admin/dashboard")
-                      ? "bg-indigo-100 text-indigo-700"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
-                >
-                  <ChartBarIcon className="mr-3 h-5 w-5" />
-                  Dashboard
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/admin/accounts"
-                  className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                    isActive("/admin/accounts")
-                      ? "bg-indigo-100 text-indigo-700"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
-                >
-                  <UsersIcon className="mr-3 h-5 w-5" />
-                  Quản lý tài khoản
-                </Link>
-              </li>
-            </ul>
+        {/* Enhanced Sidebar */}
+        <div className="w-64 bg-white shadow-lg border-r border-slate-200 h-screen sticky top-0 flex flex-col">
+          <nav className="flex-1 mt-6 px-4">
+            <div className="space-y-1">
+              {/* Dashboard */}
+              <Link
+                href="/admin"
+                className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  isActive("/admin") && pathname === "/admin"
+                    ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                <HomeIcon className="mr-3 h-5 w-5" />
+                Trang chủ
+              </Link>
+
+              <Link
+                href="/admin/dashboard"
+                className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  isActive("/admin/dashboard")
+                    ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                <ChartBarIcon className="mr-3 h-5 w-5" />
+                Dashboard
+              </Link>              {/* Account Management */}
+              <Link
+                href="/admin/accounts"
+                className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  isActive("/admin/accounts")
+                    ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                <UsersIcon className="mr-3 h-5 w-5" />
+                Quản lý tài khoản
+              </Link>
+            </div>
           </nav>
+
+          {/* User Info & Logout Section */}
+          <div className="border-t border-slate-200 p-4">
+            <div className="flex items-center space-x-3 mb-3 p-2 rounded-lg bg-slate-50">
+              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
+                <UserIcon className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-slate-700 truncate">Admin User</div>
+                <div className="text-xs text-slate-500 truncate">admin@dnatest.com</div>
+              </div>
+            </div>
+            
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 group"
+            >
+              <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5 group-hover:scale-110 transition-transform" />
+              Đăng xuất
+            </button>
+          </div>
         </div>
 
         {/* Main Content */}

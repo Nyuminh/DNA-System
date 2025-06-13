@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import MainLayout from '@/components/layout/MainLayout';
 import { 
   CheckCircleIcon, 
@@ -11,8 +12,7 @@ import {
   StarIcon
 } from '@heroicons/react/24/outline';
 
-export default function Home() {
-  const services = [
+export default function Home() {    const services = [
     {
       id: 'paternity',
       title: 'Xét nghiệm Huyết thống',
@@ -20,7 +20,6 @@ export default function Home() {
       imageUrl: '/images/cau-truc-xoan-kep-cua-DNA_.png',
       href: '/services#paternity',
       features: ['Kết quả chính xác', 'Bảo mật tuyệt đối', 'Tư vấn miễn phí'],
-      price: 'Từ 2.500.000đ',
     },
     {
       id: 'legal',
@@ -29,7 +28,6 @@ export default function Home() {
       imageUrl: '/images/adn-hanh-chinh.jpg',
       href: '/services#legal',
       features: ['Giá trị pháp lý', 'Quy trình chuẩn', 'Chứng nhận hợp lệ'],
-      price: 'Từ 3.500.000đ',
     },
     {
       id: 'private',
@@ -38,7 +36,6 @@ export default function Home() {
       imageUrl: '/images/128d5103151t89325l0.jpg',
       href: '/services#private',
       features: ['Hoàn toàn bảo mật', 'Ẩn danh tùy chọn', 'Nhanh chóng'],
-      price: 'Từ 2.200.000đ',
     },
   ];
   const features = [
@@ -164,9 +161,11 @@ export default function Home() {
                 className="card-elevated p-8 group hover:scale-105 transition-all duration-300 animate-slide-up"
                 style={{animationDelay: `${index * 100}ms`}}
               >                <div className="relative w-full h-48 rounded-xl mb-6 overflow-hidden group-hover:scale-105 transition-transform duration-300">
-                  <img 
+                  <Image 
                     src={service.imageUrl} 
                     alt={service.title}
+                    width={400}
+                    height={192}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
@@ -177,9 +176,7 @@ export default function Home() {
                 </div>
                 
                 <h3 className="text-xl font-bold text-secondary-900 mb-3">{service.title}</h3>
-                <p className="text-secondary-600 mb-6 leading-relaxed">{service.description}</p>
-                
-                <div className="space-y-2 mb-6">
+                <p className="text-secondary-600 mb-6 leading-relaxed">{service.description}</p>                <div className="space-y-2 mb-6">
                   {service.features.map((feature, featureIndex) => (
                     <div key={featureIndex} className="flex items-center text-sm text-secondary-700">
                       <CheckCircleIcon className="w-4 h-4 text-success-600 mr-2 flex-shrink-0" />
@@ -188,10 +185,15 @@ export default function Home() {
                   ))}
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <div className="text-lg font-bold text-primary-600">{service.price}</div>
-                  <Link href={service.href} className="btn-primary text-sm py-2 px-4 group-hover:shadow-lg">
+                <div className="mt-8">
+                  <Link 
+                    href={service.href} 
+                    className="w-full inline-flex items-center justify-center px-6 py-3 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors duration-200 group-hover:shadow-lg"
+                  >
                     Tìm hiểu thêm
+                    <svg className="ml-2 w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
                   </Link>
                 </div>
               </div>
@@ -257,12 +259,13 @@ export default function Home() {
                 key={index} 
                 className="bg-secondary-50 rounded-2xl p-8 animate-slide-up"
                 style={{animationDelay: `${index * 100}ms`}}
-              >
-                <div className="flex items-center mb-6">
+              >                <div className="flex items-center mb-6">
                   <div className="relative w-16 h-16 rounded-full overflow-hidden mr-4 flex-shrink-0">
-                    <img 
+                    <Image 
                       src={testimonial.imageUrl} 
                       alt={testimonial.name}
+                      width={64}
+                      height={64}
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
