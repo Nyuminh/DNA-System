@@ -21,11 +21,12 @@ interface Service {
   status: "active" | "inactive";
 }
 
-interface BlogPost {
+interface Course {
   id: string;
   title: string;
   summary: string;
-  author: string;
+  instructor: string;
+  price: number;
   publishDate: string;
   status: "published" | "draft";
 }
@@ -50,25 +51,26 @@ export default function ManagerManagerDashboard() {
       price: 6000000,
       status: "active",
     }
-  ]);
-  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([
+  ]);  const [courses, setCourses] = useState<Course[]>([
     {
       id: "1",
-      title: "Tìm hiểu về xét nghiệm ADN",
-      summary: "Giải thích chi tiết về quy trình xét nghiệm ADN",
-      author: "Dr. Nguyễn Văn A",
+      title: "Khóa học Cơ bản về ADN",
+      summary: "Hiểu biết cơ bản về ADN và các phương pháp xét nghiệm",
+      instructor: "Dr. Nguyễn Văn A",
+      price: 2000000,
       publishDate: "2025-06-01",
       status: "published",
     },
     {
       id: "2",
-      title: "10 câu hỏi thường gặp về xét nghiệm ADN",
-      summary: "Giải đáp những thắc mắc phổ biến về xét nghiệm ADN",
-      author: "Dr. Trần Thị B",
+      title: "Khóa học Nâng cao về Phân tích ADN",
+      summary: "Khóa học chuyên sâu về phân tích và giải thích kết quả ADN",
+      instructor: "Dr. Trần Thị B",
+      price: 3500000,
       publishDate: "2025-05-28",
       status: "draft",
-    }  ]);
-
+    }
+  ]);
   const toggleServiceStatus = (id: string) => {
     setServices(services.map(service => 
       service.id === id 
@@ -76,11 +78,22 @@ export default function ManagerManagerDashboard() {
         : service
     ));
   };
-  const toggleBlogStatus = (id: string) => {
-    setBlogPosts(posts => posts.map(post =>
-      post.id === id
-        ? { ...post, status: post.status === 'published' ? 'draft' : 'published' }
-        : post
+  const handleDeleteService = (id: string) => {
+    if (confirm('Bạn có chắc chắn muốn xóa dịch vụ này?')) {
+      setServices(services.filter(service => service.id !== id));
+    }
+  };
+  const handleDeleteCourse = (id: string) => {
+    if (confirm('Bạn có chắc chắn muốn xóa khóa học này?')) {
+      setCourses(courses.filter(course => course.id !== id));
+    }
+  };
+
+  const toggleCourseStatus = (id: string) => {
+    setCourses(courses => courses.map(course =>
+      course.id === id
+        ? { ...course, status: course.status === 'published' ? 'draft' : 'published' }
+        : course
     ));
   };
 
@@ -331,31 +344,28 @@ export default function ManagerManagerDashboard() {
                         <div className="text-sm text-gray-900">
                           {service.price.toLocaleString()}
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          service.status === 'active' 
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}>
+                      </td>                      <td className="px-6 py-4 whitespace-nowrap">
+                        <button
+                          onClick={() => toggleServiceStatus(service.id)}
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full cursor-pointer transition-colors ${
+                            service.status === 'active' 
+                              ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                              : 'bg-red-100 text-red-800 hover:bg-red-200'
+                          }`}
+                        >
                           {service.status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
-                        </span>
+                        </button>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">                        <Link
                           href={`/manager/services/edit/${service.id}`}
                           className="text-blue-600 hover:text-blue-900 mr-4"
                         >
                           Sửa
-                        </Link>
-                        <button
-                          onClick={() => toggleServiceStatus(service.id)}
-                          className={`${
-                            service.status === 'active' 
-                              ? 'text-red-600 hover:text-red-900'
-                              : 'text-green-600 hover:text-green-900'
-                          }`}
+                        </Link>                        <button
+                          onClick={() => handleDeleteService(service.id)}
+                          className="text-red-600 hover:text-red-900"
                         >
-                          {service.status === 'active' ? 'Ẩn' : 'Hiện'}
+                          Xóa
                         </button>
                       </td>
                     </tr>
@@ -368,29 +378,31 @@ export default function ManagerManagerDashboard() {
           {/* Blog Posts Section */}
           <section>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-semibold">Quản lý Blog</h2>              <Link
-                href="/manager/blog/new"
+              <h2 className="text-2xl font-semibold">Quản lý Khóa học</h2>              <Link
+                href="/manager/courses/new"
                 className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
               >
-                Thêm Bài Viết Mới
+                Thêm Khóa học Mới
               </Link>
             </div>
 
             <div className="bg-white shadow-md rounded-lg overflow-hidden">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tiêu đề
+                  <tr>                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Tên Khóa học
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tóm tắt
+                      Mô tả
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tác giả
+                      Giảng viên
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Ngày đăng
+                      Giá (VNĐ)
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Ngày tạo
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Trạng thái
@@ -400,53 +412,52 @@ export default function ManagerManagerDashboard() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {blogPosts.map((post) => (
-                    <tr key={post.id} className="hover:bg-gray-50">
+                <tbody className="bg-white divide-y divide-gray-200">                  {courses.map((course) => (
+                    <tr key={course.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          {post.title}
+                          {course.title}
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-500">
-                          {post.summary}
+                          {course.summary}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">                        <div className="text-sm text-gray-900">
+                          {course.instructor}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          {post.author}
+                          {course.price.toLocaleString()}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          {new Date(post.publishDate).toLocaleDateString('vi-VN')}
+                          {new Date(course.publishDate).toLocaleDateString('vi-VN')}
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          post.status === 'published'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {post.status === 'published' ? 'Đã đăng' : 'Bản nháp'}
-                        </span>
+                      </td><td className="px-6 py-4 whitespace-nowrap">                        <button
+                          onClick={() => toggleCourseStatus(course.id)}
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full cursor-pointer transition-colors ${
+                            course.status === 'published'
+                              ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                              : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                          }`}
+                        >
+                          {course.status === 'published' ? 'Đã đăng' : 'Bản nháp'}
+                        </button>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">                        <Link
-                          href={`/manager/blog/edit/${post.id}`}
+                          href={`/manager/courses/edit/${course.id}`}
                           className="text-blue-600 hover:text-blue-900 mr-4"
                         >
                           Sửa
-                        </Link>
-                        <button
-                          onClick={() => toggleBlogStatus(post.id)}
-                          className={`${
-                            post.status === 'published' 
-                              ? 'text-yellow-600 hover:text-yellow-900'
-                              : 'text-green-600 hover:text-green-900'
-                          }`}
+                        </Link>                        <button
+                          onClick={() => handleDeleteCourse(course.id)}
+                          className="text-red-600 hover:text-red-900"
                         >
-                          {post.status === 'published' ? 'Chuyển nháp' : 'Đăng bài'}
+                          Xóa
                         </button>
                       </td>
                     </tr>

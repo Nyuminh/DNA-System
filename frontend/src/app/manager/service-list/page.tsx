@@ -275,15 +275,17 @@ export default function ServicesList() {
                       <div className="text-sm font-medium text-gray-900">
                         {service.price.toLocaleString()}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                        service.status === 'active' 
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
+                    </td>                    <td className="px-6 py-4 whitespace-nowrap">
+                      <button
+                        onClick={() => toggleStatus(service.id)}
+                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${
+                          service.status === 'active' 
+                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                            : 'bg-red-100 text-red-800 hover:bg-red-200'
+                        }`}
+                      >
                         {service.status === 'active' ? 'Hoạt động' : 'Tạm dừng'}
-                      </span>
+                      </button>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="flex items-center space-x-3">
@@ -292,12 +294,11 @@ export default function ServicesList() {
                           className="text-blue-600 hover:text-blue-900 font-medium"
                         >
                           Sửa
-                        </Link>
-                        <button
+                        </Link>                        <button
                           onClick={() => handleDeleteService(service.id)}
                           className="text-red-600 hover:text-red-900 font-medium"
                         >
-                          Ẩn
+                          Xóa
                         </button>
                       </div>
                     </td>

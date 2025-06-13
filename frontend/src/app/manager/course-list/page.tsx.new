@@ -12,7 +12,8 @@ import {
   AcademicCapIcon,
   ClockIcon,
   UserGroupIcon,
-  StarIcon
+  StarIcon,
+  FunnelIcon
 } from "@heroicons/react/24/outline";
 
 interface Course {
@@ -31,7 +32,7 @@ interface Course {
 
 export default function CourseList() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [courses, setCourses] = useState<Course[]>([
     {
@@ -98,6 +99,7 @@ export default function CourseList() {
     
     return matchesSearch && matchesStatus && matchesCategory;
   });
+  
   // Statistics
   const stats = {
     total: courses.length,
@@ -105,6 +107,7 @@ export default function CourseList() {
     totalStudents: courses.reduce((sum, c) => sum + c.students, 0),
     avgRating: (courses.reduce((sum, c) => sum + c.rating, 0) / courses.length).toFixed(1)
   };
+  
   const handleDeleteCourse = (id: string) => {
     if (confirm('Bạn có chắc chắn muốn xóa khóa học này?')) {
       setCourses(courses.filter(course => course.id !== id));
@@ -137,7 +140,8 @@ export default function CourseList() {
                 <h1 className="text-3xl font-bold text-white mb-2">Danh sách Khóa học</h1>
                 <p className="text-purple-100">Quản lý và theo dõi tất cả khóa học đào tạo</p>
               </div>
-            </div>            <Link
+            </div>
+            <Link
               href="/manager/add-course"
               className="flex items-center px-6 py-3 bg-white text-purple-600 rounded-lg hover:bg-purple-50 transition-all duration-200 shadow-md hover:shadow-lg"
             >
@@ -205,34 +209,35 @@ export default function CourseList() {
         {/* Search and Filter */}
         <div className="bg-white rounded-xl shadow-md p-6 mb-8">
           <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm khóa học..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-              </div>
+            <div className="flex-1 relative">
+              <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-3 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Tìm kiếm khóa học..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
             </div>
             
             <div className="flex gap-4">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              >
-                <option value="all">Tất cả trạng thái</option>
-                <option value="active">Hoạt động</option>
-                <option value="inactive">Tạm dừng</option>
-              </select>
+              <div className="flex items-center gap-2">
+                <FunnelIcon className="h-5 w-5 text-gray-400" />
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "inactive")}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  <option value="all">Tất cả trạng thái</option>
+                  <option value="active">Hoạt động</option>
+                  <option value="inactive">Tạm dừng</option>
+                </select>
+              </div>
               
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               >
                 <option value="all">Tất cả danh mục</option>
                 <option value="basic">Cơ bản</option>
@@ -244,100 +249,107 @@ export default function CourseList() {
           </div>
         </div>
 
-        {/* Course Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCourses.map((course) => (
-            <div key={course.id} className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
-              <div className="p-6">                <div className="flex items-start justify-between mb-4">
-                  <button
-                    onClick={() => toggleStatus(course.id)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${
-                      course.status === 'active' 
-                        ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                        : 'bg-red-100 text-red-800 hover:bg-red-200'
-                    }`}
-                  >
-                    {course.status === 'active' ? 'Hoạt động' : 'Tạm dừng'}
-                  </button>
-                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                    {course.level}
-                  </span>
-                </div>
-                
-                <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{course.title}</h3>
-                <p className="text-gray-600 text-sm mb-4 line-clamp-3">{course.description}</p>
-                  <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">Giảng viên:</span>
-                    <span className="font-medium text-gray-900 text-sm">{course.instructor}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">Thời lượng:</span>
-                    <div className="flex items-center">
-                      <ClockIcon className="w-4 h-4 text-gray-400 mr-1" />
-                      <span className="font-medium text-gray-900 text-sm">{course.duration}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">Học viên:</span>
-                    <div className="flex items-center">
-                      <UserGroupIcon className="w-4 h-4 text-gray-400 mr-1" />
-                      <span className="font-medium text-gray-900 text-sm">{course.students} người</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">Đánh giá:</span>
-                    <div className="flex items-center">
-                      <span className="font-medium text-gray-900 mr-1">{course.rating}</span>
-                      <StarIcon className="w-4 h-4 text-yellow-400 fill-current" />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
-                  <span className="text-xs text-gray-500">
-                    Tạo: {new Date(course.createdAt).toLocaleDateString('vi-VN')}
-                  </span>
-                  <div className="flex space-x-2">
-                    <Link 
-                      href={`/manager/courses/${course.id}`}
-                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="Xem chi tiết"
-                    >
-                      <EyeIcon className="h-4 w-4" />
-                    </Link>
-                    <Link 
-                      href={`/manager/courses/edit/${course.id}`}
-                      className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                      title="Chỉnh sửa"
-                    >
-                      <PencilIcon className="h-4 w-4" />
-                    </Link>
-                    <button 
-                      onClick={() => handleDeleteCourse(course.id)}
-                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Xóa khóa học"
-                    >
-                      <TrashIcon className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Empty State */}
-        {filteredCourses.length === 0 && (
-          <div className="text-center py-12">
-            <AcademicCapIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">Không tìm thấy khóa học</h3>
-            <p className="mt-1 text-sm text-gray-500">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+        {/* Courses Table */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                    TÊN KHÓA HỌC
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                    GIẢNG VIÊN
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                    THỜI LƯỢNG
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                    TRẠNG THÁI
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                    THAO TÁC
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredCourses.map((course) => (
+                  <tr key={course.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <div className="text-sm font-medium text-gray-900">
+                          {course.title}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {course.description.substring(0, 100)}...
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{course.instructor}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {course.duration}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {course.level}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <button
+                        onClick={() => toggleStatus(course.id)}
+                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${
+                          course.status === 'active' 
+                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                            : 'bg-red-100 text-red-800 hover:bg-red-200'
+                        }`}
+                        title="Nhấn để thay đổi trạng thái"
+                      >
+                        {course.status === 'active' ? 'Hoạt động' : 'Tạm dừng'}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <div className="flex items-center space-x-3">
+                        <Link 
+                          href={`/manager/courses/edit/${course.id}`}
+                          className="text-purple-600 hover:text-purple-900 font-medium"
+                        >
+                          Sửa
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteCourse(course.id)}
+                          className="text-red-600 hover:text-red-900 font-medium"
+                        >
+                          Xóa
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        )}
+          
+          {/* Empty State */}
+          {filteredCourses.length === 0 && (
+            <div className="p-12 text-center">
+              <AcademicCapIcon className="mx-auto h-16 w-16 text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Không tìm thấy khóa học</h3>
+              <p className="text-gray-500 mb-6">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+              <button
+                onClick={() => {
+                  setSearchTerm("");
+                  setStatusFilter("all");
+                  setCategoryFilter("all");
+                }}
+                className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Xóa bộ lọc
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
