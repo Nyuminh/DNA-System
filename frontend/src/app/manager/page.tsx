@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { 
   UserCircleIcon, 
   ClipboardDocumentListIcon, 
@@ -30,6 +31,8 @@ interface BlogPost {
 }
 
 export default function ManagerManagerDashboard() {
+  const router = useRouter();
+  
   const [isServiceMenuOpen, setIsServiceMenuOpen] = useState(false);
   const [isCourseMenuOpen, setIsCourseMenuOpen] = useState(false);
   const [services, setServices] = useState<Service[]>([
@@ -73,13 +76,24 @@ export default function ManagerManagerDashboard() {
         : service
     ));
   };
-
   const toggleBlogStatus = (id: string) => {
     setBlogPosts(posts => posts.map(post =>
       post.id === id
         ? { ...post, status: post.status === 'published' ? 'draft' : 'published' }
         : post
     ));
+  };
+
+  const handleLogout = () => {
+    if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+      // Xóa thông tin đăng nhập (localStorage, sessionStorage, cookies)
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      sessionStorage.clear();
+      
+      // Chuyển hướng về trang đăng nhập
+      router.push('/auth/login');
+    }
   };
 
   return (
@@ -162,10 +176,13 @@ export default function ManagerManagerDashboard() {
               <span>Thông báo</span>
             </Link>            <div className="border-t border-gray-200 my-4"></div>
 
-            <Link href="/" className="flex items-center px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors">
+            <button 
+              onClick={handleLogout}
+              className="w-full flex items-center px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors"
+            >
               <ArrowRightOnRectangleIcon className="h-5 w-5 mr-3" />
               <span>Đăng xuất</span>
-            </Link>
+            </button>
           </nav>
         </div>
       </div>      {/* Main Content */}
