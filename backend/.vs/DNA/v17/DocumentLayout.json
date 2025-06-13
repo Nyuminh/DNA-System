@@ -1,0 +1,273 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\FPT\\SWP391\\DNA-System\\backend\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{B5A7BF5B-8697-42D9-8F45-3C2D9615AD10}|DAOs\\DAOs.csproj|d:\\fpt\\swp391\\dna-system\\backend\\daos\\userdao.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B5A7BF5B-8697-42D9-8F45-3C2D9615AD10}|DAOs\\DAOs.csproj|solutionrelative:daos\\userdao.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}|BOs\\BOs.csproj|d:\\fpt\\swp391\\dna-system\\backend\\bos\\models\\dnasystemcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}|BOs\\BOs.csproj|solutionrelative:bos\\models\\dnasystemcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}|BOs\\BOs.csproj|d:\\fpt\\swp391\\dna-system\\backend\\bos\\models\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}|BOs\\BOs.csproj|solutionrelative:bos\\models\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}|BOs\\BOs.csproj|d:\\fpt\\swp391\\dna-system\\backend\\bos\\models\\feedback.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}|BOs\\BOs.csproj|solutionrelative:bos\\models\\feedback.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}|BOs\\BOs.csproj|d:\\fpt\\swp391\\dna-system\\backend\\bos\\models\\invoice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}|BOs\\BOs.csproj|solutionrelative:bos\\models\\invoice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}|BOs\\BOs.csproj|d:\\fpt\\swp391\\dna-system\\backend\\bos\\models\\course.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}|BOs\\BOs.csproj|solutionrelative:bos\\models\\course.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}|BOs\\BOs.csproj|d:\\fpt\\swp391\\dna-system\\backend\\bos\\models\\booking.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}|BOs\\BOs.csproj|solutionrelative:bos\\models\\booking.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}|BOs\\BOs.csproj|d:\\fpt\\swp391\\dna-system\\backend\\bos\\models\\service.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}|BOs\\BOs.csproj|solutionrelative:bos\\models\\service.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}|BOs\\BOs.csproj|d:\\fpt\\swp391\\dna-system\\backend\\bos\\models\\testresult.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}|BOs\\BOs.csproj|solutionrelative:bos\\models\\testresult.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}|BOs\\BOs.csproj|d:\\fpt\\swp391\\dna-system\\backend\\bos\\models\\role.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}|BOs\\BOs.csproj|solutionrelative:bos\\models\\role.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}|BOs\\BOs.csproj|d:\\fpt\\swp391\\dna-system\\backend\\bos\\models\\kit.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}|BOs\\BOs.csproj|solutionrelative:bos\\models\\kit.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}|BOs\\BOs.csproj|d:\\fpt\\swp391\\dna-system\\backend\\bos\\models\\invoicedetail.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}|BOs\\BOs.csproj|solutionrelative:bos\\models\\invoicedetail.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{967730EF-2363-444C-9F3A-D02B9DE18A7C}|DNA_APIs\\DNA_APIs.csproj|d:\\fpt\\swp391\\dna-system\\backend\\dna_apis\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{967730EF-2363-444C-9F3A-D02B9DE18A7C}|DNA_APIs\\DNA_APIs.csproj|solutionrelative:dna_apis\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{967730EF-2363-444C-9F3A-D02B9DE18A7C}|DNA_APIs\\DNA_APIs.csproj|d:\\fpt\\swp391\\dna-system\\backend\\dna_apis\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{967730EF-2363-444C-9F3A-D02B9DE18A7C}|DNA_APIs\\DNA_APIs.csproj|solutionrelative:dna_apis\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\FPT\\SWP391\\DNA-System\\backend\\DNA.Api\\DNA.Api.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:DNA.Api\\DNA.Api.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "UserDAO.cs",
+              "DocumentMoniker": "D:\\FPT\\SWP391\\DNA-System\\backend\\DAOs\\UserDAO.cs",
+              "RelativeDocumentMoniker": "DAOs\\UserDAO.cs",
+              "ToolTip": "D:\\FPT\\SWP391\\DNA-System\\backend\\DAOs\\UserDAO.cs",
+              "RelativeToolTip": "DAOs\\UserDAO.cs",
+              "ViewState": "AgIAAAsAAAAAAAAAAAAAwBUAAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-13T09:44:42.171Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "User.cs",
+              "DocumentMoniker": "D:\\FPT\\SWP391\\DNA-System\\backend\\BOs\\Models\\User.cs",
+              "RelativeDocumentMoniker": "BOs\\Models\\User.cs",
+              "ToolTip": "D:\\FPT\\SWP391\\DNA-System\\backend\\BOs\\Models\\User.cs",
+              "RelativeToolTip": "BOs\\Models\\User.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-13T09:31:34.595Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "Service.cs",
+              "DocumentMoniker": "D:\\FPT\\SWP391\\DNA-System\\backend\\BOs\\Models\\Service.cs",
+              "RelativeDocumentMoniker": "BOs\\Models\\Service.cs",
+              "ToolTip": "D:\\FPT\\SWP391\\DNA-System\\backend\\BOs\\Models\\Service.cs",
+              "RelativeToolTip": "BOs\\Models\\Service.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-13T09:31:26.014Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "Booking.cs",
+              "DocumentMoniker": "D:\\FPT\\SWP391\\DNA-System\\backend\\BOs\\Models\\Booking.cs",
+              "RelativeDocumentMoniker": "BOs\\Models\\Booking.cs",
+              "ToolTip": "D:\\FPT\\SWP391\\DNA-System\\backend\\BOs\\Models\\Booking.cs",
+              "RelativeToolTip": "BOs\\Models\\Booking.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-13T09:30:27.516Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Course.cs",
+              "DocumentMoniker": "D:\\FPT\\SWP391\\DNA-System\\backend\\BOs\\Models\\Course.cs",
+              "RelativeDocumentMoniker": "BOs\\Models\\Course.cs",
+              "ToolTip": "D:\\FPT\\SWP391\\DNA-System\\backend\\BOs\\Models\\Course.cs",
+              "RelativeToolTip": "BOs\\Models\\Course.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-13T09:30:41.345Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "DnasystemContext.cs",
+              "DocumentMoniker": "D:\\FPT\\SWP391\\DNA-System\\backend\\BOs\\Models\\DnasystemContext.cs",
+              "RelativeDocumentMoniker": "BOs\\Models\\DnasystemContext.cs",
+              "ToolTip": "D:\\FPT\\SWP391\\DNA-System\\backend\\BOs\\Models\\DnasystemContext.cs",
+              "RelativeToolTip": "BOs\\Models\\DnasystemContext.cs",
+              "ViewState": "AgIAAB0AAAAAAAAAAADwvysAAAAnAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-13T09:30:48.34Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Feedback.cs",
+              "DocumentMoniker": "D:\\FPT\\SWP391\\DNA-System\\backend\\BOs\\Models\\Feedback.cs",
+              "RelativeDocumentMoniker": "BOs\\Models\\Feedback.cs",
+              "ToolTip": "D:\\FPT\\SWP391\\DNA-System\\backend\\BOs\\Models\\Feedback.cs",
+              "RelativeToolTip": "BOs\\Models\\Feedback.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-13T09:30:59.903Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Invoice.cs",
+              "DocumentMoniker": "D:\\FPT\\SWP391\\DNA-System\\backend\\BOs\\Models\\Invoice.cs",
+              "RelativeDocumentMoniker": "BOs\\Models\\Invoice.cs",
+              "ToolTip": "D:\\FPT\\SWP391\\DNA-System\\backend\\BOs\\Models\\Invoice.cs",
+              "RelativeToolTip": "BOs\\Models\\Invoice.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-13T09:31:05.937Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "TestResult.cs",
+              "DocumentMoniker": "D:\\FPT\\SWP391\\DNA-System\\backend\\BOs\\Models\\TestResult.cs",
+              "RelativeDocumentMoniker": "BOs\\Models\\TestResult.cs",
+              "ToolTip": "D:\\FPT\\SWP391\\DNA-System\\backend\\BOs\\Models\\TestResult.cs",
+              "RelativeToolTip": "BOs\\Models\\TestResult.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-13T09:31:30.237Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "Role.cs",
+              "DocumentMoniker": "D:\\FPT\\SWP391\\DNA-System\\backend\\BOs\\Models\\Role.cs",
+              "RelativeDocumentMoniker": "BOs\\Models\\Role.cs",
+              "ToolTip": "D:\\FPT\\SWP391\\DNA-System\\backend\\BOs\\Models\\Role.cs",
+              "RelativeToolTip": "BOs\\Models\\Role.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-13T09:31:20.447Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "Kit.cs",
+              "DocumentMoniker": "D:\\FPT\\SWP391\\DNA-System\\backend\\BOs\\Models\\Kit.cs",
+              "RelativeDocumentMoniker": "BOs\\Models\\Kit.cs",
+              "ToolTip": "D:\\FPT\\SWP391\\DNA-System\\backend\\BOs\\Models\\Kit.cs",
+              "RelativeToolTip": "BOs\\Models\\Kit.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-13T09:31:16.43Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "InvoiceDetail.cs",
+              "DocumentMoniker": "D:\\FPT\\SWP391\\DNA-System\\backend\\BOs\\Models\\InvoiceDetail.cs",
+              "RelativeDocumentMoniker": "BOs\\Models\\InvoiceDetail.cs",
+              "ToolTip": "D:\\FPT\\SWP391\\DNA-System\\backend\\BOs\\Models\\InvoiceDetail.cs",
+              "RelativeToolTip": "BOs\\Models\\InvoiceDetail.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-13T09:31:09.531Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "Program.cs",
+              "DocumentMoniker": "D:\\FPT\\SWP391\\DNA-System\\backend\\DNA_APIs\\Program.cs",
+              "RelativeDocumentMoniker": "DNA_APIs\\Program.cs",
+              "ToolTip": "D:\\FPT\\SWP391\\DNA-System\\backend\\DNA_APIs\\Program.cs",
+              "RelativeToolTip": "DNA_APIs\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAhAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-13T09:05:54.099Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "D:\\FPT\\SWP391\\DNA-System\\backend\\DNA_APIs\\appsettings.json",
+              "RelativeDocumentMoniker": "DNA_APIs\\appsettings.json",
+              "ToolTip": "D:\\FPT\\SWP391\\DNA-System\\backend\\DNA_APIs\\appsettings.json",
+              "RelativeToolTip": "DNA_APIs\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAARAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-06-13T08:53:24.907Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "DNA.Api.csproj",
+              "DocumentMoniker": "D:\\FPT\\SWP391\\DNA-System\\backend\\DNA.Api\\DNA.Api.csproj",
+              "RelativeDocumentMoniker": "DNA.Api\\DNA.Api.csproj",
+              "ToolTip": "D:\\FPT\\SWP391\\DNA-System\\backend\\DNA.Api\\DNA.Api.csproj",
+              "RelativeToolTip": "DNA.Api\\DNA.Api.csproj",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-06-13T08:18:01.55Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

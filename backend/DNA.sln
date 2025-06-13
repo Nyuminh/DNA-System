@@ -3,20 +3,35 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DNA.Api", "DNA.Api\DNA.Api.csproj", "{573CFB65-0978-45BC-9C38-043989E1D0EC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DNA_APIs", "DNA_APIs\DNA_APIs.csproj", "{967730EF-2363-444C-9F3A-D02B9DE18A7C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BOs", "BOs\BOs.csproj", "{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DAOs", "DAOs\DAOs.csproj", "{B5A7BF5B-8697-42D9-8F45-3C2D9615AD10}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{967730EF-2363-444C-9F3A-D02B9DE18A7C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{967730EF-2363-444C-9F3A-D02B9DE18A7C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{967730EF-2363-444C-9F3A-D02B9DE18A7C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{967730EF-2363-444C-9F3A-D02B9DE18A7C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F5FC9CCA-95E4-4213-A3BA-9C0EFF5890FB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B5A7BF5B-8697-42D9-8F45-3C2D9615AD10}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B5A7BF5B-8697-42D9-8F45-3C2D9615AD10}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B5A7BF5B-8697-42D9-8F45-3C2D9615AD10}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B5A7BF5B-8697-42D9-8F45-3C2D9615AD10}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{573CFB65-0978-45BC-9C38-043989E1D0EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{573CFB65-0978-45BC-9C38-043989E1D0EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{573CFB65-0978-45BC-9C38-043989E1D0EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{573CFB65-0978-45BC-9C38-043989E1D0EC}.Release|Any CPU.Build.0 = Release|Any CPU
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5B6F7795-7714-401D-A8CA-064A0F63C13C}
 	EndGlobalSection
 EndGlobal
