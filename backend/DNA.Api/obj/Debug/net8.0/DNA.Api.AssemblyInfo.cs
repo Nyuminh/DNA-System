@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DNA.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+95eda3516ba9078f36152ec4072fcfb0eb7c0bc0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d1fff45724a823411be282c3a67e06eeb4238ff7")]
 [assembly: System.Reflection.AssemblyProductAttribute("DNA.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DNA.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
