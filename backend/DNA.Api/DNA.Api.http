@@ -1,6 +1,0 @@
-@DNA.Api_HostAddress = http://localhost:5039
-
-GET {{DNA.Api_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
