@@ -3,7 +3,10 @@
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
+import { loginUser } from '@/lib/auth';
+import { useAuth } from '@/contexts/AuthContext';
 
 type LoginFormInputs = {
   email: string;
@@ -13,15 +16,61 @@ type LoginFormInputs = {
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState<string>('');
+  const [loginSuccess, setLoginSuccess] = useState<string>('');
+  const router = useRouter();
+  const { login } = useAuth();
+  
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormInputs>();
-
   const onSubmit = async (data: LoginFormInputs) => {
-    // This would be replaced with actual login logic
-    console.log('Login data submitted:', data);
+    try {
+      setLoginError('');
+      setLoginSuccess('');
+      
+      console.log('Login attempt with:', { email: data.email });
+      
+      const result = await loginUser({
+        email: data.email,
+        password: data.password,
+      });
+
+      console.log('Login result:', result);      if (result.success) {
+        console.log('Login result success, checking token and user:', { 
+          hasToken: !!result.token, 
+          hasUser: !!result.user,
+          token: result.token,
+          user: result.user 
+        });
+        
+        if (result.user) {
+          console.log('User data exists, proceeding with login...');
+          
+          // Sử dụng AuthContext để lưu trạng thái
+          login(result.token || 'default-token', result.user);
+          
+          setLoginSuccess('Đăng nhập thành công! Đang chuyển hướng...');
+          
+          // Chuyển hướng về trang chính ngay lập tức để test
+          setTimeout(() => {
+            console.log('Redirecting to home page...');
+            router.push('/');
+          }, 1000); // Giảm thời gian chờ xuống 1 giây
+        } else {
+          console.log('Missing user data');
+          setLoginError('Thiếu thông tin người dùng từ server');
+        }
+      } else {
+        console.log('Login failed:', result);
+        setLoginError(result.message || 'Đăng nhập thất bại');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setLoginError('Đã xảy ra lỗi không mong muốn');
+    }
   };
 
   return (
@@ -51,10 +100,34 @@ export default function LoginPage() {
                 Đăng ký ngay
               </Link>
             </p>
-          </div>
+          </div>          <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+            <div className="bg-white/80 backdrop-blur-sm px-6 py-8 shadow-xl border border-white/20 sm:rounded-2xl sm:px-10">
+              
+              {/* Error Message */}
+              {loginError && (
+                <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200">
+                  <div className="flex items-center">
+                    <svg className="w-5 h-5 text-red-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    <p className="text-sm text-red-800 font-medium">{loginError}</p>
+                  </div>
+                </div>
+              )}
 
-          <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-            <div className="bg-white/80 backdrop-blur-sm px-6 py-8 shadow-xl border border-white/20 sm:rounded-2xl sm:px-10">            <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+              {/* Success Message */}
+              {loginSuccess && (
+                <div className="mb-6 p-4 rounded-xl bg-green-50 border border-green-200">
+                  <div className="flex items-center">
+                    <svg className="w-5 h-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <p className="text-sm text-green-800 font-medium">{loginSuccess}</p>
+                  </div>
+                </div>
+              )}
+
+              <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
               {/* Email Field */}
               <div>
                 <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
