@@ -22,6 +22,9 @@ interface AuthContextType {
   logout: () => void;
   isLoggedIn: boolean;
   isLoading: boolean;
+  isAdmin: () => boolean;
+  isManager: () => boolean;
+  isCustomer: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -48,22 +51,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     
     setIsLoading(false);
-  }, []);
-  const login = (newToken: string, newUser: User) => {
-    console.log('AuthContext login called with:', { token: newToken, user: newUser });
+  }, []);  const login = (newToken: string, newUser: User) => {
     setToken(newToken);
     setUser(newUser);
     localStorage.setItem('token', newToken);
     localStorage.setItem('user', JSON.stringify(newUser));
-    console.log('AuthContext state updated, isLoggedIn:', !!(newUser && newToken));
   };
-
   const logout = () => {
     setToken(null);
     setUser(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
   };
+
+  // Helper functions để kiểm tra quyền
+  const isAdmin = () => user?.roleID === 'R01';
+  const isManager = () => user?.roleID === 'R04';
+  const isCustomer = () => user?.roleID === 'R03';
 
   const value = {
     user,
@@ -72,6 +76,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout,
     isLoggedIn: !!user && !!token,
     isLoading,
+    isAdmin,
+    isManager,
+    isCustomer,
   };
 
   return (

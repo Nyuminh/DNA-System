@@ -71,17 +71,10 @@ export interface LoginResponse {
 
 // Hàm login
 export const loginUser = async (loginData: LoginRequest): Promise<LoginResponse> => {
-  try {
-    console.log('Sending login request:', { email: loginData.email });
-    
-    const response = await apiClient.post('/User/Login', {
+  try {    const response = await apiClient.post('/User/Login', {
       email: loginData.email,
       password: loginData.password,
     });
-
-    console.log('Full API Response:', response);
-    console.log('Response data:', response.data);
-    console.log('Response status:', response.status);
 
     // Kiểm tra status code thành công (200-299)
     if (response.status >= 200 && response.status < 300) {
@@ -96,9 +89,6 @@ export const loginUser = async (loginData: LoginRequest): Promise<LoginResponse>
         user = data;
         token = 'temp-token'; // Tạm thời để test
       }
-
-      console.log('Parsed token:', token);
-      console.log('Parsed user:', user);
 
       if (user) {
         return {

@@ -26,45 +26,46 @@ export default function LoginPage() {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormInputs>();
-  const onSubmit = async (data: LoginFormInputs) => {
-    try {
+  const onSubmit = async (data: LoginFormInputs) => {    try {
       setLoginError('');
       setLoginSuccess('');
-      
-      console.log('Login attempt with:', { email: data.email });
-      
+        
       const result = await loginUser({
         email: data.email,
         password: data.password,
       });
-
-      console.log('Login result:', result);      if (result.success) {
-        console.log('Login result success, checking token and user:', { 
-          hasToken: !!result.token, 
-          hasUser: !!result.user,
-          token: result.token,
-          user: result.user 
-        });
-        
+      
+      if (result.success) {
         if (result.user) {
-          console.log('User data exists, proceeding with login...');
-          
           // Sử dụng AuthContext để lưu trạng thái
           login(result.token || 'default-token', result.user);
-          
           setLoginSuccess('Đăng nhập thành công! Đang chuyển hướng...');
           
-          // Chuyển hướng về trang chính ngay lập tức để test
+          // Phân quyền theo roleID
           setTimeout(() => {
-            console.log('Redirecting to home page...');
-            router.push('/');
-          }, 1000); // Giảm thời gian chờ xuống 1 giây
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const userAny = result.user as any;
+            const roleID = userAny?.roleID || userAny?.roleId || userAny?.role_id || userAny?.RoleID;
+            
+            switch (roleID) {
+              case 'R01':
+                router.push('/admin');
+                break;
+              case 'R03':
+                router.push('/');
+                break;
+              case 'R04':
+                router.push('/manager');
+                break;
+              default:
+                router.push('/');
+                break;
+            }
+          }, 1000);
         } else {
-          console.log('Missing user data');
           setLoginError('Thiếu thông tin người dùng từ server');
         }
       } else {
-        console.log('Login failed:', result);
         setLoginError(result.message || 'Đăng nhập thất bại');
       }
     } catch (error) {
