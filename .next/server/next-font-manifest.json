@@ -6,10 +6,10 @@
     "[project]/src/app/auth/login/page": [
       "static/media/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw-s.p.0faac26c.woff2"
     ],
-    "[project]/src/app/admin/page": [
+    "[project]/src/app/dashboard/page": [
       "static/media/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw-s.p.0faac26c.woff2"
     ],
-    "[project]/src/app/admin/dashboard/page": [
+    "[project]/src/app/my-tests/page": [
       "static/media/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw-s.p.0faac26c.woff2"
     ],
     "[project]/src/app/manager/page": [
@@ -18,10 +18,10 @@
     "[project]/src/app/manager/personal-profile/page": [
       "static/media/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw-s.p.0faac26c.woff2"
     ],
-    "[project]/src/app/dashboard/page": [
+    "[project]/src/app/admin/page": [
       "static/media/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw-s.p.0faac26c.woff2"
     ],
-    "[project]/src/app/admin/accounts/page": [
+    "[project]/src/app/admin/dashboard/page": [
       "static/media/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw-s.p.0faac26c.woff2"
     ]
   },

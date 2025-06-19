@@ -38,16 +38,15 @@
       "static/chunks/_e69f0d._.js",
       "static/chunks/_d95469._.js"
     ],
-    "/admin/page": [
+    "/dashboard/page": [
       "static/chunks/_a91c21._.js",
       "static/chunks/src_app_favicon_ico_mjs_ddfdf0._.js",
       "static/chunks/[root of the server]__8c5b3e._.css",
       "static/chunks/_517c68._.js",
       "static/chunks/src_app_layout_tsx_61af54._.js",
-      "static/chunks/_149a4f._.js",
-      "static/chunks/src_app_admin_layout_tsx_3da6ab._.js",
-      "static/chunks/src_app_admin_page_tsx_3781b3._.js",
-      "static/chunks/src_app_admin_page_tsx_10fd19._.js",
+      "static/chunks/src_0b47b8._.js",
+      "static/chunks/node_modules_a222cf._.js",
+      "static/chunks/src_app_dashboard_page_tsx_3da6ab._.js",
       "static/chunks/node_modules_next_dist_compiled_react-dom_1f56dc._.js",
       "static/chunks/node_modules_next_dist_compiled_107ce8._.js",
       "static/chunks/node_modules_next_dist_client_523921._.js",
@@ -57,16 +56,15 @@
       "static/chunks/_e69f0d._.js",
       "static/chunks/_d95469._.js"
     ],
-    "/admin/dashboard/page": [
+    "/my-tests/page": [
       "static/chunks/_a91c21._.js",
       "static/chunks/src_app_favicon_ico_mjs_ddfdf0._.js",
       "static/chunks/[root of the server]__8c5b3e._.css",
       "static/chunks/_517c68._.js",
       "static/chunks/src_app_layout_tsx_61af54._.js",
-      "static/chunks/_149a4f._.js",
-      "static/chunks/src_app_admin_layout_tsx_3da6ab._.js",
-      "static/chunks/_0eb943._.js",
-      "static/chunks/src_app_admin_dashboard_page_tsx_10fd19._.js",
+      "static/chunks/src_1e755b._.js",
+      "static/chunks/node_modules_4de27e._.js",
+      "static/chunks/src_app_my-tests_page_tsx_3da6ab._.js",
       "static/chunks/node_modules_next_dist_compiled_react-dom_1f56dc._.js",
       "static/chunks/node_modules_next_dist_compiled_107ce8._.js",
       "static/chunks/node_modules_next_dist_client_523921._.js",
@@ -111,15 +109,16 @@
       "static/chunks/_e69f0d._.js",
       "static/chunks/_d95469._.js"
     ],
-    "/dashboard/page": [
+    "/admin/page": [
       "static/chunks/_a91c21._.js",
       "static/chunks/src_app_favicon_ico_mjs_ddfdf0._.js",
       "static/chunks/[root of the server]__8c5b3e._.css",
       "static/chunks/_517c68._.js",
       "static/chunks/src_app_layout_tsx_61af54._.js",
-      "static/chunks/src_0b47b8._.js",
-      "static/chunks/node_modules_a222cf._.js",
-      "static/chunks/src_app_dashboard_page_tsx_3da6ab._.js",
+      "static/chunks/_149a4f._.js",
+      "static/chunks/src_app_admin_layout_tsx_3da6ab._.js",
+      "static/chunks/src_app_admin_page_tsx_3781b3._.js",
+      "static/chunks/src_app_admin_page_tsx_10fd19._.js",
       "static/chunks/node_modules_next_dist_compiled_react-dom_1f56dc._.js",
       "static/chunks/node_modules_next_dist_compiled_107ce8._.js",
       "static/chunks/node_modules_next_dist_client_523921._.js",
@@ -129,7 +128,7 @@
       "static/chunks/_e69f0d._.js",
       "static/chunks/_d95469._.js"
     ],
-    "/admin/accounts/page": [
+    "/admin/dashboard/page": [
       "static/chunks/_a91c21._.js",
       "static/chunks/src_app_favicon_ico_mjs_ddfdf0._.js",
       "static/chunks/[root of the server]__8c5b3e._.css",
@@ -137,8 +136,8 @@
       "static/chunks/src_app_layout_tsx_61af54._.js",
       "static/chunks/_149a4f._.js",
       "static/chunks/src_app_admin_layout_tsx_3da6ab._.js",
-      "static/chunks/_931d79._.js",
-      "static/chunks/src_app_admin_accounts_page_tsx_10fd19._.js",
+      "static/chunks/_0eb943._.js",
+      "static/chunks/src_app_admin_dashboard_page_tsx_10fd19._.js",
       "static/chunks/node_modules_next_dist_compiled_react-dom_1f56dc._.js",
       "static/chunks/node_modules_next_dist_compiled_107ce8._.js",
       "static/chunks/node_modules_next_dist_client_523921._.js",
