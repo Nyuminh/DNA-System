@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   UserIcon,
   EnvelopeIcon,
@@ -13,15 +14,28 @@ export default function AdminProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'profile' | 'security'>('profile');
+  const { user } = useAuth();
   
   const [profileData, setProfileData] = useState({
-    name: 'Admin User',
-    email: 'admin@dnatesting.com',
-    phone: '+84 123 456 789',
+    name: user?.fullname || 'Admin User',
+    email: user?.email || 'admin@dnatesting.com',
+    phone: user?.phone || '+84 123 456 789',
     role: 'Quản trị viên hệ thống',
     joinDate: '2025-01-01',
     lastLogin: '2025-06-08T10:30:00'
   });
+
+  // Cập nhật profileData khi user thay đổi
+  useEffect(() => {
+    if (user) {
+      setProfileData(prev => ({
+        ...prev,
+        name: user.fullname || prev.name,
+        email: user.email || prev.email,
+        phone: user.phone || prev.phone,
+      }));
+    }
+  }, [user]);
 
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',

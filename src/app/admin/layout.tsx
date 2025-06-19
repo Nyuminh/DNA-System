@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   UserIcon, 
   ChartBarIcon, 
@@ -18,20 +19,20 @@ interface AdminLayoutProps {
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { user } = useAuth();
 
   const isActive = (path: string) => {
     if (path === "/admin" && pathname === "/admin") return true;
     if (path !== "/admin" && pathname.startsWith(path)) return true;
     return false;
-  };
-
-  const handleLogout = async () => {
+  };const handleLogout = async () => {
     try {
+      const { logoutUser } = await import('@/lib/api/auth');
       // Call logout API
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await logoutUser();
       // Clear local storage
-      localStorage.removeItem('auth-token');
-      localStorage.removeItem('user-data');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       // Redirect to login
       router.push('/auth/login');
     } catch (error) {
@@ -80,15 +81,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <button className="relative p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
                 <BellIcon className="h-6 w-6" />
                 <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
-              </button>
-
-              {/* Admin Profile - Simplified */}
+              </button>              {/* Admin Profile - Simplified */}
               <div className="flex items-center space-x-3 px-3 py-2 rounded-xl bg-slate-50">
                 <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
                   <UserIcon className="h-4 w-4 text-white" />
                 </div>
                 <div className="hidden sm:block text-left">
-                  <div className="text-sm font-medium text-slate-700">Admin User</div>
+                  <div className="text-sm font-medium text-slate-700">{user?.fullname || 'Admin User'}</div>
                   <div className="text-xs text-slate-500">Quản trị viên</div>
                 </div>
               </div>
@@ -137,14 +136,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </nav>
 
           {/* User Info & Logout Section */}
-          <div className="border-t border-slate-200 p-4">
-            <div className="flex items-center space-x-3 mb-3 p-2 rounded-lg bg-slate-50">
+          <div className="border-t border-slate-200 p-4">            <div className="flex items-center space-x-3 mb-3 p-2 rounded-lg bg-slate-50">
               <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
                 <UserIcon className="h-5 w-5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-slate-700 truncate">Admin User</div>
-                <div className="text-xs text-slate-500 truncate">admin@dnatest.com</div>
+                <div className="text-sm font-medium text-slate-700 truncate">{user?.fullname || 'Admin User'}</div>
+                <div className="text-xs text-slate-500 truncate">{user?.email || 'admin@dnatest.com'}</div>
               </div>
             </div>
             

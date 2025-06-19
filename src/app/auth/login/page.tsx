@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
-import { loginUser } from '@/lib/auth';
+import { loginUser } from '@/lib/api/auth';
 import { useAuth } from '@/contexts/AuthContext';
 
 type LoginFormInputs = {

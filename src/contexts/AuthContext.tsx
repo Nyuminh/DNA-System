@@ -1,19 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-
-export interface User {
-  userID: string;
-  username: string;
-  password?: string; // Optional vì không nên trả về từ API
-  fullname: string;
-  gender: string;
-  roleID: string;
-  email: string;
-  phone: string;
-  birthdate: string; // ISO date string
-  image: string;
-}
+import type { User } from '@/lib/api/auth';
 
 interface AuthContextType {
   user: User | null;

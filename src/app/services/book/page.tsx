@@ -246,24 +246,20 @@ function BookServiceContent() {
     e.preventDefault();
     
     try {
-      const response = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          testType: selectedTest.id,
-          price: formData.serviceType === 'expedited' 
-            ? selectedTest.expedited.price 
-            : selectedTest.price
-        }),
+      const { createBooking } = await import('@/lib/api/bookings');
+      
+      const result = await createBooking({
+        serviceId: selectedTest.id,
+        testType: selectedTest.name,
+        collectionMethod: formData.collectionMethod,
+        appointmentDate: formData.appointmentDate,
+        appointmentTime: formData.appointmentTime,
+        participants: formData.participants,
+        notes: `Service Type: ${formData.serviceType}, Address: ${formData.address}, City: ${formData.cityProvince}`
       });
       
-      const result = await response.json();
-      
       if (result.success) {
-        alert(`Đặt xét nghiệm thành công! Mã đặt lịch: ${result.booking.id}. Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.`);
+        alert(`Đặt xét nghiệm thành công! Mã đặt lịch: ${result.booking?.id}. Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.`);
         // TODO: Redirect to booking confirmation page
       } else {
         alert(result.message || 'Có lỗi xảy ra khi đặt lịch');
