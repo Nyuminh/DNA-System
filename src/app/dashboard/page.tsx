@@ -1,13 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { 
   UserIcon, 
   ClipboardDocumentListIcon, 
   Cog6ToothIcon, 
   BellIcon,
-  ArrowRightStartOnRectangleIcon
+  ArrowRightStartOnRectangleIcon,
+  KeyIcon
 } from '@heroicons/react/24/outline';
 import MainLayout from '@/components/layout/MainLayout';
 
@@ -48,12 +50,21 @@ const testHistory = [
 const tabs = [
   { name: 'Hồ sơ cá nhân', icon: UserIcon, current: true },
   { name: 'Lịch sử xét nghiệm', icon: ClipboardDocumentListIcon, current: false },
+  { name: 'Đổi mật khẩu', icon: KeyIcon, current: false },
   { name: 'Cài đặt', icon: Cog6ToothIcon, current: false },
   { name: 'Thông báo', icon: BellIcon, current: false },
 ];
 
 export default function DashboardPage() {
+  const searchParams = useSearchParams();
   const [currentTab, setCurrentTab] = useState('Hồ sơ cá nhân');
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && tabs.some(t => t.name === tab)) {
+      setCurrentTab(tab);
+    }
+  }, [searchParams]);
 
   const handleTabChange = (tabName: string) => {
     setCurrentTab(tabName);
@@ -61,9 +72,8 @@ export default function DashboardPage() {
 
   return (
     <MainLayout>
-      <div className="bg-gray-50 min-h-screen">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Tài khoản của tôi</h1>
+      <div className="bg-gray-50 min-h-screen">        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Hồ sơ cá nhân</h1>
           
           <div className="mt-8 lg:flex lg:gap-x-6">
             {/* Sidebar */}
@@ -169,8 +179,7 @@ export default function DashboardPage() {
                               defaultValue={user.address}
                               className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
                             />
-                          </div>
-                        </div>
+                          </div>                        </div>
                       </div>
 
                       <div className="flex justify-end">
@@ -182,59 +191,93 @@ export default function DashboardPage() {
                         </button>
                       </div>
                     </form>
+                  </div>
+                )}
 
-                    <div className="mt-10 border-t border-gray-200 pt-6">
-                      <h3 className="text-lg font-medium text-gray-900">Đổi mật khẩu</h3>
-                      <form className="mt-4 space-y-6">
-                        <div>
-                          <label htmlFor="current-password" className="block text-sm font-medium leading-6 text-gray-900">
-                            Mật khẩu hiện tại
-                          </label>
-                          <div className="mt-2">
-                            <input
-                              type="password"
-                              id="current-password"
-                              className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
-                            />
+                {currentTab === 'Đổi mật khẩu' && (
+                  <div className="p-6">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-6">Đổi mật khẩu</h2>
+                    
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-6">
+                      <div className="flex">
+                        <div className="flex-shrink-0">
+                          <KeyIcon className="h-5 w-5 text-yellow-400" aria-hidden="true" />
+                        </div>
+                        <div className="ml-3">
+                          <h3 className="text-sm font-medium text-yellow-800">
+                            Lưu ý bảo mật
+                          </h3>
+                          <div className="mt-2 text-sm text-yellow-700">
+                            <p>
+                              Để đảm bảo an toàn tài khoản, hãy sử dụng mật khẩu mạnh có ít nhất 8 ký tự, 
+                              bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt.
+                            </p>
                           </div>
                         </div>
-
-                        <div>
-                          <label htmlFor="new-password" className="block text-sm font-medium leading-6 text-gray-900">
-                            Mật khẩu mới
-                          </label>
-                          <div className="mt-2">
-                            <input
-                              type="password"
-                              id="new-password"
-                              className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
-                            />
-                          </div>
-                        </div>
-
-                        <div>
-                          <label htmlFor="confirm-password" className="block text-sm font-medium leading-6 text-gray-900">
-                            Xác nhận mật khẩu mới
-                          </label>
-                          <div className="mt-2">
-                            <input
-                              type="password"
-                              id="confirm-password"
-                              className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="flex justify-end">
-                          <button
-                            type="submit"
-                            className="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-                          >
-                            Cập nhật mật khẩu
-                          </button>
-                        </div>
-                      </form>
+                      </div>
                     </div>
+
+                    <form className="space-y-6">
+                      <div>
+                        <label htmlFor="current-password" className="block text-sm font-medium leading-6 text-gray-900">
+                          Mật khẩu hiện tại
+                        </label>
+                        <div className="mt-2">
+                          <input
+                            type="password"
+                            id="current-password"
+                            className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+                            placeholder="Nhập mật khẩu hiện tại"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label htmlFor="new-password" className="block text-sm font-medium leading-6 text-gray-900">
+                          Mật khẩu mới
+                        </label>
+                        <div className="mt-2">
+                          <input
+                            type="password"
+                            id="new-password"
+                            className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+                            placeholder="Nhập mật khẩu mới"
+                          />
+                        </div>
+                        <p className="mt-2 text-sm text-gray-500">
+                          Mật khẩu phải có ít nhất 8 ký tự và chứa ít nhất một chữ hoa, một chữ thường, một số và một ký tự đặc biệt.
+                        </p>
+                      </div>
+
+                      <div>
+                        <label htmlFor="confirm-password" className="block text-sm font-medium leading-6 text-gray-900">
+                          Xác nhận mật khẩu mới
+                        </label>
+                        <div className="mt-2">
+                          <input
+                            type="password"
+                            id="confirm-password"
+                            className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+                            placeholder="Nhập lại mật khẩu mới"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end space-x-3">
+                        <button
+                          type="button"
+                          className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                        >
+                          Hủy
+                        </button>
+                        <button
+                          type="submit"
+                          className="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                        >
+                          Cập nhật mật khẩu
+                        </button>
+                      </div>
+                    </form>
                   </div>
                 )}
 

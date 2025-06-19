@@ -73,17 +73,9 @@ export default function Header() {
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary-600 group-hover:w-full transition-all duration-200"></span>
             </Link>
           ))}
-        </div>
-          <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:gap-x-4">
+        </div>          <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:gap-x-4">
           {isLoggedIn ? (
             <div className="flex items-center gap-x-4">
-              <Link 
-                href="/my-tests" 
-                className="text-sm font-medium text-secondary-700 hover:text-primary-600 transition-colors duration-200"
-              >
-                Xét nghiệm của tôi
-              </Link>
-              
               {/* User Menu */}
               <div className="relative">
                 <button
@@ -114,18 +106,26 @@ export default function Header() {
                       onClick={handleUserMenuClick}
                       className="w-full text-left px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-100 transition-colors duration-200"
                     >
-                      {isAdmin() ? 'Admin Dashboard' : isManager() ? 'Manager Dashboard' : 'Dashboard'}
+                      {isAdmin() ? 'Admin Dashboard' : isManager() ? 'Manager Dashboard' : 'Xem hồ sơ'}
                     </button>
-                    
-                    {/* Menu cho Customer */}
+                      {/* Menu cho Customer */}
                     {!isAdmin() && !isManager() && (
-                      <Link
-                        href="/my-tests"
-                        className="block px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-100 transition-colors duration-200"
-                        onClick={() => setShowUserMenu(false)}
-                      >
-                        Xét nghiệm của tôi
-                      </Link>
+                      <>
+                        <Link
+                          href="/my-tests"
+                          className="block px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-100 transition-colors duration-200"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          Xét nghiệm của tôi
+                        </Link>
+                        <Link
+                          href="/dashboard?tab=Đổi mật khẩu"
+                          className="block px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-100 transition-colors duration-200"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          Đổi mật khẩu
+                        </Link>
+                      </>
                     )}
                     
                     {/* Menu cho Manager */}
@@ -234,19 +234,25 @@ export default function Header() {
                 </div>
                   <div className="border-t border-secondary-200 px-6 py-6 space-y-3">
                   {isLoggedIn ? (
-                    <>
-                      {/* Menu cho Customer */}
+                    <>                      {/* Menu cho Customer */}
                       {!isAdmin() && !isManager() && (
-                        <Link
-                          href="/my-tests"
-                          className="block rounded-lg px-4 py-3 text-base font-medium text-secondary-700 hover:bg-secondary-100 hover:text-primary-600 transition-colors duration-200"
-                          onClick={() => setMobileMenuOpen(false)}
-                        >
-                          Xét nghiệm của tôi
-                        </Link>
-                      )}
-                      
-                      {/* Dashboard link */}
+                        <>
+                          <Link
+                            href="/my-tests"
+                            className="block rounded-lg px-4 py-3 text-base font-medium text-secondary-700 hover:bg-secondary-100 hover:text-primary-600 transition-colors duration-200"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            Xét nghiệm của tôi
+                          </Link>
+                          <Link
+                            href="/dashboard?tab=Đổi mật khẩu"
+                            className="block rounded-lg px-4 py-3 text-base font-medium text-secondary-700 hover:bg-secondary-100 hover:text-primary-600 transition-colors duration-200"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            Đổi mật khẩu
+                          </Link>
+                        </>
+                      )}{/* Profile link */}
                       <button
                         onClick={() => {
                           handleUserMenuClick();
@@ -254,7 +260,7 @@ export default function Header() {
                         }}
                         className="w-full text-left rounded-lg px-4 py-3 text-base font-medium text-secondary-700 hover:bg-secondary-100 hover:text-primary-600 transition-colors duration-200"
                       >
-                        {isAdmin() ? 'Admin Dashboard' : isManager() ? 'Manager Dashboard' : 'Dashboard'}
+                        {isAdmin() ? 'Admin Dashboard' : isManager() ? 'Manager Dashboard' : 'Xem hồ sơ'}
                       </button>
                       
                       {/* Menu cho Manager */}
