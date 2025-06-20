@@ -2,6 +2,19 @@ import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 import apiClient from './client';
 
+// Interface cho register request
+export interface RegisterRequest {
+  username: string;
+  password: string;
+  fullname: string;
+  gender: 'Male' | 'Female' | 'Other';
+  email: string;
+  phone: string;
+  birthdate: string;
+  address: string;
+  image?: File;
+}
+
 // Interface cho login request
 export interface LoginRequest {
   username: string;
@@ -815,6 +828,124 @@ export const testApiConnection = async (): Promise<{success: boolean; message: s
     return {
       success: false,
       message: `Unknown error: ${error}`,
+    };
+  }
+};
+
+// Interface cho register response
+export interface RegisterResponse {
+  success: boolean;
+  message: string;
+  token?: string;
+  user?: User;
+}
+
+// Hàm gọi API đăng ký
+export const registerUser = async (registerData: RegisterRequest): Promise<RegisterResponse> => {
+  try {
+    // Kiểm tra xem có file image không
+    if (registerData.image) {
+      // Nếu có file, sử dụng FormData
+      const formData = new FormData();
+      
+      // Thêm các trường dữ liệu
+      formData.append('username', registerData.username);
+      formData.append('password', registerData.password);
+      formData.append('fullname', registerData.fullname);
+      formData.append('gender', registerData.gender);
+      formData.append('email', registerData.email);
+      formData.append('phone', registerData.phone);
+      formData.append('birthdate', registerData.birthdate);
+      formData.append('address', registerData.address);      formData.append('roleID', 'R03'); // R03 - Customer role
+      formData.append('image', registerData.image);
+
+      const response = await apiClient.post('/api/Auth/register', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      return handleRegisterResponse(response);
+    } else {
+      // Nếu không có file, sử dụng JSON
+      const jsonData = {
+        username: registerData.username,
+        password: registerData.password,
+        fullname: registerData.fullname,
+        gender: registerData.gender,
+        email: registerData.email,
+        phone: registerData.phone,
+        birthdate: registerData.birthdate,
+        address: registerData.address,
+        roleID: 'R03', // R03 - Customer role
+        image: null
+      };
+
+      console.log('Sending register data as JSON:', jsonData);
+
+      const response = await apiClient.post('/api/Auth/register', jsonData, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      return handleRegisterResponse(response);
+    }
+  } catch (error: any) {
+    console.error('Register error:', error);
+    
+    let errorMessage = 'Đăng ký thất bại. Vui lòng thử lại.';
+    
+    if (error.response?.status === 415) {
+      errorMessage = 'Định dạng dữ liệu không được hỗ trợ. Vui lòng thử lại.';
+    } else if (error.response?.status === 400) {
+      errorMessage = error.response.data?.message || 'Dữ liệu không hợp lệ.';
+    } else if (error.response?.status === 409) {
+      errorMessage = 'Tên đăng nhập hoặc email đã tồn tại.';
+    } else if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+
+    return {
+      success: false,
+      message: errorMessage,
+    };
+  }
+};
+
+// Hàm helper xử lý response từ API register
+const handleRegisterResponse = (response: any): RegisterResponse => {
+  // Kiểm tra status code thành công (200-299)
+  if (response.status >= 200 && response.status < 300) {
+    const data = response.data;
+    
+    console.log('Register API response:', data);
+    
+    // Lấy token từ response nếu có
+    const token = data.token || data.accessToken || data.access_token || data.jwt;
+    
+    if (token) {
+      // Lưu token vào localStorage
+      localStorage.setItem('token', token);
+      
+      // Lưu user info nếu có
+      if (data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
+    }
+
+    return {
+      success: true,
+      message: data.message || 'Đăng ký thành công!',
+      token: token,
+      user: data.user,
+    };
+  } else {
+    return {
+      success: false,
+      message: 'Đăng ký thất bại!',
     };
   }
 };
