@@ -19,25 +19,33 @@ interface AdminLayoutProps {
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const isActive = (path: string) => {
     if (path === "/admin" && pathname === "/admin") return true;
     if (path !== "/admin" && pathname.startsWith(path)) return true;
     return false;
-  };const handleLogout = async () => {
+  };  const handleLogout = async () => {
     try {
       const { logoutUser } = await import('@/lib/api/auth');
       // Call logout API
-      await logoutUser();
-      // Clear local storage
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      const result = await logoutUser();
+      console.log('Admin logout result:', result.message);
+      
+      // Clear AuthContext state
+      logout();
+      
       // Redirect to login
       router.push('/auth/login');
     } catch (error) {
-      console.error('Logout error:', error);
-      // Force redirect even if API fails
+      console.error('Admin logout error:', error);
+      // Force logout nếu API fails
+      const { forceLogout } = await import('@/lib/api/auth');
+      forceLogout();
+      
+      // Clear AuthContext state
+      logout();
+      
       router.push('/auth/login');
     }
   };

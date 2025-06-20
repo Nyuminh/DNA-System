@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   UserCircleIcon, 
   ClipboardDocumentListIcon, 
@@ -30,6 +32,8 @@ interface BlogPost {
 }
 
 export default function ManagerManagerDashboard() {
+  const router = useRouter();
+  const { logout } = useAuth();
   const [isServiceMenuOpen, setIsServiceMenuOpen] = useState(false);
   const [isCourseMenuOpen, setIsCourseMenuOpen] = useState(false);
   const [services, setServices] = useState<Service[]>([
@@ -80,7 +84,33 @@ export default function ManagerManagerDashboard() {
         ? { ...post, status: post.status === 'published' ? 'draft' : 'published' }
         : post
     ));
-  };  return (
+  };
+  const handleLogout = async () => {
+    try {
+      const { logoutUser } = await import('@/lib/api/auth');
+      // Call logout API
+      const result = await logoutUser();
+      console.log('Manager logout result:', result.message);
+      
+      // Clear AuthContext state
+      logout();
+      
+      // Redirect to login
+      router.push('/auth/login');
+    } catch (error) {
+      console.error('Manager logout error:', error);
+      // Force logout nếu API fails
+      const { forceLogout } = await import('@/lib/api/auth');
+      forceLogout();
+      
+      // Clear AuthContext state
+      logout();
+      
+      router.push('/auth/login');
+    }
+  };
+
+  return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
       <div className="w-64 bg-white shadow-md">
@@ -160,10 +190,13 @@ export default function ManagerManagerDashboard() {
               <span>Thông báo</span>
             </Link>            <div className="border-t border-gray-200 my-4"></div>
 
-            <Link href="/" className="flex items-center px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors">
+            <button 
+              onClick={handleLogout}
+              className="flex items-center w-full px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors"
+            >
               <ArrowRightOnRectangleIcon className="h-5 w-5 mr-3" />
               <span>Đăng xuất</span>
-            </Link>
+            </button>
           </nav>
         </div>
       </div>      {/* Main Content */}

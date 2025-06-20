@@ -67,12 +67,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(newUser);
     localStorage.setItem('token', newToken);
     localStorage.setItem('user', JSON.stringify(newUser));
-  };
-  const logout = () => {
+  };  const logout = () => {
     setToken(null);
     setUser(null);
+    // Clear tất cả localStorage data liên quan đến auth
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('roleID');
+    localStorage.removeItem('role');
+    localStorage.removeItem('userData');
+    localStorage.removeItem('authToken');
+    console.log('AuthContext logout - all data cleared');
   };
   // Helper functions để kiểm tra quyền
   const isAdmin = () => user?.roleID === 'Admin';

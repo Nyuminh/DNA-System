@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 import apiClient from './client';
@@ -231,17 +230,47 @@ export const loginUser = async (loginData: LoginRequest): Promise<LoginResponse>
 // Hàm logout
 export const logoutUser = async (): Promise<{ success: boolean; message: string }> => {
   try {
-    await apiClient.post('/User/Logout');
+    // Lấy token từ localStorage để gửi trong header
+    const token = localStorage.getItem('token');
+    
+    if (token) {
+      await apiClient.post('/api/Auth/logout', {}, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+    }
+    
+    // Clear authentication data sau khi logout thành công
+    clearAuthData();
+    
+    console.log('Logout successful');
     return {
       success: true,
       message: 'Đăng xuất thành công'
-    };  } catch (_error) {
+    };
+  } catch (error) {
+    console.error('Logout error:', error);
+    
     // Ngay cả khi API thất bại, vẫn coi như logout thành công để clear local data
+    clearAuthData();
+    
     return {
       success: true,
       message: 'Đăng xuất thành công'
     };
   }
+};
+
+// Hàm logout với option force (không cần gọi API)
+export const forceLogout = (): { success: boolean; message: string } => {
+  clearAuthData();
+  console.log('Force logout - authentication data cleared');
+  return {
+    success: true,
+    message: 'Đã đăng xuất khỏi hệ thống'
+  };
 };
 
 // Hàm decode JWT token
@@ -382,5 +411,49 @@ export const getRoleName = (roleID: string): string => {
       return 'Manager';
     default:
       return roleID; // Trả về roleID gốc nếu không khớp
+  }
+};
+
+// Hàm helper để clear authentication data từ localStorage
+export const clearAuthData = (): void => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  localStorage.removeItem('roleID');
+  localStorage.removeItem('role');
+  localStorage.removeItem('userData');
+  localStorage.removeItem('authToken');
+  console.log('Authentication data cleared from localStorage');
+};
+
+// Hàm kiểm tra user có đang đăng nhập không
+export const isAuthenticated = (): boolean => {
+  const token = localStorage.getItem('token');
+  return token !== null && isTokenValid(token);
+};
+
+// Hàm lấy current user role
+export const getCurrentUserRole = (): string | null => {
+  const userInfo = getUserFromToken();
+  return userInfo?.roleID || null;
+};
+
+// Hàm save user data vào localStorage (sau khi login thành công)
+export const saveUserData = (user: User, token: string): void => {
+  localStorage.setItem('token', token);
+  localStorage.setItem('user', JSON.stringify(user));
+  localStorage.setItem('roleID', user.roleID);
+  console.log('User data saved to localStorage');
+};
+
+// Hàm lấy thông tin user từ localStorage (không cần token validation)
+export const getCurrentUser = (): User | null => {
+  try {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      return JSON.parse(userStr) as User;
+    }
+    return null;
+  } catch {
+    return null;
   }
 };

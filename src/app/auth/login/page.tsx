@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { loginUser, debugToken } from '@/lib/api/auth';
@@ -19,13 +19,28 @@ export default function LoginPage() {
   const [loginError, setLoginError] = useState<string>('');
   const [loginSuccess, setLoginSuccess] = useState<string>('');
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, isLoggedIn, isLoading, user } = useAuth();
+  
+  // Redirect nếu user đã đăng nhập
+  useEffect(() => {
+    if (!isLoading && isLoggedIn && user) {
+      console.log('User already logged in, redirecting...', user);
+      // Redirect dựa trên role
+      if (user.roleID === 'Admin') {
+        router.push('/admin');
+      } else if (user.roleID === 'Manager') {
+        router.push('/manager');
+      } else {
+        router.push('/');
+      }
+    }
+  }, [isLoggedIn, isLoading, user, router]);
   
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginFormInputs>();  const onSubmit = async (data: LoginFormInputs) => {
+  } = useForm<LoginFormInputs>();const onSubmit = async (data: LoginFormInputs) => {
     try {
       setLoginError('');
       setLoginSuccess('');
