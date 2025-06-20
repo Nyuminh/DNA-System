@@ -4,19 +4,17 @@ import apiClient from './client';
 // Interface cho service
 export interface Service {
   id: string;
+  type: string;
   name: string;
-  category: string;
-  description: string;
   price: string;
-  duration: string;
-  features: string[];
-  isPopular: boolean;
+  description: string;
+  image: string;
 }
 
 // Lấy danh sách services
 export const getServices = async (): Promise<{ success: boolean; services?: Service[]; message?: string }> => {
   try {
-    const response = await apiClient.get('/Services');
+    const response = await apiClient.get('/api/Services');
     
     if (response.status >= 200 && response.status < 300) {
       return {
@@ -40,7 +38,7 @@ export const getServices = async (): Promise<{ success: boolean; services?: Serv
 // Lấy service theo ID
 export const getServiceById = async (id: string): Promise<{ success: boolean; service?: Service; message?: string }> => {
   try {
-    const response = await apiClient.get(`/Services/${id}`);
+    const response = await apiClient.get(`/api/Services/${id}`);
     
     if (response.status >= 200 && response.status < 300) {
       return {
@@ -61,76 +59,3 @@ export const getServiceById = async (id: string): Promise<{ success: boolean; se
   }
 };
 
-// Tạo service mới (Admin)
-export const createService = async (serviceData: Omit<Service, 'id'>): Promise<{ success: boolean; service?: Service; message?: string }> => {
-  try {
-    const response = await apiClient.post('/Services', serviceData);
-    
-    if (response.status >= 200 && response.status < 300) {
-      return {
-        success: true,
-        service: response.data,
-        message: 'Tạo dịch vụ thành công'
-      };
-    }
-    
-    return {
-      success: false,
-      message: 'Không thể tạo dịch vụ'
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: 'Có lỗi xảy ra khi tạo dịch vụ'
-    };
-  }
-};
-
-// Cập nhật service (Admin)
-export const updateService = async (id: string, serviceData: Partial<Service>): Promise<{ success: boolean; service?: Service; message?: string }> => {
-  try {
-    const response = await apiClient.put(`/Services/${id}`, serviceData);
-    
-    if (response.status >= 200 && response.status < 300) {
-      return {
-        success: true,
-        service: response.data,
-        message: 'Cập nhật dịch vụ thành công'
-      };
-    }
-    
-    return {
-      success: false,
-      message: 'Không thể cập nhật dịch vụ'
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: 'Có lỗi xảy ra khi cập nhật dịch vụ'
-    };
-  }
-};
-
-// Xóa service (Admin)
-export const deleteService = async (id: string): Promise<{ success: boolean; message?: string }> => {
-  try {
-    const response = await apiClient.delete(`/Services/${id}`);
-    
-    if (response.status >= 200 && response.status < 300) {
-      return {
-        success: true,
-        message: 'Xóa dịch vụ thành công'
-      };
-    }
-    
-    return {
-      success: false,
-      message: 'Không thể xóa dịch vụ'
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: 'Có lỗi xảy ra khi xóa dịch vụ'
-    };
-  }
-};
