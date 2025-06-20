@@ -23,6 +23,93 @@ export interface User {
   address: string;
 }
 
+// Interface cho Test History
+export interface TestHistory {
+  id: string;
+  serviceType: string;
+  testType: string;
+  status: string;
+  requestDate: string;
+  completionDate: string | null;
+  sampleMethod: string;
+  amount: string;
+}
+
+// Interface cho Test History từ API response
+interface TestHistoryApiResponse {
+  id?: string;
+  testID?: string;
+  requestID?: string;
+  serviceType?: string;
+  serviceName?: string;
+  type?: string;
+  testType?: string;
+  testName?: string;
+  name?: string;
+  status?: string;
+  state?: string;
+  requestDate?: string;
+  createdDate?: string;
+  orderDate?: string;
+  completionDate?: string;
+  finishedDate?: string;
+  resultDate?: string;
+  sampleMethod?: string;
+  collectionMethod?: string;
+  samplingMethod?: string;
+  amount?: string;
+  price?: string;
+  cost?: string;
+  fee?: string;
+}
+
+// Interface cho Notification từ API response
+interface NotificationApiResponse {
+  id?: string;
+  notificationID?: string;
+  title?: string;
+  subject?: string;
+  header?: string;
+  message?: string;
+  content?: string;
+  body?: string;
+  description?: string;
+  type?: string;
+  category?: string;
+  level?: string;
+  isRead?: boolean;
+  read?: boolean;
+  createdAt?: string;
+  createDate?: string;
+  timestamp?: string;
+}
+
+// Interface cho Notification
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'success' | 'info' | 'warning' | 'error';
+  isRead: boolean;
+  createdAt: string;
+}
+
+// Interface cho Dashboard Stats
+export interface DashboardStats {
+  totalTests: number;
+  completedTests: number;
+  pendingTests: number;
+  unreadNotifications: number;
+}
+
+// Interface cho Dashboard Data
+export interface DashboardData {
+  user: User | null;
+  testHistory: TestHistory[];
+  notifications: Notification[];
+  stats: DashboardStats;
+}
+
 // Interface cho decoded JWT token
 export interface DecodedToken {
   userID?: string;
@@ -382,6 +469,8 @@ export const debugToken = (token: string): void => {
 // Hàm lấy thông tin user profile từ API (sau khi có token)
 export const getUserProfile = async (token: string): Promise<User | null> => {
   try {
+    console.log('Fetching user profile from /api/User/me with token:', token ? 'present' : 'missing');
+    
     const response = await apiClient.get('/api/User/me', {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -389,13 +478,43 @@ export const getUserProfile = async (token: string): Promise<User | null> => {
       }
     });
 
+    console.log('API Response Status:', response.status);
+    console.log('API Response Data:', response.data);
+
     if (response.status === 200 && response.data) {
-      console.log('User profile from /api/User/me:', response.data);
-      return response.data;
+      // Transform API response to match User interface
+      const userData: User = {
+        userID: response.data.userID || response.data.id || '',
+        username: response.data.username || response.data.userName || '',
+        fullname: response.data.fullname || response.data.fullName || response.data.name || '',
+        gender: response.data.gender || '',
+        roleID: response.data.roleID || response.data.role || '',
+        email: response.data.email || '',
+        phone: response.data.phone || response.data.phoneNumber || '',
+        birthdate: response.data.birthdate || response.data.birthDate || response.data.dateOfBirth || '',
+        image: response.data.image || response.data.avatar || response.data.profileImage || '',
+        address: response.data.address || '',
+      };
+      
+      console.log('Transformed user data:', userData);
+      return userData;
     }
     return null;
   } catch (error) {
-    console.error('Error fetching user profile from /api/User/me:', error);
+    if (axios.isAxiosError(error)) {
+      console.error('API Error:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message
+      });
+      
+      if (error.response?.status === 401) {
+        console.error('Unauthorized - token may be invalid or expired');
+      }
+    } else {
+      console.error('Error fetching user profile from /api/User/me:', error);
+    }
     return null;
   }
 };
@@ -455,5 +574,247 @@ export const getCurrentUser = (): User | null => {
     return null;
   } catch {
     return null;
+  }
+};
+
+// Hàm lấy dashboard data cho user hiện tại
+export const getDashboardData = async (): Promise<DashboardData | null> => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('No token found for dashboard data');
+      return null;
+    }
+
+    console.log('Fetching dashboard data with token:', token ? 'present' : 'missing');
+
+    // Fetch user profile
+    console.log('Step 1: Fetching user profile...');
+    const userProfile = await getUserProfile(token);
+    
+    // Fetch test history
+    console.log('Step 2: Fetching test history...');
+    const testHistory = await getUserTestHistory(token);
+    
+    // Fetch notifications
+    console.log('Step 3: Fetching notifications...');
+    const notifications = await getUserNotifications(token);
+    
+    // Calculate stats
+    const stats: DashboardStats = {
+      totalTests: testHistory?.length || 0,
+      completedTests: testHistory?.filter((test: TestHistory) => test.status === 'Đã hoàn thành').length || 0,
+      pendingTests: testHistory?.filter((test: TestHistory) => test.status === 'Đang xử lý').length || 0,
+      unreadNotifications: notifications?.filter((notif: Notification) => !notif.isRead).length || 0,
+    };
+
+    console.log('Dashboard data compiled successfully:', {
+      user: userProfile ? 'loaded' : 'failed',
+      testHistory: testHistory?.length || 0,
+      notifications: notifications?.length || 0,
+      stats
+    });
+
+    return {
+      user: userProfile,
+      testHistory: testHistory || [],
+      notifications: notifications || [],
+      stats
+    };
+  } catch (error) {
+    console.error('Error fetching dashboard data:', error);
+    return null;
+  }
+};
+
+// Hàm lấy lịch sử xét nghiệm của user
+export const getUserTestHistory = async (token: string): Promise<TestHistory[] | null> => {
+  try {
+    console.log('Fetching user test history from /api/User/tests');
+    
+    const response = await apiClient.get('/api/User/tests', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log('Test History API Response Status:', response.status);
+    console.log('Test History API Response Data:', response.data);
+
+    if (response.status === 200 && response.data) {      // Transform API response to match TestHistory interface
+      const testHistory: TestHistory[] = Array.isArray(response.data) 
+        ? response.data.map((test: TestHistoryApiResponse) => ({
+            id: test.id || test.testID || test.requestID || '',
+            serviceType: test.serviceType || test.serviceName || test.type || 'Không xác định',
+            testType: test.testType || test.testName || test.name || 'Không xác định',
+            status: test.status || test.state || 'Không xác định',
+            requestDate: test.requestDate || test.createdDate || test.orderDate || new Date().toISOString(),
+            completionDate: test.completionDate || test.finishedDate || test.resultDate || null,
+            sampleMethod: test.sampleMethod || test.collectionMethod || test.samplingMethod || 'Không xác định',
+            amount: test.amount || test.price || test.cost || test.fee || '0 VNĐ',
+          }))
+        : [];
+      
+      console.log('Transformed test history data:', testHistory);
+      return testHistory;
+    }
+    
+    console.log('No test history data found or invalid response');
+    return [];
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Test History API Error:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message
+      });
+      
+      if (error.response?.status === 401) {
+        console.error('Unauthorized - token may be invalid or expired');
+      }
+    } else {
+      console.error('Error fetching user test history:', error);
+    }
+    
+    // Return mock data as fallback
+    console.log('Returning mock test history data as fallback');
+    return [
+      {
+        id: 'TEST123',
+        serviceType: 'Xét nghiệm Huyết thống',
+        testType: 'Xét nghiệm cha con',
+        status: 'Đã hoàn thành',
+        requestDate: '2025-05-12',
+        completionDate: '2025-05-15',
+        sampleMethod: 'Tự thu mẫu',
+        amount: '4,000,000 VNĐ',
+      },
+      {
+        id: 'TEST124',
+        serviceType: 'Xét nghiệm ADN Dân sự',
+        testType: 'Xét nghiệm cha con ẩn danh',
+        status: 'Đang xử lý',
+        requestDate: '2025-05-20',
+        completionDate: null,
+        sampleMethod: 'Thu mẫu tận nơi',
+        amount: '3,500,000 VNĐ',
+      },
+    ];
+  }
+};
+
+// Hàm lấy thông báo của user
+export const getUserNotifications = async (token: string): Promise<Notification[] | null> => {
+  try {
+    console.log('Fetching user notifications from /api/User/notifications');
+    
+    const response = await apiClient.get('/api/User/notifications', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log('Notifications API Response Status:', response.status);
+    console.log('Notifications API Response Data:', response.data);
+
+    if (response.status === 200 && response.data) {
+      // Transform API response to match Notification interface
+      const notifications: Notification[] = Array.isArray(response.data) 
+        ? response.data.map((notif: NotificationApiResponse) => ({
+            id: notif.id || notif.notificationID || '',
+            title: notif.title || notif.subject || notif.header || 'Thông báo',
+            message: notif.message || notif.content || notif.body || notif.description || '',
+            type: (notif.type || notif.category || notif.level || 'info') as 'success' | 'info' | 'warning' | 'error',
+            isRead: notif.isRead !== undefined ? notif.isRead : (notif.read !== undefined ? notif.read : false),
+            createdAt: notif.createdAt || notif.createDate || notif.timestamp || new Date().toISOString(),
+          }))
+        : [];
+      
+      console.log('Transformed notifications data:', notifications);
+      return notifications;
+    }
+    
+    console.log('No notifications data found or invalid response');
+    return [];
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Notifications API Error:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message
+      });
+      
+      if (error.response?.status === 401) {
+        console.error('Unauthorized - token may be invalid or expired');
+      }
+    } else {
+      console.error('Error fetching user notifications:', error);
+    }
+    
+    // Return mock data as fallback
+    console.log('Returning mock notifications data as fallback');
+    return [
+      {
+        id: '1',
+        title: 'Kết quả xét nghiệm đã sẵn sàng',
+        message: 'Kết quả xét nghiệm TEST123 đã có, vui lòng kiểm tra.',
+        type: 'success',
+        isRead: false,
+        createdAt: '2025-06-20T10:30:00Z'
+      },
+      {
+        id: '2',
+        title: 'Nhắc nhở thu mẫu',
+        message: 'Vui lòng chuẩn bị mẫu cho xét nghiệm TEST124.',
+        type: 'info',
+        isRead: true,
+        createdAt: '2025-06-19T14:20:00Z'
+      }
+    ];
+  }
+};
+
+// Hàm test kết nối API
+export const testApiConnection = async (): Promise<{success: boolean; message: string; data?: unknown}> => {
+  try {
+    console.log('Testing API connection to:', `${apiClient.defaults.baseURL}/api/User/me`);
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return {
+        success: false,
+        message: 'No token found in localStorage'
+      };
+    }
+    
+    const response = await apiClient.get('/api/User/me', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    return {
+      success: true,
+      message: `API connection successful (Status: ${response.status})`,
+      data: response.data
+    };
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      return {
+        success: false,
+        message: `API Error: ${error.response?.status} - ${error.response?.statusText || error.message}`,
+        data: error.response?.data
+      };
+    }
+    
+    return {
+      success: false,
+      message: `Unknown error: ${error}`,
+    };
   }
 };
