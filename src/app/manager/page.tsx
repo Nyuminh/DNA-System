@@ -80,9 +80,7 @@ export default function ManagerManagerDashboard() {
         ? { ...post, status: post.status === 'published' ? 'draft' : 'published' }
         : post
     ));
-  };
-
-  return (
+  };  return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
       <div className="w-64 bg-white shadow-md">
@@ -435,8 +433,7 @@ export default function ManagerManagerDashboard() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+              </table>            </div>
           </section>
         </div>
       </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { 
@@ -55,7 +55,7 @@ const tabs = [
   { name: 'Thông báo', icon: BellIcon, current: false },
 ];
 
-export default function DashboardPage() {
+function DashboardContent() {
   const searchParams = useSearchParams();
   const [currentTab, setCurrentTab] = useState('Hồ sơ cá nhân');
 
@@ -535,9 +535,27 @@ export default function DashboardPage() {
                 )}
               </div>
             </div>
-          </div>
-        </div>
+          </div>        </div>
       </div>
     </MainLayout>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <MainLayout>
+        <div className="bg-gray-50 min-h-screen">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-2">Đang tải...</span>
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    }>
+      <DashboardContent />
+    </Suspense>
   );
 }

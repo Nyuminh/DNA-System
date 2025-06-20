@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
-import { loginUser } from '@/lib/api/auth';
+import { loginUser, debugToken } from '@/lib/api/auth';
 import { useAuth } from '@/contexts/AuthContext';
 
 type LoginFormInputs = {
@@ -25,46 +25,47 @@ export default function LoginPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginFormInputs>();
-  const onSubmit = async (data: LoginFormInputs) => {    try {
+  } = useForm<LoginFormInputs>();  const onSubmit = async (data: LoginFormInputs) => {
+    try {
       setLoginError('');
       setLoginSuccess('');
-          const result = await loginUser({
+      
+      const result = await loginUser({
         username: data.username,
         password: data.password,
         rememberMe: data.rememberMe,
       });
-      
-      if (result.success) {
+        if (result.success && result.token) {
+        // Debug token để xem cấu trúc
+        debugToken(result.token);
+        
+        // Lưu token vào localStorage (đã được decode trong loginUser)
+        localStorage.setItem('token', result.token);
+        
+        // Lưu thông tin user nếu có
         if (result.user) {
+          localStorage.setItem('user', JSON.stringify(result.user));
           // Sử dụng AuthContext để lưu trạng thái
-          login(result.token || 'default-token', result.user);
-          setLoginSuccess('Đăng nhập thành công! Đang chuyển hướng...');
-          
-          // Phân quyền theo roleID
-          setTimeout(() => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const userAny = result.user as any;
-            const roleID = userAny?.roleID || userAny?.roleId || userAny?.role_id || userAny?.RoleID;
-            
-            switch (roleID) {
-              case 'R01':
-                router.push('/admin');
-                break;
-              case 'R03':
-                router.push('/');
-                break;
-              case 'R04':
-                router.push('/manager');
-                break;
-              default:
-                router.push('/');
-                break;
-            }
-          }, 1000);
-        } else {
-          setLoginError('Thiếu thông tin người dùng từ server');
+          login(result.token, result.user);
         }
+        
+        setLoginSuccess('Đăng nhập thành công! Đang chuyển hướng...');
+        
+        console.log(' Login successful:');
+        console.log('- User:', result.user);
+        console.log('- Role ID:', result.roleID);
+        console.log('- Redirect Path:', result.redirectPath);
+        
+        // Sử dụng redirectPath đã được tính toán từ JWT decode
+        setTimeout(() => {
+          if (result.redirectPath) {
+            router.push(result.redirectPath);
+          } else {
+            // Fallback nếu không có redirectPath
+            router.push('/');
+          }
+        }, 1000);
+        
       } else {
         setLoginError(result.message || 'Đăng nhập thất bại');
       }
