@@ -4,7 +4,7 @@ import apiClient from './client';
 
 // Interface cho login request
 export interface LoginRequest {
-  email: string;
+  username: string;
   password: string;
   rememberMe?: boolean;
 }
@@ -20,6 +20,7 @@ export interface User {
   phone: string;
   birthdate: string; // ISO date string
   image: string;
+  address: string;
 }
 
 // Interface cho login response
@@ -33,8 +34,8 @@ export interface LoginResponse {
 // Hàm gọi API đăng nhập
 export const loginUser = async (loginData: LoginRequest): Promise<LoginResponse> => {
   try {
-    const response = await apiClient.post('/User/Login', {
-      email: loginData.email,
+    const response = await apiClient.post('/api/Auth/login', {
+      username: loginData.username,
       password: loginData.password,
       rememberMe: loginData.rememberMe || false,
     });

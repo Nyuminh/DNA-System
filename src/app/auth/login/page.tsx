@@ -9,7 +9,7 @@ import { loginUser } from '@/lib/api/auth';
 import { useAuth } from '@/contexts/AuthContext';
 
 type LoginFormInputs = {
-  email: string;
+  username: string;
   password: string;
   rememberMe: boolean;
 };
@@ -29,10 +29,10 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormInputs) => {    try {
       setLoginError('');
       setLoginSuccess('');
-        
-      const result = await loginUser({
-        email: data.email,
+          const result = await loginUser({
+        username: data.username,
         password: data.password,
+        rememberMe: data.rememberMe,
       });
       
       if (result.success) {
@@ -128,42 +128,41 @@ export default function LoginPage() {
                 </div>
               )}
 
-              <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-              {/* Email Field */}
+              <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>              {/* Username Field */}
               <div>
-                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Địa chỉ email
+                <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Tên đăng nhập
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                        d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   </div>
                   <input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="your@email.com"
+                    id="username"
+                    type="text"
+                    autoComplete="username"
+                    placeholder="Nhập tên đăng nhập"
                     className={`block w-full pl-10 pr-3 py-3 border-0 rounded-xl bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:text-sm transition-all duration-200 ${
-                      errors.email ? 'ring-2 ring-red-400 bg-red-50' : ''
+                      errors.username ? 'ring-2 ring-red-400 bg-red-50' : ''
                     }`}
-                    {...register('email', {
-                      required: 'Email là bắt buộc',
-                      pattern: {
-                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                        message: 'Email không hợp lệ',
+                    {...register('username', {
+                      required: 'Tên đăng nhập là bắt buộc',
+                      minLength: {
+                        value: 3,
+                        message: 'Tên đăng nhập phải có ít nhất 3 ký tự',
                       },
                     })}
                   />
                 </div>
-                {errors.email && (
+                {errors.username && (
                   <p className="mt-2 text-sm text-red-600 flex items-center">
                     <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                     </svg>
-                    {errors.email.message}
+                    {errors.username.message}
                   </p>
                 )}
               </div>

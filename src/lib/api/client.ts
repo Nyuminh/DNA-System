@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Cấu hình base URL cho API
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://localhost:7029';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5198';
 
 // Tạo instance axios với cấu hình mặc định
 const apiClient = axios.create({
