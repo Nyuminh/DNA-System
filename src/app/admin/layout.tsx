@@ -128,7 +128,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               >
                 <ChartBarIcon className="mr-3 h-5 w-5" />
                 Dashboard
-              </Link>{/* Account Management */}
+              </Link>              {/* Account Management */}
               <Link
                 href="/admin/accounts"
                 className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
@@ -139,6 +139,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               >
                 <UsersIcon className="mr-3 h-5 w-5" />
                 Quản lý tài khoản
+              </Link>              {/* Profile Management */}
+              <Link
+                href="/admin/profile"
+                className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  isActive("/admin/profile")
+                    ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                <UserIcon className="mr-3 h-5 w-5" />
+                Hồ sơ cá nhân
               </Link>
             </div>
           </nav>
