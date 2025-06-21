@@ -59,3 +59,26 @@ export const getServiceById = async (id: string): Promise<{ success: boolean; se
   }
 };
 
+//Delete service by ID
+export const deleteServiceById = async (id: string): Promise<{ success: boolean; message?: string }> => {
+  try {
+    const response = await apiClient.delete(`/api/Services/${id}`);
+    
+    if (response.status >= 200 && response.status < 300) {
+      return {
+        success: true,
+        message: 'Xóa dịch vụ thành công'
+      };
+    }
+    
+    return {
+      success: false,
+      message: 'Không thể xóa dịch vụ'
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: 'Có lỗi xảy ra khi xóa dịch vụ'
+    };
+  }
+};

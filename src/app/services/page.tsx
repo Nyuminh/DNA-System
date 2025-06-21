@@ -229,8 +229,12 @@ export default function ServicesPage() {
                   </h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {servicesByType[selectedType].map((service) => (
-                      <div key={service.id} className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
+                    {servicesByType[selectedType].map((service, index) => (
+                      <div 
+                        key={service.id ? `service-${service.id}` : `service-${selectedType}-${index}`} 
+                        className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow"
+                      >
+                        {/* Keep existing content */}
                         {service.image && (
                           <div className="h-48 w-full bg-gray-200">
                             <img 
@@ -246,7 +250,7 @@ export default function ServicesPage() {
                           <div className="flex justify-between items-center">
                             <p className="text-lg font-bold text-blue-600">{service.price+" VND"}</p>
                             <Link 
-                              href={`/services/book?serviceId=${service.id}`}
+                              href={`/services/book?serviceId=${encodeURIComponent(String(service.id))}`}
                               className="inline-block bg-blue-600 text-white text-sm px-4 py-2 rounded hover:bg-blue-700"
                             >
                               Xem chi tiết
