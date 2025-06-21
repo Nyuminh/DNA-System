@@ -2,26 +2,92 @@
 
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
+import { loginUser, debugToken } from '@/lib/api/auth';
+import { useAuth } from '@/contexts/AuthContext';
 
 type LoginFormInputs = {
-  email: string;
+  username: string;
   password: string;
   rememberMe: boolean;
 };
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState<string>('');
+  const [loginSuccess, setLoginSuccess] = useState<string>('');
+  const router = useRouter();
+  const { login, isLoggedIn, isLoading, user } = useAuth();
+  
+  // Redirect nếu user đã đăng nhập
+  useEffect(() => {
+    if (!isLoading && isLoggedIn && user) {
+      console.log('User already logged in, redirecting...', user);
+      // Redirect dựa trên role
+      if (user.roleID === 'Admin') {
+        router.push('/admin');
+      } else if (user.roleID === 'Manager') {
+        router.push('/manager');
+      } else {
+        router.push('/');
+      }
+    }
+  }, [isLoggedIn, isLoading, user, router]);
+  
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginFormInputs>();
-
-  const onSubmit = async (data: LoginFormInputs) => {
-    // This would be replaced with actual login logic
-    console.log('Login data submitted:', data);
+  } = useForm<LoginFormInputs>();const onSubmit = async (data: LoginFormInputs) => {
+    try {
+      setLoginError('');
+      setLoginSuccess('');
+      
+      const result = await loginUser({
+        username: data.username,
+        password: data.password,
+        rememberMe: data.rememberMe,
+      });
+        if (result.success && result.token) {
+        // Debug token để xem cấu trúc
+        debugToken(result.token);
+        
+        // Lưu token vào localStorage (đã được decode trong loginUser)
+        localStorage.setItem('token', result.token);
+        
+        // Lưu thông tin user nếu có
+        if (result.user) {
+          localStorage.setItem('user', JSON.stringify(result.user));
+          // Sử dụng AuthContext để lưu trạng thái
+          login(result.token, result.user);
+        }
+        
+        setLoginSuccess('Đăng nhập thành công! Đang chuyển hướng...');
+        
+        console.log(' Login successful:');
+        console.log('- User:', result.user);
+        console.log('- Role ID:', result.roleID);
+        console.log('- Redirect Path:', result.redirectPath);
+        
+        // Sử dụng redirectPath đã được tính toán từ JWT decode
+        setTimeout(() => {
+          if (result.redirectPath) {
+            router.push(result.redirectPath);
+          } else {
+            // Fallback nếu không có redirectPath
+            router.push('/');
+          }
+        }, 1000);
+        
+      } else {
+        setLoginError(result.message || 'Đăng nhập thất bại');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setLoginError('Đã xảy ra lỗi không mong muốn');
+    }
   };
 
   return (
@@ -51,45 +117,68 @@ export default function LoginPage() {
                 Đăng ký ngay
               </Link>
             </p>
-          </div>
+          </div>          <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+            <div className="bg-white/80 backdrop-blur-sm px-6 py-8 shadow-xl border border-white/20 sm:rounded-2xl sm:px-10">
+              
+              {/* Error Message */}
+              {loginError && (
+                <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200">
+                  <div className="flex items-center">
+                    <svg className="w-5 h-5 text-red-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    <p className="text-sm text-red-800 font-medium">{loginError}</p>
+                  </div>
+                </div>
+              )}
 
-          <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-            <div className="bg-white/80 backdrop-blur-sm px-6 py-8 shadow-xl border border-white/20 sm:rounded-2xl sm:px-10">            <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-              {/* Email Field */}
+              {/* Success Message */}
+              {loginSuccess && (
+                <div className="mb-6 p-4 rounded-xl bg-green-50 border border-green-200">
+                  <div className="flex items-center">
+                    <svg className="w-5 h-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <p className="text-sm text-green-800 font-medium">{loginSuccess}</p>
+                  </div>
+                </div>
+              )}
+
+              <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>              {/* Username Field */}
               <div>
-                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Địa chỉ email
+                <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Tên đăng nhập
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                        d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   </div>
                   <input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="your@email.com"
+                    id="username"
+                    type="text"
+                    autoComplete="username"
+                    placeholder="Nhập tên đăng nhập"
                     className={`block w-full pl-10 pr-3 py-3 border-0 rounded-xl bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:text-sm transition-all duration-200 ${
-                      errors.email ? 'ring-2 ring-red-400 bg-red-50' : ''
+                      errors.username ? 'ring-2 ring-red-400 bg-red-50' : ''
                     }`}
-                    {...register('email', {
-                      required: 'Email là bắt buộc',
-                      pattern: {
-                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                        message: 'Email không hợp lệ',
+                    {...register('username', {
+                      required: 'Tên đăng nhập là bắt buộc',
+                      minLength: {
+                        value: 3,
+                        message: 'Tên đăng nhập phải có ít nhất 3 ký tự',
                       },
                     })}
                   />
                 </div>
-                {errors.email && (
+                {errors.username && (
                   <p className="mt-2 text-sm text-red-600 flex items-center">
                     <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                     </svg>
-                    {errors.email.message}
+                    {errors.username.message}
                   </p>
                 )}
               </div>
@@ -122,7 +211,7 @@ export default function LoginPage() {
                       },
                     })}
                   />
-                  <button
+                  <button 
                     type="button"
                     className="absolute inset-y-0 right-0 pr-3 flex items-center"
                     onClick={() => setShowPassword(!showPassword)}

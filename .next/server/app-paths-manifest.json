@@ -1,4 +1,11 @@
 {
   "/page": "app/page.js",
-  "/auth/login/page": "app/auth/login/page.js"
+  "/auth/login/page": "app/auth/login/page.js",
+  "/admin/page": "app/admin/page.js",
+  "/admin/dashboard/page": "app/admin/dashboard/page.js",
+  "/admin/profile/page": "app/admin/profile/page.js",
+  "/admin/accounts/page": "app/admin/accounts/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/manager/page": "app/manager/page.js",
+  "/manager/profile/page": "app/manager/profile/page.js"
 }

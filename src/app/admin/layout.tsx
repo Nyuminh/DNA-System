@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   UserIcon, 
   ChartBarIcon, 
@@ -18,25 +20,57 @@ interface AdminLayoutProps {
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { user, logout } = useAuth();
+  const [userEmail, setUserEmail] = useState<string>('');
+
+  // Fetch user email if not available in AuthContext
+  useEffect(() => {
+    const fetchUserEmail = async () => {
+      if (!user?.email || user.email === 'admin@dnatest.com') {
+        try {
+          const { adminProfileAPI } = await import('@/lib/api/admin');
+          const result = await adminProfileAPI.getProfile();
+          if (result.success && result.profile?.email) {
+            setUserEmail(result.profile.email);
+          }
+        } catch (error) {
+          console.error('Error fetching user email:', error);
+        }
+      } else {
+        setUserEmail(user.email);
+      }
+    };
+
+    fetchUserEmail();
+  }, [user]);
+
+  const displayEmail = userEmail || user?.email || 'admin@dnatest.com';
 
   const isActive = (path: string) => {
     if (path === "/admin" && pathname === "/admin") return true;
     if (path !== "/admin" && pathname.startsWith(path)) return true;
     return false;
-  };
-
-  const handleLogout = async () => {
+  };  const handleLogout = async () => {
     try {
+      const { logoutUser } = await import('@/lib/api/auth');
       // Call logout API
-      await fetch('/api/auth/logout', { method: 'POST' });
-      // Clear local storage
-      localStorage.removeItem('auth-token');
-      localStorage.removeItem('user-data');
+      const result = await logoutUser();
+      console.log('Admin logout result:', result.message);
+      
+      // Clear AuthContext state
+      logout();
+      
       // Redirect to login
       router.push('/auth/login');
     } catch (error) {
-      console.error('Logout error:', error);
-      // Force redirect even if API fails
+      console.error('Admin logout error:', error);
+      // Force logout nếu API fails
+      const { forceLogout } = await import('@/lib/api/auth');
+      forceLogout();
+      
+      // Clear AuthContext state
+      logout();
+      
       router.push('/auth/login');
     }
   };
@@ -46,18 +80,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-slate-200/60 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
+          <div className="flex items-center justify-between h-16">            <div className="flex items-center space-x-4">
               <div className="flex-shrink-0">
-                <Link href="/admin" className="flex items-center space-x-3 group">
+                <Link href="/" className="flex items-center space-x-3 group">
                   <div className="h-10 w-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-200">
                     <span className="text-white font-bold text-lg">D</span>
                   </div>
                   <div className="hidden md:block">
                     <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                      DNA Admin
+                      DNA Testing Service
                     </h1>
-                    <p className="text-xs text-slate-500 -mt-1">Testing Management</p>
+                    <p className="text-xs text-slate-500 -mt-1">Admin Dashboard</p>
                   </div>
                 </Link>
               </div>
@@ -81,15 +114,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <button className="relative p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
                 <BellIcon className="h-6 w-6" />
                 <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
-              </button>
-
-              {/* Admin Profile - Simplified */}
+              </button>              {/* Admin Profile - Simplified */}
               <div className="flex items-center space-x-3 px-3 py-2 rounded-xl bg-slate-50">
                 <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
                   <UserIcon className="h-4 w-4 text-white" />
-                </div>
-                <div className="hidden sm:block text-left">
-                  <div className="text-sm font-medium text-slate-700">Admin User</div>
+                </div>                <div className="hidden sm:block text-left">
+                  <div className="text-sm font-medium text-slate-700">{user?.username || 'admin'}</div>
                   <div className="text-xs text-slate-500">Quản trị viên</div>
                 </div>
               </div>
@@ -102,24 +132,33 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         {/* Enhanced Sidebar */}
         <div className="w-64 bg-white shadow-lg border-r border-slate-200 h-screen sticky top-0 flex flex-col">
           <nav className="flex-1 mt-6 px-4">
-            <div className="space-y-1">
-              {/* Dashboard */}
+            <div className="space-y-1">              {/* Home Page Link */}
               <Link
-                href="/admin"
-                className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
-                  isActive("/admin") && pathname === "/admin"
-                    ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                }`}
+                href="/"
+                className="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               >
                 <HomeIcon className="mr-3 h-5 w-5" />
                 Trang chủ
               </Link>
 
+              {/* Profile Management - Moved up */}
               <Link
-                href="/admin/dashboard"
+                href="/admin/profile"
                 className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
-                  isActive("/admin/dashboard")
+                  isActive("/admin/profile")
+                    ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                <UserIcon className="mr-3 h-5 w-5" />
+                Hồ sơ cá nhân
+              </Link>
+
+              {/* Dashboard */}
+              <Link
+                href="/admin"
+                className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  isActive("/admin") && pathname === "/admin"
                     ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg"
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 }`}
@@ -142,14 +181,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </nav>
 
           {/* User Info & Logout Section */}
-          <div className="border-t border-slate-200 p-4">
-            <div className="flex items-center space-x-3 mb-3 p-2 rounded-lg bg-slate-50">
+          <div className="border-t border-slate-200 p-4">            <div className="flex items-center space-x-3 mb-3 p-2 rounded-lg bg-slate-50">
               <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
                 <UserIcon className="h-5 w-5 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-slate-700 truncate">Admin User</div>
-                <div className="text-xs text-slate-500 truncate">admin@dnatest.com</div>
+              </div>              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-slate-700 truncate">{user?.username || 'admin'}</div>
+                <div className="text-xs text-slate-500 truncate">{displayEmail}</div>
               </div>
             </div>
             

@@ -1,304 +1,235 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { adminProfileAPI } from '@/lib/api/admin';
 import { 
-  UserIcon,
-  EnvelopeIcon,
-  KeyIcon,
-  CameraIcon,
-  CheckIcon
+  CheckIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 
+interface ProfileFormData {
+  username: string;
+  fullname: string;
+  email: string;
+  phone: string;
+  address: string;
+}
+
 export default function AdminProfilePage() {
-  const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'profile' | 'security'>('profile');
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   
-  const [profileData, setProfileData] = useState({
-    name: 'Admin User',
-    email: 'admin@dnatesting.com',
-    phone: '+84 123 456 789',
-    role: 'Quản trị viên hệ thống',
-    joinDate: '2025-01-01',
-    lastLogin: '2025-06-08T10:30:00'
+  const [profileData, setProfileData] = useState<ProfileFormData>({
+    username: '',
+    fullname: '',
+    email: '',
+    phone: '',
+    address: ''
   });
 
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
+  // Tải thông tin cá nhân từ API
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setIsLoading(true);
+        const result = await adminProfileAPI.getProfile();
+        
+        if (result.success && result.profile) {
+          setProfileData({
+            username: result.profile.username || '',
+            fullname: result.profile.fullname || '',
+            email: result.profile.email || '',
+            phone: result.profile.phone || '',
+            address: result.profile.address || ''
+          });
+        } else {
+          setError('Không thể tải thông tin cá nhân');
+        }
+      } catch (err) {
+        console.error('Error loading profile:', err);
+        setError('Đã xảy ra lỗi khi tải thông tin');
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const handleSaveProfile = async () => {
+    fetchProfile();
+  }, []);
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsSaving(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsEditing(false);
-    setIsSaving(false);
-    alert('Cập nhật thông tin thành công!');
-  };
-
-  const handleChangePassword = async () => {
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert('Mật khẩu xác nhận không khớp!');
-      return;
-    }
+    setError(null);
     
-    if (passwordData.newPassword.length < 6) {
-      alert('Mật khẩu mới phải có ít nhất 6 ký tự!');
-      return;
+    try {
+      const result = await adminProfileAPI.updateProfile({
+        fullname: profileData.fullname,
+        phone: profileData.phone
+      });
+      
+      if (result.success) {
+        setSuccess('Cập nhật thông tin thành công!');
+        setTimeout(() => setSuccess(null), 3000);
+      } else {
+        setError(result.message || 'Có lỗi xảy ra khi cập nhật thông tin');
+      }
+    } catch {
+      setError('Có lỗi xảy ra khi cập nhật thông tin');
+    } finally {
+      setIsSaving(false);
     }
-
-    setIsSaving(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    setIsSaving(false);
-    alert('Đổi mật khẩu thành công!');
   };
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Hồ sơ cá nhân</h1>
-        <p className="text-gray-600 text-sm">Quản lý thông tin cá nhân và cài đặt bảo mật</p>
-      </div>
-
-      {/* Profile Card */}
-      <div className="bg-white/70 backdrop-blur-sm rounded-xl shadow-sm p-5 mb-6 border border-white/20">
-        <div className="flex items-center space-x-5 mb-5">
-          <div className="relative">
-            <div className="h-20 w-20 rounded-full bg-gradient-to-br from-indigo-50 to-indigo-100 flex items-center justify-center border border-indigo-100/50">
-              <UserIcon className="h-10 w-10 text-indigo-600" />
-            </div>
-            <button className="absolute bottom-0 right-0 bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-sm border border-white/50">
-              <CameraIcon className="h-3 w-3 text-gray-600" />
-            </button>
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">{profileData.name}</h2>
-            <p className="text-gray-600 text-sm">{profileData.role}</p>            <p className="text-xs text-gray-500">
-              Tham gia từ {new Date(profileData.joinDate).toLocaleDateString('vi-VN')}
-            </p>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="border-b border-gray-200/50 mb-5">
-          <nav className="-mb-px flex space-x-6">
-            <button
-              onClick={() => setActiveTab('profile')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'profile'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Thông tin cá nhân
-            </button>
-            <button
-              onClick={() => setActiveTab('security')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'security'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Bảo mật
-            </button>
-          </nav>
-        </div>
-
-        {/* Profile Tab */}
-        {activeTab === 'profile' && (
-          <div className="space-y-5">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Họ và tên
-                </label>
-                <div className="relative">                  <input
-                    type="text"
-                    value={profileData.name}
-                    onChange={(e) => setProfileData({...profileData, name: e.target.value})}
-                    disabled={!isEditing}
-                    className={`w-full pl-9 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm ${
-                      !isEditing ? 'bg-gray-50/50 text-gray-600' : 'bg-white/50'
-                    }`}
-                  />
-                  <UserIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+    <div className="bg-gray-50 min-h-screen">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-10">
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Hồ sơ cá nhân</h1>
+        
+        <div className="mt-8">
+          <div className="bg-white shadow rounded-lg overflow-hidden">
+            
+            {/* Error/Success Messages */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 m-6 mb-4">
+                <div className="flex">
+                  <ExclamationTriangleIcon className="h-5 w-5 text-red-400 mt-0.5" />
+                  <div className="ml-3">
+                    <p className="text-sm text-red-700">{error}</p>
+                  </div>
+                  <button
+                    onClick={() => setError(null)}
+                    className="ml-auto text-red-400 hover:text-red-600"
+                  >
+                    ×
+                  </button>
                 </div>
               </div>
+            )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email
-                </label>
-                <div className="relative">
-                  <input
-                    type="email"
-                    value={profileData.email}
-                    onChange={(e) => setProfileData({...profileData, email: e.target.value})}
-                    disabled={!isEditing}
-                    className={`w-full pl-9 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm ${
-                      !isEditing ? 'bg-gray-50/50 text-gray-600' : 'bg-white/50'
-                    }`}
-                  />
-                  <EnvelopeIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            {success && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 m-6 mb-4">
+                <div className="flex">
+                  <CheckIcon className="h-5 w-5 text-green-400 mt-0.5" />
+                  <div className="ml-3">
+                    <p className="text-sm text-green-700">{success}</p>
+                  </div>
+                  <button
+                    onClick={() => setSuccess(null)}
+                    className="ml-auto text-green-400 hover:text-green-600"
+                  >
+                    ×
+                  </button>
                 </div>
               </div>
+            )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Số điện thoại
-                </label>
-                <input
-                  type="tel"
-                  value={profileData.phone}
-                  onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
-                  disabled={!isEditing}                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm ${
-                    !isEditing ? 'bg-gray-50/50 text-gray-600' : 'bg-white/50'
-                  }`}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Vai trò
-                </label>
-                <input
-                  type="text"
-                  value={profileData.role}
-                  disabled
-                  className="w-full px-4 py-2.5 border rounded-lg bg-gray-50/50 text-gray-600 text-sm"
-                />
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-r from-gray-50/80 to-gray-100/80 backdrop-blur-sm rounded-lg p-4 border border-gray-100/50">
-              <h3 className="font-medium text-gray-900 mb-2 text-sm">Thông tin hoạt động</h3>
-              <div className="text-xs text-gray-600 space-y-1">
-                <p>Đăng nhập lần cuối: {new Date(profileData.lastLogin).toLocaleString('vi-VN')}</p>
-                <p>Ngày tham gia: {new Date(profileData.joinDate).toLocaleDateString('vi-VN')}</p>
-              </div>
-            </div>            <div className="flex justify-end space-x-3">
-              {!isEditing ? (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200 text-sm shadow-sm"
-                >
-                  Chỉnh sửa
-                </button>
+            {/* Profile Form */}
+            <div className="p-6">
+              {isLoading ? (
+                <div className="flex items-center justify-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-2">Đang tải thông tin từ API...</span>
+                </div>
               ) : (
                 <>
-                  <button
-                    onClick={() => setIsEditing(false)}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    onClick={handleSaveProfile}
-                    disabled={isSaving}
-                    className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200 disabled:opacity-50 flex items-center gap-2 text-sm shadow-sm"
-                  >
-                    {isSaving ? (
-                      <>
-                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                        Đang lưu...
-                      </>
-                    ) : (
-                      <>
-                        <CheckIcon className="h-3 w-3" />
-                        Lưu thay đổi
-                      </>
-                    )}
-                  </button>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-6">Thông tin cá nhân</h2>
+                  <form className="space-y-6" onSubmit={handleSaveProfile}>
+                    <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
+                      <div>
+                        <label htmlFor="username" className="block text-sm font-medium leading-6 text-gray-900">
+                          Tên đăng nhập
+                        </label>
+                        <div className="mt-2">
+                          <input
+                            type="text"
+                            id="username"
+                            value={profileData.username}
+                            className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-500 bg-gray-50 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm sm:leading-6"
+                            readOnly
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label htmlFor="fullname" className="block text-sm font-medium leading-6 text-gray-900">
+                          Họ và tên
+                        </label>
+                        <div className="mt-2">
+                          <input
+                            type="text"
+                            id="fullname"
+                            value={profileData.fullname}
+                            onChange={(e) => setProfileData({...profileData, fullname: e.target.value})}
+                            className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
+                          Email
+                        </label>
+                        <div className="mt-2">
+                          <input
+                            type="email"
+                            id="email"
+                            value={profileData.email}
+                            onChange={(e) => setProfileData({...profileData, email: e.target.value})}
+                            className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label htmlFor="phone" className="block text-sm font-medium leading-6 text-gray-900">
+                          Số điện thoại
+                        </label>
+                        <div className="mt-2">
+                          <input
+                            type="tel"
+                            id="phone"
+                            value={profileData.phone}
+                            onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
+                            className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label htmlFor="address" className="block text-sm font-medium leading-6 text-gray-900">
+                          Địa chỉ
+                        </label>
+                        <div className="mt-2">
+                          <input
+                            type="text"
+                            id="address"
+                            value={profileData.address}
+                            onChange={(e) => setProfileData({...profileData, address: e.target.value})}
+                            className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end">
+                      <button
+                        type="submit"
+                        disabled={isSaving}
+                        className="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
+                      </button>
+                    </div>
+                  </form>
                 </>
               )}
             </div>
           </div>
-        )}        {/* Security Tab */}
-        {activeTab === 'security' && (
-          <div className="space-y-5">
-            <div className="bg-gradient-to-r from-yellow-50/80 to-amber-50/80 backdrop-blur-sm border border-yellow-200/50 rounded-xl p-4">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <KeyIcon className="h-4 w-4 text-yellow-500" />
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-yellow-800 mb-1">
-                    Đổi mật khẩu
-                  </h3>
-                  <div className="text-xs text-yellow-700">
-                    <p>Để bảo mật tài khoản, hãy sử dụng mật khẩu mạnh có ít nhất 8 ký tự bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Mật khẩu hiện tại
-                </label>
-                <input
-                  type="password"
-                  value={passwordData.currentPassword}
-                  onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/50 backdrop-blur-sm text-sm transition-all duration-200"
-                  placeholder="Nhập mật khẩu hiện tại"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Mật khẩu mới
-                </label>
-                <input
-                  type="password"
-                  value={passwordData.newPassword}
-                  onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/50 backdrop-blur-sm text-sm transition-all duration-200"
-                  placeholder="Nhập mật khẩu mới"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Xác nhận mật khẩu mới
-                </label>
-                <input
-                  type="password"
-                  value={passwordData.confirmPassword}
-                  onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/50 backdrop-blur-sm text-sm transition-all duration-200"
-                  placeholder="Nhập lại mật khẩu mới"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end">
-              <button
-                onClick={handleChangePassword}
-                disabled={isSaving || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
-                className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm shadow-sm"
-              >
-                {isSaving ? (
-                  <>
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                    Đang cập nhật...
-                  </>
-                ) : (
-                  <>
-                    <KeyIcon className="h-3 w-3" />
-                    Đổi mật khẩu
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

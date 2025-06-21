@@ -2,8 +2,10 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import { useRouter } from 'next/navigation';
+import { Bars3Icon, XMarkIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 import Logo from '@/components/common/Logo';
+import { useAuth } from '@/contexts/AuthContext';
 
 const navigation = [
   { name: 'Trang chủ', href: '/' },
@@ -14,10 +16,27 @@ const navigation = [
 ];
 
 export default function Header() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
-  // This would normally be fetched from your auth state
-  const isLoggedIn = false;
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);  const [showUserMenu, setShowUserMenu] = useState(false);
+  const { user, isLoggedIn, logout, isAdmin, isManager } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    logout();
+    router.push('/');
+    setShowUserMenu(false);
+  };
+
+  const handleUserMenuClick = () => {
+    // Điều hướng theo role
+    if (isAdmin()) {
+      router.push('/admin');
+    } else if (isManager()) {
+      router.push('/manager');
+    } else {
+      router.push('/dashboard');
+    }
+    setShowUserMenu(false);
+  };
 
   return (
     <header className="bg-white/95 backdrop-blur-md border-b border-secondary-200 sticky top-0 z-50">
@@ -54,27 +73,112 @@ export default function Header() {
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary-600 group-hover:w-full transition-all duration-200"></span>
             </Link>
           ))}
-        </div>
-        
-        <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:gap-x-4">
+        </div>          <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:gap-x-4">
           {isLoggedIn ? (
-            <>
-              <Link 
-                href="/my-tests" 
-                className="text-sm font-medium text-secondary-700 hover:text-primary-600 transition-colors duration-200"
-              >
-                Xét nghiệm của tôi
-              </Link>
-              <Link 
-                href="/dashboard" 
-                className="text-sm font-medium text-secondary-700 hover:text-primary-600 transition-colors duration-200"
-              >
-                Tài khoản
-              </Link>
-              <button className="btn-secondary text-sm py-2 px-4">
-                Đăng xuất
-              </button>
-            </>
+            <div className="flex items-center gap-x-4">
+              {/* User Menu */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center gap-x-2 text-sm font-medium text-secondary-700 hover:text-primary-600 transition-colors duration-200 group"
+                >                  <div className="flex items-center gap-x-2">                    {user?.image ? (
+                      <div 
+                        className="h-8 w-8 rounded-full bg-cover bg-center border-2 border-primary-600"
+                        style={{ backgroundImage: `url(${user.image})` }}
+                        title={user.fullname || user.username}
+                      />
+                    ) : (
+                      <UserCircleIcon className="h-8 w-8 text-primary-600" />
+                    )}
+                    <div className="text-left">
+                      <div className="text-sm font-medium text-secondary-900">
+                        Chào mừng, {user?.fullname || user?.username}
+                      </div>
+                      <div className="text-xs text-secondary-600 truncate max-w-32">
+                        {user?.email}
+                      </div>
+                    </div>
+                  </div>
+                </button>                {/* Dropdown Menu */}
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-secondary-200 py-1 z-50">
+                    <button
+                      onClick={handleUserMenuClick}
+                      className="w-full text-left px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-100 transition-colors duration-200"
+                    >
+                      {isAdmin() ? 'Admin Dashboard' : isManager() ? 'Manager Dashboard' : 'Xem hồ sơ'}
+                    </button>
+                      {/* Menu cho Customer */}
+                    {!isAdmin() && !isManager() && (
+                      <>
+                        <Link
+                          href="/my-tests"
+                          className="block px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-100 transition-colors duration-200"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          Xét nghiệm của tôi
+                        </Link>
+                        <Link
+                          href="/dashboard?tab=Đổi mật khẩu"
+                          className="block px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-100 transition-colors duration-200"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          Đổi mật khẩu
+                        </Link>
+                      </>
+                    )}
+                    
+                    {/* Menu cho Manager */}
+                    {isManager() && (
+                      <>
+                        <Link
+                          href="/manager/services"
+                          className="block px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-100 transition-colors duration-200"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          Quản lý dịch vụ
+                        </Link>
+                        <Link
+                          href="/manager/profile"
+                          className="block px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-100 transition-colors duration-200"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          Hồ sơ cá nhân
+                        </Link>
+                      </>
+                    )}
+                    
+                    {/* Menu cho Admin */}
+                    {isAdmin() && (
+                      <>
+                        <Link
+                          href="/admin/accounts"
+                          className="block px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-100 transition-colors duration-200"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          Quản lý tài khoản
+                        </Link>
+                        <Link
+                          href="/admin/services"
+                          className="block px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-100 transition-colors duration-200"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          Quản lý dịch vụ
+                        </Link>
+                      </>
+                    )}
+                    
+                    <div className="border-t border-secondary-200 my-1"></div>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200"
+                    >
+                      Đăng xuất
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           ) : (
             <>
               <Link 
@@ -128,26 +232,83 @@ export default function Header() {
                     </Link>
                   ))}
                 </div>
-                
-                <div className="border-t border-secondary-200 px-6 py-6 space-y-3">
+                  <div className="border-t border-secondary-200 px-6 py-6 space-y-3">
                   {isLoggedIn ? (
-                    <>
-                      <Link
-                        href="/my-tests"
-                        className="block rounded-lg px-4 py-3 text-base font-medium text-secondary-700 hover:bg-secondary-100 hover:text-primary-600 transition-colors duration-200"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        Xét nghiệm của tôi
-                      </Link>
-                      <Link
-                        href="/dashboard"
-                        className="block rounded-lg px-4 py-3 text-base font-medium text-secondary-700 hover:bg-secondary-100 hover:text-primary-600 transition-colors duration-200"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        Tài khoản
-                      </Link>
-                      <button 
+                    <>                      {/* Menu cho Customer */}
+                      {!isAdmin() && !isManager() && (
+                        <>
+                          <Link
+                            href="/my-tests"
+                            className="block rounded-lg px-4 py-3 text-base font-medium text-secondary-700 hover:bg-secondary-100 hover:text-primary-600 transition-colors duration-200"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            Xét nghiệm của tôi
+                          </Link>
+                          <Link
+                            href="/dashboard?tab=Đổi mật khẩu"
+                            className="block rounded-lg px-4 py-3 text-base font-medium text-secondary-700 hover:bg-secondary-100 hover:text-primary-600 transition-colors duration-200"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            Đổi mật khẩu
+                          </Link>
+                        </>
+                      )}{/* Profile link */}
+                      <button
+                        onClick={() => {
+                          handleUserMenuClick();
+                          setMobileMenuOpen(false);
+                        }}
                         className="w-full text-left rounded-lg px-4 py-3 text-base font-medium text-secondary-700 hover:bg-secondary-100 hover:text-primary-600 transition-colors duration-200"
+                      >
+                        {isAdmin() ? 'Admin Dashboard' : isManager() ? 'Manager Dashboard' : 'Xem hồ sơ'}
+                      </button>
+                      
+                      {/* Menu cho Manager */}
+                      {isManager() && (
+                        <>
+                          <Link
+                            href="/manager/services"
+                            className="block rounded-lg px-4 py-3 text-base font-medium text-secondary-700 hover:bg-secondary-100 hover:text-primary-600 transition-colors duration-200"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            Quản lý dịch vụ
+                          </Link>
+                          <Link
+                            href="/manager/profile"
+                            className="block rounded-lg px-4 py-3 text-base font-medium text-secondary-700 hover:bg-secondary-100 hover:text-primary-600 transition-colors duration-200"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            Hồ sơ cá nhân
+                          </Link>
+                        </>
+                      )}
+                      
+                      {/* Menu cho Admin */}
+                      {isAdmin() && (
+                        <>
+                          <Link
+                            href="/admin/accounts"
+                            className="block rounded-lg px-4 py-3 text-base font-medium text-secondary-700 hover:bg-secondary-100 hover:text-primary-600 transition-colors duration-200"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            Quản lý tài khoản
+                          </Link>
+                          <Link
+                            href="/admin/services"
+                            className="block rounded-lg px-4 py-3 text-base font-medium text-secondary-700 hover:bg-secondary-100 hover:text-primary-600 transition-colors duration-200"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            Quản lý dịch vụ
+                          </Link>
+                        </>
+                      )}
+                      
+                      <button 
+                        className="w-full text-left rounded-lg px-4 py-3 text-base font-medium text-red-600 hover:bg-red-50 transition-colors duration-200"
+                        onClick={() => {
+                          handleLogout();
+                          setMobileMenuOpen(false);
+                        }}
                       >
                         Đăng xuất
                       </button>
