@@ -93,9 +93,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <div className="flex items-center space-x-3 px-3 py-2 rounded-xl bg-slate-50">
                 <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
                   <UserIcon className="h-4 w-4 text-white" />
-                </div>
-                <div className="hidden sm:block text-left">
-                  <div className="text-sm font-medium text-slate-700">{user?.fullname || 'Admin User'}</div>
+                </div>                <div className="hidden sm:block text-left">
+                  <div className="text-sm font-medium text-slate-700">{user?.username || 'admin'}</div>
                   <div className="text-xs text-slate-500">Quản trị viên</div>
                 </div>
               </div>
@@ -158,9 +157,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <div className="border-t border-slate-200 p-4">            <div className="flex items-center space-x-3 mb-3 p-2 rounded-lg bg-slate-50">
               <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
                 <UserIcon className="h-5 w-5 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-slate-700 truncate">{user?.fullname || 'Admin User'}</div>
+              </div>              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-slate-700 truncate">{user?.username || 'admin'}</div>
                 <div className="text-xs text-slate-500 truncate">{user?.email || 'admin@dnatest.com'}</div>
               </div>
             </div>
