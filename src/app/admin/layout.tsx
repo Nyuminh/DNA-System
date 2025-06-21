@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   UserIcon, 
@@ -20,6 +21,30 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const [userEmail, setUserEmail] = useState<string>('');
+
+  // Fetch user email if not available in AuthContext
+  useEffect(() => {
+    const fetchUserEmail = async () => {
+      if (!user?.email || user.email === 'admin@dnatest.com') {
+        try {
+          const { adminProfileAPI } = await import('@/lib/api/admin');
+          const result = await adminProfileAPI.getProfile();
+          if (result.success && result.profile?.email) {
+            setUserEmail(result.profile.email);
+          }
+        } catch (error) {
+          console.error('Error fetching user email:', error);
+        }
+      } else {
+        setUserEmail(user.email);
+      }
+    };
+
+    fetchUserEmail();
+  }, [user]);
+
+  const displayEmail = userEmail || user?.email || 'admin@dnatest.com';
 
   const isActive = (path: string) => {
     if (path === "/admin" && pathname === "/admin") return true;
@@ -116,6 +141,19 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 Trang chủ
               </Link>
 
+              {/* Profile Management - Moved up */}
+              <Link
+                href="/admin/profile"
+                className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  isActive("/admin/profile")
+                    ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                <UserIcon className="mr-3 h-5 w-5" />
+                Hồ sơ cá nhân
+              </Link>
+
               {/* Dashboard */}
               <Link
                 href="/admin"
@@ -138,17 +176,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               >
                 <UsersIcon className="mr-3 h-5 w-5" />
                 Quản lý tài khoản
-              </Link>              {/* Profile Management */}
-              <Link
-                href="/admin/profile"
-                className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
-                  isActive("/admin/profile")
-                    ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                }`}
-              >
-                <UserIcon className="mr-3 h-5 w-5" />
-                Hồ sơ cá nhân
               </Link>
             </div>
           </nav>
@@ -159,7 +186,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 <UserIcon className="h-5 w-5 text-white" />
               </div>              <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-slate-700 truncate">{user?.username || 'admin'}</div>
-                <div className="text-xs text-slate-500 truncate">{user?.email || 'admin@dnatest.com'}</div>
+                <div className="text-xs text-slate-500 truncate">{displayEmail}</div>
               </div>
             </div>
             

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   UserIcon, 
@@ -22,6 +23,30 @@ export default function ManagerLayout({ children }: ManagerLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const [userEmail, setUserEmail] = useState<string>('');
+
+  // Fetch user email if not available in AuthContext
+  useEffect(() => {
+    const fetchUserEmail = async () => {
+      if (!user?.email || user.email === 'manager@dnatest.com') {
+        try {
+          const { adminProfileAPI } = await import('@/lib/api/admin');
+          const result = await adminProfileAPI.getProfile();
+          if (result.success && result.profile?.email) {
+            setUserEmail(result.profile.email);
+          }
+        } catch (error) {
+          console.error('Error fetching user email:', error);
+        }
+      } else {
+        setUserEmail(user.email);
+      }
+    };
+
+    fetchUserEmail();
+  }, [user]);
+
+  const displayEmail = userEmail || user?.email || 'manager@dnatest.com';
 
   const isActive = (path: string) => {
     if (path === "/manager" && pathname === "/manager") return true;
@@ -115,14 +140,26 @@ export default function ManagerLayout({ children }: ManagerLayoutProps) {
         {/* Enhanced Sidebar */}
         <div className="w-64 bg-white shadow-lg border-r border-slate-200 h-screen sticky top-0 flex flex-col">
           <nav className="flex-1 mt-6 px-4">
-            <div className="space-y-1">
-              {/* Home Page Link */}
+            <div className="space-y-1">              {/* Home Page Link */}
               <Link
                 href="/"
                 className="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               >
                 <HomeIcon className="mr-3 h-5 w-5" />
                 Trang chủ
+              </Link>
+
+              {/* Profile Management - Moved up */}
+              <Link
+                href="/manager/profile"
+                className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  isActive("/manager/profile")
+                    ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                <UserIcon className="mr-3 h-5 w-5" />
+                Hồ sơ cá nhân
               </Link>
 
               {/* Dashboard */}
@@ -225,19 +262,7 @@ export default function ManagerLayout({ children }: ManagerLayoutProps) {
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 }`}
               >
-                <BellIcon className="mr-3 h-5 w-5" />
-                Thông báo
-              </Link>              {/* Profile Management */}
-              <Link
-                href="/manager/profile"
-                className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
-                  isActive("/manager/profile")
-                    ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                }`}
-              >
-                <UserIcon className="mr-3 h-5 w-5" />
-                Hồ sơ cá nhân
+                <BellIcon className="mr-3 h-5 w-5" />                Thông báo
               </Link>
             </div>
           </nav>
@@ -247,10 +272,9 @@ export default function ManagerLayout({ children }: ManagerLayoutProps) {
             <div className="flex items-center space-x-3 mb-3 p-2 rounded-lg bg-slate-50">
               <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-md">
                 <UserIcon className="h-5 w-5 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
+              </div>              <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-slate-700 truncate">{user?.username || 'manager'}</div>
-                <div className="text-xs text-slate-500 truncate">{user?.email || 'manager@dnatest.com'}</div>
+                <div className="text-xs text-slate-500 truncate">{displayEmail}</div>
               </div>
             </div>
             
