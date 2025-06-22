@@ -3,9 +3,17 @@
   "/auth/login/page": "app/auth/login/page.js",
   "/admin/page": "app/admin/page.js",
   "/admin/dashboard/page": "app/admin/dashboard/page.js",
-  "/admin/profile/page": "app/admin/profile/page.js",
-  "/admin/accounts/page": "app/admin/accounts/page.js",
-  "/favicon.ico/route": "app/favicon.ico/route.js",
   "/manager/page": "app/manager/page.js",
-  "/manager/profile/page": "app/manager/profile/page.js"
+  "/manager/profile/page": "app/manager/profile/page.js",
+  "/my-tests/page": "app/my-tests/page.js",
+  "/my-tests/[id]/page": "app/my-tests/[id]/page.js",
+  "/services/page": "app/services/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/staff/page": "app/staff/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/staff/profile/page": "app/staff/profile/page.js",
+  "/staff/pending-results/page": "app/staff/pending-results/page.js",
+  "/staff/completed-results/page": "app/staff/completed-results/page.js",
+  "/staff/kits/page": "app/staff/kits/page.js",
+  "/staff/test-results/page": "app/staff/test-results/page.js"
 }

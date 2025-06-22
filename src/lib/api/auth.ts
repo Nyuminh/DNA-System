@@ -410,12 +410,15 @@ export const getRedirectPath = (roleID: string): string => {
     case 'R01':
     case 'Admin':
       return '/admin';
-    case 'R03':
-    case 'Customer':
-      return '/';
-    case 'R04':
+    case 'R02':
     case 'Manager':
       return '/manager';
+    case 'R03':
+    case 'Staff':
+      return '/staff';
+    case 'R04':
+    case 'Customer':
+      return '/';
     default:
       return '/';
   }
@@ -537,10 +540,12 @@ export const getRoleName = (roleID: string): string => {
   switch (roleID) {
     case 'R01':
       return 'Admin';
-    case 'R03':
-      return 'Customer';
-    case 'R04':
+    case 'R02':
       return 'Manager';
+    case 'R03':
+      return 'Staff';
+    case 'R04':
+      return 'Customer';
     default:
       return roleID; // Trả về roleID gốc nếu không khớp
   }
@@ -856,7 +861,7 @@ export const registerUser = async (registerData: RegisterRequest): Promise<Regis
       formData.append('email', registerData.email);
       formData.append('phone', registerData.phone);
       formData.append('birthdate', registerData.birthdate);
-      formData.append('address', registerData.address);      formData.append('roleID', 'R03'); // R03 - Customer role
+      formData.append('address', registerData.address);      formData.append('roleID', 'R04'); // R04 - Customer role
       formData.append('image', registerData.image);
 
       const response = await apiClient.post('/api/Auth/register', formData, {
@@ -877,7 +882,7 @@ export const registerUser = async (registerData: RegisterRequest): Promise<Regis
         phone: registerData.phone,
         birthdate: registerData.birthdate,
         address: registerData.address,
-        roleID: 'R03', // R03 - Customer role
+        roleID: 'R04', // R04 - Customer role
         image: null
       };
 

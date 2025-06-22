@@ -20,8 +20,7 @@ export default function LoginPage() {
   const [loginSuccess, setLoginSuccess] = useState<string>('');
   const router = useRouter();
   const { login, isLoggedIn, isLoading, user } = useAuth();
-  
-  // Redirect nếu user đã đăng nhập
+    // Redirect nếu user đã đăng nhập
   useEffect(() => {
     if (!isLoading && isLoggedIn && user) {
       console.log('User already logged in, redirecting...', user);
@@ -30,6 +29,8 @@ export default function LoginPage() {
         router.push('/admin');
       } else if (user.roleID === 'Manager') {
         router.push('/manager');
+      } else if (user.roleID === 'Staff') {
+        router.push('/staff');
       } else {
         router.push('/');
       }

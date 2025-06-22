@@ -14,6 +14,7 @@ interface AuthContextType {
   isAdmin: () => boolean;
   isManager: () => boolean;
   isCustomer: () => boolean;
+  isStaff: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -78,11 +79,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('userData');
     localStorage.removeItem('authToken');
     console.log('AuthContext logout - all data cleared');
-  };
-  // Helper functions để kiểm tra quyền
+  };  // Helper functions để kiểm tra quyền
   const isAdmin = () => user?.roleID === 'Admin';
   const isManager = () => user?.roleID === 'Manager';
   const isCustomer = () => user?.roleID === 'Customer';
+  const isStaff = () => user?.roleID === 'Staff';
 
   const value = {
     user,
@@ -94,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAdmin,
     isManager,
     isCustomer,
+    isStaff,
   };
 
   return (
