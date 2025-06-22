@@ -12,70 +12,102 @@ import {
 } from '@heroicons/react/24/outline';
 
 interface User {
-  id: string;
-  name: string;
+  userID: string;
+  username: string;
+  password: string;
+  fullname: string;
+  gender: "Nam" | "Nữ" | "Khác";
+  roleID: string;
   email: string;
-  role: "admin" | "manager" | "user";
+  phone: string;
+  birthdate: string;
+  image: string;
+  address: string;
   status: "active" | "inactive" | "suspended";
   createdAt: string;
-  lastLogin: string;
+  lastLogin?: string;
 }
 
-export default function AccountsPage() {
-  const [users, setUsers] = useState<User[]>([
+export default function AccountsPage() {  const [users, setUsers] = useState<User[]>([
     {
-      id: "1",
-      name: "Nguyễn Văn A",
+      userID: "U001",
+      username: "nguyenvana",
+      password: "********",
+      fullname: "Nguyễn Văn A",
+      gender: "Nam",
+      roleID: "R002",
       email: "nguyenvana@example.com",
-      role: "manager",
+      phone: "0901234567",
+      birthdate: "1990-05-15",
+      image: "/images/customer-1.jpg",
+      address: "123 Đường ABC, Quận 1, TP.HCM",
       status: "active",
       createdAt: "2025-01-15",
       lastLogin: "2025-06-08"
     },
     {
-      id: "2",
-      name: "Trần Thị B",
+      userID: "U002",
+      username: "tranthib",
+      password: "********",
+      fullname: "Trần Thị B",
+      gender: "Nữ",
+      roleID: "R003",
       email: "tranthib@example.com",
-      role: "user",
+      phone: "0987654321",
+      birthdate: "1992-08-20",
+      image: "/images/customer-2.jpg",
+      address: "456 Đường XYZ, Quận 2, TP.HCM",
       status: "active",
       createdAt: "2025-02-20",
       lastLogin: "2025-06-07"
     },
     {
-      id: "3",
-      name: "Huyn Duc Khanh",
+      userID: "U003",
+      username: "khanhhd",
+      password: "********",
+      fullname: "Huỳnh Đức Khanh",
+      gender: "Nam",
+      roleID: "R003",
       email: "KhanhHDSE@fpt.edu.vn",
-      role: "user",
+      phone: "0912345678",
+      birthdate: "1995-03-10",
+      image: "/images/customer-3.jpg",
+      address: "789 Đường DEF, Quận 3, TP.HCM",
       status: "suspended",
       createdAt: "2025-03-10",
       lastLogin: "2025-06-05"
     },
     {
-      id: "4",
-      name: "Phạm Thị D",
+      userID: "U004",
+      username: "phamthid",
+      password: "********",
+      fullname: "Phạm Thị D",
+      gender: "Nữ",
+      roleID: "R001",
       email: "phamthid@example.com",
-      role: "admin",
+      phone: "0923456789",
+      birthdate: "1988-12-01",
+      image: "/images/customer-1.jpg",
+      address: "321 Đường GHI, Quận 4, TP.HCM",
       status: "active",
       createdAt: "2025-01-01",
       lastLogin: "2025-06-08"
     },
     {
-      id: "5",
-      name: "Hoàng Văn E",
+      userID: "U005",
+      username: "hoangvane",
+      password: "********",
+      fullname: "Hoàng Văn E",
+      gender: "Nam",
+      roleID: "R003",
       email: "hoangvane@example.com",
-      role: "user",
+      phone: "0934567890",
+      birthdate: "1993-07-15",
+      image: "/images/customer-2.jpg",
+      address: "654 Đường JKL, Quận 5, TP.HCM",
       status: "inactive",
       createdAt: "2025-04-15",
       lastLogin: "2025-05-20"
-    },
-    {
-      id: "4",
-      name: "Phạm Thị D",
-      email: "phamthid@example.com",
-      role: "user",
-      status: "active",
-      createdAt: "2025-04-12",
-      lastLogin: "2025-06-06"
     }
   ]);
 
@@ -97,15 +129,15 @@ export default function AccountsPage() {
       </span>
     );
   };
-
-  const getRoleBadge = (role: string) => {
+  const getRoleBadge = (roleID: string) => {
     const roleConfig = {
-      admin: { color: "bg-purple-100 text-purple-800", text: "Quản trị viên" },
-      manager: { color: "bg-blue-100 text-blue-800", text: "Quản lý" },
-      user: { color: "bg-gray-100 text-gray-800", text: "Người dùng" }
+      "R001": { color: "bg-purple-100 text-purple-800", text: "Quản trị viên" },
+      "R002": { color: "bg-blue-100 text-blue-800", text: "Quản lý" },
+      "R003": { color: "bg-gray-100 text-gray-800", text: "Người dùng" }
     };
     
-    const config = roleConfig[role as keyof typeof roleConfig];
+    const config = roleConfig[roleID as keyof typeof roleConfig] || 
+                  { color: "bg-gray-100 text-gray-800", text: "Không xác định" };
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}>
         {config.text}
@@ -116,7 +148,7 @@ export default function AccountsPage() {
   const toggleUserStatus = (user: User) => {
     setUsers(prevUsers =>
       prevUsers.map(u =>
-        u.id === user.id
+        u.userID === user.userID
           ? { ...u, status: u.status === "active" ? "suspended" : "active" as const }
           : u
       )
@@ -124,18 +156,19 @@ export default function AccountsPage() {
   };
 
   const viewUserDetails = (user: User) => {
-    alert(`Xem chi tiết người dùng: ${user.name}`);
+    alert(`Xem chi tiết người dùng: ${user.fullname}`);
   };
 
   const editUser = (user: User) => {
-    alert(`Chỉnh sửa người dùng: ${user.name}`);
+    alert(`Chỉnh sửa người dùng: ${user.fullname}`);
   };
 
   // Filter users based on search and filters
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = !filterRole || user.role === filterRole;
+    const matchesSearch = user.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.username.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = !filterRole || user.roleID === filterRole;
     const matchesStatus = !filterStatus || user.status === filterStatus;
     
     return matchesSearch && matchesRole && matchesStatus;
@@ -210,16 +243,15 @@ export default function AccountsPage() {
               className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/50 backdrop-blur-sm text-sm"
             />
           </div>
-          <div className="flex gap-3">
-            <select
+          <div className="flex gap-3">            <select
               value={filterRole}
               onChange={(e) => setFilterRole(e.target.value)}
               className="px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/50 backdrop-blur-sm text-sm"
             >
               <option value="">Tất cả vai trò</option>
-              <option value="admin">Quản trị viên</option>
-              <option value="manager">Quản lý</option>
-              <option value="user">Người dùng</option>
+              <option value="R001">Quản trị viên</option>
+              <option value="R002">Quản lý</option>
+              <option value="R003">Người dùng</option>
             </select>
             <select
               value={filterStatus}
@@ -246,19 +278,34 @@ export default function AccountsPage() {
             <thead className="bg-gradient-to-r from-gray-50/80 to-gray-100/80 backdrop-blur-sm">
               <tr>
                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Người dùng
+                  ID
+                </th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Tên đăng nhập
+                </th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Họ tên
+                </th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Giới tính
                 </th>
                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Vai trò
                 </th>
                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Email
+                </th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Số điện thoại
+                </th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Ngày sinh
+                </th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Địa chỉ
+                </th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Trạng thái
-                </th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Ngày tạo
-                </th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Đăng nhập cuối
                 </th>
                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Thao tác
@@ -267,30 +314,58 @@ export default function AccountsPage() {
             </thead>
             <tbody className="bg-white/30 divide-y divide-gray-200/30">
               {filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-white/50 transition-colors duration-150">
+                <tr key={user.userID} className="hover:bg-white/50 transition-colors duration-150">
+                  <td className="px-5 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {user.userID}
+                  </td>
                   <td className="px-5 py-3 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 h-8 w-8">
-                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                          <UserIcon className="h-4 w-4 text-gray-500" />
-                        </div>
+                      <div className="flex-shrink-0 h-8 w-8">                        <img 
+                          className="h-8 w-8 rounded-full object-cover" 
+                          src={user.image || "/images/customer-1.jpg"} 
+                          alt={user.fullname}
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "/images/customer-1.jpg";
+                          }}
+                        />
                       </div>
                       <div className="ml-3">
-                        <div className="text-sm font-medium text-gray-900">{user.name}</div>                        <div className="text-xs text-gray-500">{user.email}</div>
+                        <div className="text-sm font-medium text-gray-900">{user.username}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-5 py-3 whitespace-nowrap">
-                    {getRoleBadge(user.role)}
+                    <div className="text-sm font-medium text-gray-900">{user.fullname}</div>
+                  </td>
+                  <td className="px-5 py-3 whitespace-nowrap">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      user.gender === "Nam" ? "bg-blue-100 text-blue-800" : 
+                      user.gender === "Nữ" ? "bg-pink-100 text-pink-800" : 
+                      "bg-gray-100 text-gray-800"
+                    }`}>
+                      {user.gender}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3 whitespace-nowrap">
+                    {getRoleBadge(user.roleID)}
+                  </td>
+                  <td className="px-5 py-3 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{user.email}</div>
+                  </td>
+                  <td className="px-5 py-3 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{user.phone}</div>
+                  </td>
+                  <td className="px-5 py-3 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(user.birthdate).toLocaleDateString('vi-VN')}
+                  </td>
+                  <td className="px-5 py-3">
+                    <div className="text-sm text-gray-900 max-w-xs truncate" title={user.address}>
+                      {user.address}
+                    </div>
                   </td>
                   <td className="px-5 py-3 whitespace-nowrap">
                     {getStatusBadge(user.status)}
-                  </td>
-                  <td className="px-5 py-3 whitespace-nowrap text-xs text-gray-500">
-                    {new Date(user.createdAt).toLocaleDateString('vi-VN')}
-                  </td>
-                  <td className="px-5 py-3 whitespace-nowrap text-xs text-gray-500">
-                    {new Date(user.lastLogin).toLocaleDateString('vi-VN')}
                   </td>
                   <td className="px-5 py-3 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center space-x-1">
@@ -307,7 +382,8 @@ export default function AccountsPage() {
                       <button
                         onClick={() => editUser(user)}
                         className="text-yellow-600 hover:text-yellow-900 p-1.5 rounded-lg hover:bg-yellow-50 transition-all duration-150 group relative"
-                        title="Chỉnh sửa"                      >
+                        title="Chỉnh sửa"
+                      >
                         <PencilIcon className="h-4 w-4" />
                         <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs rounded-md py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
                           Chỉnh sửa
@@ -337,7 +413,8 @@ export default function AccountsPage() {
               ))}
             </tbody>
           </table>
-        </div>        {filteredUsers.length === 0 && (
+        </div>
+        {filteredUsers.length === 0 && (
           <div className="text-center py-8">
             <UserIcon className="mx-auto h-10 w-10 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">Không tìm thấy người dùng</h3>
