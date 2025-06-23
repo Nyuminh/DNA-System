@@ -82,3 +82,31 @@ export const deleteServiceById = async (id: string): Promise<{ success: boolean;
     };
   }
 };
+export const createService = async (
+  service: Service
+): Promise<{ success: boolean; service?: Service; message?: string }> => {
+  try {
+    const response = await apiClient.post('/api/Services', service);
+
+    if (response.status >= 200 && response.status < 300) {
+      return {
+        success: true,
+        service: response.data, // <-- trả về service mới tạo
+        message: 'Tạo dịch vụ thành công',
+      };
+    }
+
+    return {
+      success: false,
+      message: 'Không thể tạo dịch vụ',
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      message:
+        error?.response?.data?.message ||
+        error?.message ||
+        'Có lỗi xảy ra khi tạo dịch vụ',
+    };
+  }
+};

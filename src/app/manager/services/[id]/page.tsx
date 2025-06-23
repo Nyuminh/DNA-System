@@ -25,7 +25,6 @@ interface Service {
   category: string;
   bookings: number;
   rating: number;
-  createdAt: string;
   duration: string;
   requirements: string[];
   benefits: string[];
@@ -33,6 +32,7 @@ interface Service {
   sampleTypes: string[];
   turnaroundTime: string;
   accuracy: string;
+  image?: string; // Thêm thuộc tính hình ảnh
 }
 
 interface Booking {
@@ -107,6 +107,9 @@ export default function ServiceDetailPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editData, setEditData] = useState<Service | null>(null);
+  const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchServiceDetails = async () => {
@@ -146,7 +149,6 @@ export default function ServiceDetailPage() {
           category: serviceData.category || serviceData.type || 'Khác',
           bookings: Number.parseInt(String(serviceData.bookings || serviceData.bookingCount || '0'), 10) || 0,
           rating: Number.parseFloat(String(serviceData.rating || serviceData.averageRating || '0')) || 0,
-          createdAt: serviceData.createdAt || new Date().toISOString(),
           duration: serviceData.duration || serviceData.turnaroundTime || '5-7 ngày làm việc',
           requirements: ensureArray(serviceData.requirements || [
             "Giấy tờ tùy thân có ảnh",
@@ -173,7 +175,8 @@ export default function ServiceDetailPage() {
             "Móng tay/chân"
           ]),
           turnaroundTime: serviceData.turnaroundTime || '5-7 ngày làm việc',
-          accuracy: serviceData.accuracy || '99.99%'
+          accuracy: serviceData.accuracy || '99.99%',
+          image: serviceData.image || serviceData.imageUrl || '', // Lấy ảnh từ API
         };
 
         setService(formattedService);
@@ -245,6 +248,22 @@ export default function ServiceDetailPage() {
     fetchServiceDetails();
   }, [serviceId]);
 
+  // Lấy danh mục khi mở form chỉnh sửa
+  useEffect(() => {
+  if (showEditForm) {
+    axios.get("http://localhost:5198/api/Services/categories")
+    
+      .then(res => {
+        let data = res.data;
+        // Nếu có $values thì lấy ra
+        if (data && data.$values) data = data.$values;
+        setCategories(Array.isArray(data) ? data.map((c: any) => c.name || c) : []);
+      })
+      .catch((err) => {
+        setCategories(["Hành chính", "Pháp lý", "Y tế", "Khác"]);
+      });
+  }
+}, [showEditForm]);
   const handleDeleteService = async () => {
     if (confirm('Bạn có chắc chắn muốn xóa dịch vụ này? Hành động này không thể hoàn tác.')) {
       try {
@@ -267,7 +286,7 @@ export default function ServiceDetailPage() {
         alert('Dịch vụ đã được xóa thành công!');
         
         // Redirect to services list
-        window.location.href = '/manager/service-list';
+        window.location.href = '/manager/services';
       } catch (error) {
         console.error('Error deleting service:', error);
         
@@ -282,6 +301,44 @@ export default function ServiceDetailPage() {
         } else {
           alert(`Không thể xóa dịch vụ: ${ 'Lỗi không xác định'}`);
         }
+      }
+    }
+  };
+
+  const handleEditClick = () => {
+    setEditData(service);
+    setShowEditForm(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editData) return;
+    try {
+      // Lấy token từ localStorage
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert("Bạn cần đăng nhập để thực hiện chức năng này.");
+        return;
+      }
+      // Gọi API cập nhật dịch vụ với header Authorization
+      await axios.put(
+        `http://localhost:5198/api/Services/${serviceId}`,
+        editData,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      setService(editData);
+      setShowEditForm(false);
+      alert("Cập nhật dịch vụ thành công!");
+    } catch (err: any) {
+      if (axios.isAxiosError(err) && err.response?.status === 401) {
+        alert("Bạn không có quyền cập nhật. Vui lòng đăng nhập lại.");
+      } else {
+        alert("Cập nhật thất bại!");
       }
     }
   };
@@ -301,20 +358,7 @@ export default function ServiceDetailPage() {
     }
   };
 
-  const getBookingStatusText = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'Hoàn thành';
-      case 'confirmed':
-        return 'Đã xác nhận';
-      case 'pending':
-        return 'Chờ xử lý';
-      case 'cancelled':
-        return 'Đã hủy';
-      default:
-        return 'Không xác định';
-    }
-  };
+ 
 
   if (loading) {
     return (
@@ -366,7 +410,7 @@ export default function ServiceDetailPage() {
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
               <Link 
-                href="/manager/service-list"
+                href="/manager/services"
                 className="mr-4 p-2 text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <ArrowLeftIcon className="h-6 w-6" />
@@ -380,13 +424,13 @@ export default function ServiceDetailPage() {
               </div>
             </div>
             <div className="flex space-x-3">
-              <Link
-                href={`/manager/services/edit/${service.id}`}
+              <button
+                onClick={handleEditClick}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 <PencilIcon className="h-4 w-4 mr-2" />
                 Chỉnh sửa
-              </Link>
+              </button>
               <button
                 onClick={handleDeleteService}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
@@ -413,6 +457,16 @@ export default function ServiceDetailPage() {
               </div>
               <p className="text-gray-600 mb-4">{service.description}</p>
             </div>
+            {/* Hiển thị hình ảnh dịch vụ nếu có */}
+            {service.image && (
+              <div className="ml-6">
+                <img
+                  src={service.image}
+                  alt={service.name}
+                  className="w-40 h-40 object-cover rounded-lg shadow"
+                />
+              </div>
+            )}
             <div className="ml-6 text-right">
               <div className="text-3xl font-bold text-blue-600 mb-2">
                 {service?.price !== undefined 
@@ -429,7 +483,7 @@ export default function ServiceDetailPage() {
           </div>
 
           {/* Key Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-blue-50 rounded-lg p-4">
               <div className="flex items-center">
                 <ClockIcon className="h-5 w-5 text-blue-600 mr-2" />
@@ -445,28 +499,6 @@ export default function ServiceDetailPage() {
                 <div>
                   <p className="text-sm font-medium text-gray-900">Độ chính xác</p>
                   <p className="text-sm text-gray-600">{service.accuracy}</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-purple-50 rounded-lg p-4">
-              <div className="flex items-center">
-                <UserGroupIcon className="h-5 w-5 text-purple-600 mr-2" />
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Đã đặt</p>
-                  <p className="text-sm text-gray-600">{service.bookings} lượt</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-yellow-50 rounded-lg p-4">
-              <div className="flex items-center">
-                <CalendarIcon className="h-5 w-5 text-yellow-600 mr-2" />
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Ngày tạo</p>
-                  <p className="text-sm text-gray-600">
-                    {service.createdAt 
-                      ? new Date(service.createdAt).toLocaleDateString('vi-VN')
-                      : new Date().toLocaleDateString('vi-VN')}
-                  </p>
                 </div>
               </div>
             </div>
@@ -608,11 +640,7 @@ export default function ServiceDetailPage() {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {new Date(booking.bookingDate).toLocaleDateString('vi-VN')}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getBookingStatusColor(booking.status)}`}>
-                              {getBookingStatusText(booking.status)}
-                            </span>
-                          </td>
+                          
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {booking.totalAmount.toLocaleString()} VNĐ
                           </td>
@@ -666,6 +694,132 @@ export default function ServiceDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Form chỉnh sửa dịch vụ dạng popup/modal */}
+      {showEditForm && editData && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <form
+            onSubmit={handleEditSubmit}
+            className="bg-white p-8 rounded-lg shadow-lg max-w-xl w-full space-y-6 relative"
+          >
+            <button
+              type="button"
+              onClick={() => setShowEditForm(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl"
+            >
+              ×
+            </button>
+            <h2 className="text-2xl font-bold mb-4">Chỉnh sửa Dịch vụ</h2>
+            {/* Tên dịch vụ */}
+            <div>
+              <label className="block text-sm font-medium mb-1">Tên dịch vụ</label>
+              <input
+                type="text"
+                className="w-full border rounded px-3 py-2"
+                value={editData.name}
+                onChange={e => setEditData({ ...editData, name: e.target.value })}
+                required
+              />
+            </div>
+            {/* Mô tả */}
+            <div>
+              <label className="block text-sm font-medium mb-1">Mô tả</label>
+              <textarea
+                className="w-full border rounded px-3 py-2"
+                value={editData.description}
+                onChange={e => setEditData({ ...editData, description: e.target.value })}
+                required
+              />
+            </div>
+            {/* Giá và Danh mục */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Giá (VNĐ)</label>
+                <input
+                  type="number"
+                  className="w-full border rounded px-3 py-2"
+                  value={editData.price}
+                  onChange={e => setEditData({ ...editData, price: Number(e.target.value) })}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Danh mục</label>
+                <select
+                  className="w-full border rounded px-3 py-2"
+                  value={editData.category}
+                  onChange={e => setEditData({ ...editData, category: e.target.value })}
+                >
+                  {categories.length > 0 ? (
+                    categories.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="Hành chính">Hành chính</option>
+                      <option value="Pháp lý">Pháp lý</option>
+                      <option value="Y tế">Y tế</option>
+                      <option value="Khác">Khác</option>
+                    </>
+                  )}
+                </select>
+              </div>
+            </div>
+            {/* Ảnh dịch vụ */}
+            <div>
+              <label className="block text-sm font-medium mb-1">Ảnh dịch vụ</label>
+              <div className="border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center">
+                {editData.image && (
+                  <div className="mb-2 text-green-600 font-medium">
+                    {typeof editData.image === "string" && editData.image.startsWith("data:")
+                      ? "Đã chọn ảnh mới"
+                      : editData.image.split("/").pop()}
+                  </div>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  id="service-image-upload"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      // Đọc file thành base64 để preview hoặc gửi lên API
+                      const reader = new FileReader();
+                      reader.onload = (ev) => {
+                        setEditData({ ...editData, image: ev.target?.result as string });
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                />
+                <label
+                  htmlFor="service-image-upload"
+                  className="text-blue-600 cursor-pointer underline"
+                >
+                  Chọn ảnh
+                </label>
+              </div>
+            </div>
+            {/* Nút hành động */}
+            <div className="flex justify-end space-x-2">
+              <button
+                type="button"
+                onClick={() => setShowEditForm(false)}
+                className="px-4 py-2 rounded bg-gray-200 text-gray-700"
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 rounded bg-blue-600 text-white"
+              >
+                Cập nhật
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

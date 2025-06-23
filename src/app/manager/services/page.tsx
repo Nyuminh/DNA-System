@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   PlusIcon, 
   MagnifyingGlassIcon,
@@ -10,6 +10,10 @@ import {
   TrashIcon,
   XMarkIcon
 } from "@heroicons/react/24/outline";
+import axios from "axios";
+import Link from "next/link";
+import { deleteServiceById } from "@/lib/api/services"; // Import the deleteService function
+import { createService } from "@/lib/api/services"; // Import the createService function
 
 interface Service {
   id: string;
@@ -24,119 +28,158 @@ interface Service {
   status: "active" | "inactive";
   createdAt: string;
   updatedAt: string;
+  image?: string; // Add this line to allow 'image' property
 }
 
 type ModalType = 'create' | 'edit' | 'view' | 'delete' | null;
 
 export default function ServicesManagement() {
-  const [services, setServices] = useState<Service[]>([
-    {
-      id: "1",
-      name: "Xét nghiệm ADN Hành chính",
-      description: "Xét nghiệm ADN xác định quan hệ huyết thống phục vụ các thủ tục hành chính",
-      price: 4500000,
-      duration: "5-7 ngày",
-      sampleTypes: ["Tóc", "Nước bọt", "Máu"],
-      accuracy: "99,99%",
-      features: ["Kết quả nhanh", "Không cần giấy tờ pháp lý", "Bảo mật cao"],
-      category: 'paternity',
-      status: "active",
-      createdAt: "2024-01-15",
-      updatedAt: "2024-01-20"
-    },
-    {
-      id: "2", 
-      name: "Xét nghiệm ADN Tư pháp",
-      description: "Xét nghiệm ADN có giá trị pháp lý, được công nhận bởi tòa án",
-      price: 6000000,
-      duration: "7-10 ngày",
-      sampleTypes: ["Máu", "Nước bọt"],
-      accuracy: "99,99%",
-      features: ["Giá trị pháp lý", "Chứng nhận quốc tế", "Quy trình nghiêm ngặt"],
-      category: 'forensic',
-      status: "active",
-      createdAt: "2024-01-10",
-      updatedAt: "2024-01-25"
-    },
-    {
-      id: "3",
-      name: "Xét nghiệm Nguồn gốc Dòng dõi",
-      description: "Tìm hiểu nguồn gốc dân tộc và dòng dõi gia đình qua ADN",
-      price: 3500000,
-      duration: "10-14 ngày",
-      sampleTypes: ["Nước bọt", "Tóc"],
-      accuracy: "95%+",
-      features: ["Bản đồ nguồn gốc", "Lịch sử di cư", "Kết nối họ hàng"],
-      category: 'ancestry',
-      status: "active",
-      createdAt: "2024-02-01",
-      updatedAt: "2024-02-05"
-    },
-    {
-      id: "4",
-      name: "Xét nghiệm Sức khỏe Cá nhân",
-      description: "Phân tích ADN để đánh giá nguy cơ bệnh tật và đặc điểm sức khỏe",
-      price: 8000000,
-      duration: "14-21 ngày",
-      sampleTypes: ["Máu", "Nước bọt"],
-      accuracy: "90%+",
-      features: ["Báo cáo chi tiết", "Tư vấn chuyên gia", "Theo dõi sức khỏe"],
-      category: 'health',
-      status: "inactive",
-      createdAt: "2024-01-05",
-      updatedAt: "2024-02-10"
-    }
-  ]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [categoryFilter, setCategoryFilter] = useState<"all" | "paternity" | "forensic" | "ancestry" | "health">("all");
   const [modalType, setModalType] = useState<ModalType>(null);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [formData, setFormData] = useState<Partial<Service>>({});
+  const [categories, setCategories] = useState<{ id: string; name: string; value: string }[]>([]);
+  const [imageFileName, setImageFileName] = useState<string>('');
 
-  // Filter services
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await axios.get("http://localhost:5198/api/Services/categories");
+        let cats: any[] = [];
+        if (res.data && Array.isArray(res.data)) {
+          cats = res.data;
+        } else if (res.data && res.data.$values) {
+          cats = res.data.$values;
+        }
+        setCategories(
+          cats.map((cat: any) => ({
+            id: cat.id?.toString() || cat.value || cat,
+            name: cat.name || cat.label || cat,
+            value: cat.value || cat.id || cat,
+          }))
+        );
+      } catch {
+        setCategories([
+          { id: "paternity", name: "Huyết thống", value: "paternity" },
+          { id: "forensic", name: "Tư pháp", value: "forensic" },
+          { id: "ancestry", name: "Nguồn gốc", value: "ancestry" },
+          { id: "health", name: "Sức khỏe", value: "health" },
+        ]);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  // Fetch services from API
+  useEffect(() => {
+    const fetchServices = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await axios.get("http://localhost:5198/api/Services");
+        let servicesArray = [];
+        if (response.data && typeof response.data === 'object') {
+          if ('$values' in response.data && Array.isArray(response.data.$values)) {
+            servicesArray = response.data.$values;
+          } else if (Array.isArray(response.data)) {
+            servicesArray = response.data;
+          } else {
+            servicesArray = [response.data];
+          }
+        }
+        const formattedServices = servicesArray.map((service: any, index: number) => ({
+          id: service.id?.toString() || service.serviceId?.toString() || "",
+          name: service.name || service.serviceName || 'Không có tên',
+          description: service.description || 'Không có mô tả',
+          price: typeof service.price === 'number'
+            ? service.price
+            : typeof service.price === 'string'
+              ? (parseFloat(service.price.replace(/[^\d.-]/g, '')) || 0)
+              : 0,
+          duration: service.duration || "",
+          sampleTypes: service.sampleTypes || [],
+          accuracy: service.accuracy || "",
+          features: service.features || [],
+          category: service.category || service.type || 'paternity',
+          status: service.status || 'active',
+          createdAt: service.createdAt || new Date().toISOString().split('T')[0],
+          updatedAt: service.updatedAt || new Date().toISOString().split('T')[0]
+        }));
+        setServices(formattedServices);
+      } catch (err) {
+        setError("Không thể tải danh sách dịch vụ");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchServices();
+  }, []);
+
+  // Filter services (dùng categories)
   const filteredServices = services.filter(service => {
-    const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         service.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || service.status === statusFilter;
-    const matchesCategory = categoryFilter === "all" || service.category === categoryFilter;
-    
-    return matchesSearch && matchesStatus && matchesCategory;
+    const name = service.name ?? '';
+    const description = service.description ?? '';
+    const matchesSearch =
+      name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory =
+      categoryFilter === "all" ||
+      service.category === categoryFilter ||
+      service.category === categories.find(c => c.value === categoryFilter)?.name;
+    return matchesSearch && matchesCategory;
   });
 
   // Statistics
   const stats = {
     total: services.length,
-    active: services.filter(s => s.status === 'active').length,
-    inactive: services.filter(s => s.status === 'inactive').length,
-    totalRevenue: services.filter(s => s.status === 'active').reduce((sum, s) => sum + s.price, 0)
+    totalRevenue: services.reduce((sum, s) => sum + s.price, 0)
   };
 
-  const categoryLabels = {
-    paternity: 'Xét nghiệm Huyết thống',
-    forensic: 'Xét nghiệm Tư pháp', 
-    ancestry: 'Nguồn gốc Dòng dõi',
-    health: 'Sức khỏe Cá nhân'
-  };
 
-  const openModal = (type: ModalType, service?: Service) => {
+
+  const openModal = async (type: ModalType, service?: Service) => {
     setModalType(type);
     setSelectedService(service || null);
+
     if (type === 'create') {
       setFormData({
+        id: '',
         name: '',
         description: '',
         price: 0,
-        duration: '',
-        sampleTypes: [],
-        accuracy: '',
-        features: [],
-        category: 'paternity',
-        status: 'active'
+        image: '',
+        category: undefined,
       });
-    } else if (service) {
-      setFormData(service);
+      setImageFileName('');
+    } else if (type === 'edit' && service) {
+      setLoading(true);
+      try {
+        const res = await axios.get(`http://localhost:5198/api/Services/${service.id}`);
+        const data = res.data;
+        setFormData({
+          id: data.id?.toString() || data.serviceId?.toString() || '',
+          name: data.name || data.serviceName || '',
+          description: data.description || '',
+          price: typeof data.price === 'number'
+            ? data.price
+            : typeof data.price === 'string'
+              ? (parseFloat(data.price.replace(/[^\d.-]/g, '')) || 0)
+              : 0,
+          image: data.image || '',
+          category: data.category || data.type || '',
+        });
+        setImageFileName(data.image || '');
+      } catch {
+        alert("Không thể tải dữ liệu dịch vụ để chỉnh sửa!");
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -146,41 +189,84 @@ export default function ServicesManagement() {
     setFormData({});
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // You can implement POST/PUT/DELETE API calls here for real CRUD
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (modalType === 'create') {
-      const newService: Service = {
-        ...formData as Service,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString().split('T')[0],
-        updatedAt: new Date().toISOString().split('T')[0]
+    setError(null);
+    setLoading(true);
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setError("Bạn cần đăng nhập để thực hiện chức năng này.");
+        setLoading(false);
+        return;
+      }
+
+      const payload = {
+        serviceId: formData.id || "",
+        type: formData.category,
+        name: formData.name,
+        price: Number(formData.price) || 0,
+        description: formData.description,
+        image: formData.image || "",
       };
-      setServices([...services, newService]);
-    } else if (modalType === 'edit' && selectedService) {
-      setServices(services.map(s => 
-        s.id === selectedService.id 
-          ? { ...formData as Service, id: selectedService.id, updatedAt: new Date().toISOString().split('T')[0] }
-          : s
-      ));
+
+      if (modalType === 'edit' && formData.id) {
+        // Gọi API PUT để cập nhật dịch vụ
+        await axios.put(
+          `http://localhost:5198/api/Services/${formData.id}`,
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        closeModal();
+        alert("✅ Cập nhật dịch vụ thành công!");
+        window.location.reload();
+      } else {
+        // Gọi API POST để tạo mới dịch vụ
+        await axios.post(
+          "http://localhost:5198/api/Services",
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        closeModal();
+        alert("✅ Thêm dịch vụ thành công!");
+        window.location.reload();
+      }
+    } catch (error: any) {
+      alert(
+        `❌ ${modalType === 'edit' ? 'Cập nhật' : 'Thêm'} dịch vụ thất bại!\n` +
+        (error?.response?.data?.message || error?.message || "Đã xảy ra lỗi không xác định.")
+      );
+    } finally {
+      setLoading(false);
     }
-    
-    closeModal();
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (selectedService) {
-      setServices(services.filter(s => s.id !== selectedService.id));
-      closeModal();
+      try {
+        await deleteServiceById(selectedService.id); 
+        setServices(services.filter(s => s.id !== selectedService.id));
+        closeModal();
+        alert("✅ Xóa dịch vụ thành công!");
+      } catch (error: any) {
+        alert(
+          "Xóa dịch vụ thất bại!\n" +
+          (error?.response?.data?.message || error?.message || "Đã xảy ra lỗi không xác định.")
+        );
+      }
     }
-  };
-
-  const toggleStatus = (id: string) => {
-    setServices(services.map(service => 
-      service.id === id 
-        ? { ...service, status: service.status === 'active' ? 'inactive' : 'active' }
-        : service
-    ));
   };
 
   return (
@@ -193,73 +279,52 @@ export default function ServicesManagement() {
               <h1 className="text-3xl font-bold text-white mb-2">Quản lý Dịch vụ</h1>
               <p className="text-blue-100">Quản lý toàn bộ dịch vụ xét nghiệm ADN</p>
             </div>
-            <button
-              onClick={() => openModal('create')}
-              className="flex items-center px-6 py-3 bg-white text-blue-600 rounded-lg hover:bg-gray-50 transition-all duration-200 shadow-md hover:shadow-lg"
-            >
-              <PlusIcon className="h-5 w-5 mr-2" />
-              Thêm Dịch vụ Mới
-            </button>
+            <div className="flex items-center gap-4">
+              <Link
+                href="/manager"
+                className="flex items-center px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-gray-50 transition-all duration-200 shadow-md hover:shadow-lg"
+              >
+                {/* Home/Dashboard icon */}
+                <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l9-9 9 9M4 10v10a1 1 0 001 1h3m10-11v10a1 1 0 01-1 1h-3m-6 0h6" />
+                </svg>
+                Về Dashboard
+              </Link>
+              <button
+                onClick={() => openModal('create')}
+                className="flex items-center px-6 py-3 bg-white text-blue-600 rounded-lg hover:bg-gray-50 transition-all duration-200 shadow-md hover:shadow-lg"
+              >
+                <PlusIcon className="h-5 w-5 mr-2" />
+                Thêm Dịch vụ Mới
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="container mx-auto px-6 py-8">
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Tổng Dịch vụ</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-              </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-500 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Tổng Dịch vụ</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+            </div>
+            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
             </div>
           </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Đang Hoạt động</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.active}</p>
-              </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
+          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-yellow-500 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Tổng Giá trị</p>
+              <p className="text-2xl font-bold text-gray-900">{(stats.totalRevenue / 1000000).toFixed(1)}M</p>
             </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-red-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Tạm Dừng</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.inactive}</p>
-              </div>
-              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-yellow-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Tổng Giá trị</p>
-                <p className="text-2xl font-bold text-gray-900">{(stats.totalRevenue / 1000000).toFixed(1)}M</p>
-              </div>
-              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                </svg>
-              </div>
+            <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+              <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+              </svg>
             </div>
           </div>
         </div>
@@ -280,26 +345,24 @@ export default function ServicesManagement() {
             
             <div className="flex gap-4">
               <div className="flex items-center gap-2">
-                <FunnelIcon className="h-5 w-5 text-gray-400" />                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "inactive")}
+                <FunnelIcon className="h-5 w-5 text-gray-400" />
+                <select
+                  value={categoryFilter}
+                  onChange={(e) =>
+                    setCategoryFilter(
+                      e.target.value as "all" | "paternity" | "forensic" | "ancestry" | "health"
+                    )
+                  }
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="all">Tất cả trạng thái</option>
-                  <option value="active">Hoạt động</option>
-                  <option value="inactive">Tạm dừng</option>
+                  <option value="all">Tất cả danh mục</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.value}>
+                      {cat.name}
+                    </option>
+                  ))}
                 </select>
-              </div>                <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value as "all" | "paternity" | "forensic" | "ancestry" | "health")}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="all">Tất cả danh mục</option>
-                <option value="paternity">Huyết thống</option>
-                <option value="forensic">Tư pháp</option>
-                <option value="ancestry">Nguồn gốc</option>
-                <option value="health">Sức khỏe</option>
-              </select>
+              </div>
             </div>
           </div>
         </div>
@@ -318,12 +381,6 @@ export default function ServicesManagement() {
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Giá & Thời gian
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Độ chính xác
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Trạng thái
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Thao tác
@@ -352,7 +409,7 @@ export default function ServicesManagement() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                        {categoryLabels[service.category]}
+                        {categories.find(cat => cat.value === service.category)?.name || service.category}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -363,30 +420,14 @@ export default function ServicesManagement() {
                         {service.duration}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {service.accuracy}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button
-                        onClick={() => toggleStatus(service.id)}
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors ${
-                          service.status === 'active' 
-                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                            : 'bg-red-100 text-red-800 hover:bg-red-200'
-                        }`}
-                      >
-                        {service.status === 'active' ? 'Hoạt động' : 'Tạm dừng'}
-                      </button>
-                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
+                      <div className="flex space-x-2 justify-center">
                         <button
-                          onClick={() => openModal('view', service)}
-                          className="text-gray-600 hover:text-gray-900 p-1 rounded hover:bg-gray-100"
+
                         >
-                          <EyeIcon className="h-4 w-4" />
+                          <Link href={`/manager/services/${service.id}`} className="text-blue-600">
+                                <EyeIcon className="w-5 h-5" />
+                          </Link>
                         </button>
                         <button
                           onClick={() => openModal('edit', service)}
@@ -418,7 +459,7 @@ export default function ServicesManagement() {
               <h3 className="text-lg font-semibold text-gray-900">
                 {modalType === 'create' && 'Thêm Dịch vụ Mới'}
                 {modalType === 'edit' && 'Chỉnh sửa Dịch vụ'}
-                {modalType === 'view' && 'Chi tiết Dịch vụ'}
+              
                 {modalType === 'delete' && 'Xác nhận Xóa'}
               </h3>
               <button
@@ -450,47 +491,6 @@ export default function ServicesManagement() {
                     </button>
                   </div>
                 </div>
-              ) : modalType === 'view' ? (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Tên dịch vụ</label>
-                    <p className="text-gray-900">{selectedService?.name}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
-                    <p className="text-gray-900">{selectedService?.description}</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Giá</label>
-                      <p className="text-gray-900">{selectedService?.price.toLocaleString()} VNĐ</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Thời gian</label>
-                      <p className="text-gray-900">{selectedService?.duration}</p>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Loại mẫu</label>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedService?.sampleTypes.map((type, index) => (
-                        <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                          {type}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Tính năng</label>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedService?.features.map((feature, index) => (
-                        <span key={index} className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-                          {feature}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
@@ -498,101 +498,107 @@ export default function ServicesManagement() {
                     <input
                       type="text"
                       value={formData.name || ''}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       required
+                      lang="vi"
+                      autoComplete="off"
+                      autoCorrect="on"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
                     <textarea
                       value={formData.description || ''}
-                      onChange={(e) => setFormData({...formData, description: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       rows={3}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       required
+                      lang="vi"
+                      autoComplete="off"
+                      autoCorrect="on"
                     />
                   </div>
+                  {/* <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Link hình ảnh</label>
+                    <input
+                      type="text"
+                      value={formData.image || ''}
+                      onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                      placeholder="https://example.com/image.jpg"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div> */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Giá (VNĐ)</label>
                       <input
                         type="number"
                         value={formData.price || ''}
-                        onChange={(e) => setFormData({...formData, price: Number(e.target.value)})}
+                        onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Thời gian</label>
-                      <input
-                        type="text"
-                        value={formData.duration || ''}
-                        onChange={(e) => setFormData({...formData, duration: e.target.value})}
-                        placeholder="Ví dụ: 5-7 ngày"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Độ chính xác</label>
-                      <input
-                        type="text"
-                        value={formData.accuracy || ''}
-                        onChange={(e) => setFormData({...formData, accuracy: e.target.value})}
-                        placeholder="Ví dụ: 99,99%"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Danh mục</label>                      <select
-                        value={formData.category || 'paternity'}
-                        onChange={(e) => setFormData({...formData, category: e.target.value as "paternity" | "forensic" | "ancestry" | "health"})}
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Danh mục</label>
+                      <select
+                        value={formData.category || ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            category: e.target.value as "paternity" | "forensic" | "ancestry" | "health",
+                          })
+                        }
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         required
                       >
-                        <option value="paternity">Huyết thống</option>
-                        <option value="forensic">Tư pháp</option>
-                        <option value="ancestry">Nguồn gốc</option>
-                        <option value="health">Sức khỏe</option>
+                        <option value="" disabled hidden>
+                          -- Vui lòng chọn danh mục --
+                        </option>
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.value}>
+                            {cat.name}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Loại mẫu (phân cách bằng dấu phẩy)</label>
-                    <input
-                      type="text"
-                      value={formData.sampleTypes?.join(', ') || ''}
-                      onChange={(e) => setFormData({...formData, sampleTypes: e.target.value.split(', ').filter(s => s.trim())})}
-                      placeholder="Ví dụ: Máu, Nước bọt, Tóc"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Tính năng (phân cách bằng dấu phẩy)</label>
-                    <input
-                      type="text"
-                      value={formData.features?.join(', ') || ''}
-                      onChange={(e) => setFormData({...formData, features: e.target.value.split(', ').filter(s => s.trim())})}
-                      placeholder="Ví dụ: Kết quả nhanh, Bảo mật cao"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>                    <select
-                      value={formData.status || 'active'}
-                      onChange={(e) => setFormData({...formData, status: e.target.value as "active" | "inactive"})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Ảnh dịch vụ</label>
+                    <div
+                      className="w-full px-3 py-6 border-2 border-dashed border-gray-300 rounded-lg text-center cursor-pointer bg-gray-50 hover:bg-gray-100"
+                      onDragOver={e => e.preventDefault()}
+                      onDrop={e => {
+                        e.preventDefault();
+                        const file = e.dataTransfer.files[0];
+                        if (file) {
+                          setImageFileName(file.name);
+                          setFormData({ ...formData, image: file.name });
+                        }
+                      }}
                     >
-                      <option value="active">Hoạt động</option>
-                      <option value="inactive">Tạm dừng</option>
-                    </select>
+                      {imageFileName || formData.image
+                        ? <span className="text-green-600 font-medium">{imageFileName || formData.image}</span>
+                        : <span className="text-gray-400">Kéo & thả ảnh vào đây hoặc click để chọn</span>
+                      }
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={e => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setImageFileName(file.name);
+                            setFormData({ ...formData, image: file.name });
+                          }
+                        }}
+                        id="image-upload"
+                      />
+                      <label htmlFor="image-upload" className="block mt-2 text-blue-600 underline cursor-pointer">
+                        Chọn ảnh
+                      </label>
+                    </div>
                   </div>
                   <div className="flex justify-end space-x-4 pt-4">
                     <button
