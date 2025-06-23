@@ -1,98 +1,103 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import MainLayout from '@/components/layout/MainLayout';
-
-const services = [
-  {
-    id: 'paternity',
-    title: 'Xét nghiệm Huyết thống',
-    description: 'Xét nghiệm ADN để xác định mối quan hệ cha con, mẹ con và các mối quan hệ huyết thống khác.',
-    price: 'Từ 4.000.000 VNĐ',
-    testTypes: [
-      {
-        id: 'father-child',
-        name: 'Xét nghiệm cha con',
-        description: 'Xác định mối quan hệ cha con thông qua ADN, độ chính xác 99.9999%.',
-        price: '4.000.000 VNĐ',
-        duration: '3-5 ngày làm việc',
-      },
-      {
-        id: 'mother-child',
-        name: 'Xét nghiệm mẹ con',
-        description: 'Xác định mối quan hệ mẹ con thông qua ADN, độ chính xác 99.9999%.',
-        price: '4.000.000 VNĐ',
-        duration: '3-5 ngày làm việc',
-      },
-      {
-        id: 'siblings',
-        name: 'Xét nghiệm anh chị em ruột',
-        description: 'Xác định mối quan hệ anh chị em ruột thông qua ADN, độ chính xác 99.9%.',
-        price: '5.500.000 VNĐ',
-        duration: '7-10 ngày làm việc',
-      },
-    ],
-  },
-  {
-    id: 'legal',
-    title: 'Xét nghiệm ADN Hành chính',
-    description: 'Dịch vụ xét nghiệm ADN được công nhận bởi cơ quan pháp lý, sử dụng cho các thủ tục hành chính.',
-    price: 'Từ 5.500.000 VNĐ',
-    testTypes: [
-      {
-        id: 'immigration',
-        name: 'Xét nghiệm ADN cho di trú',
-        description: 'Chứng minh mối quan hệ huyết thống cho mục đích xin visa, quốc tịch, định cư nước ngoài.',
-        price: '6.500.000 VNĐ',
-        duration: '5-7 ngày làm việc',
-      },
-      {
-        id: 'birth-certificate',
-        name: 'Xét nghiệm ADN cho khai sinh',
-        description: 'Xác định mối quan hệ huyết thống cho việc đăng ký khai sinh.',
-        price: '5.500.000 VNĐ',
-        duration: '3-5 ngày làm việc',
-      },
-      {
-        id: 'legal-inheritance',
-        name: 'Xét nghiệm ADN cho thừa kế',
-        description: 'Xác định mối quan hệ huyết thống cho mục đích pháp lý liên quan đến thừa kế.',
-        price: '6.000.000 VNĐ',
-        duration: '3-5 ngày làm việc',
-      },
-    ],
-  },
-  {
-    id: 'private',
-    title: 'Xét nghiệm ADN Dân sự',
-    description: 'Dịch vụ xét nghiệm ADN bảo mật, không yêu cầu cung cấp thông tin cá nhân.',
-    price: 'Từ 3.500.000 VNĐ',
-    testTypes: [
-      {
-        id: 'anonymous-paternity',
-        name: 'Xét nghiệm cha con ẩn danh',
-        description: 'Xác định mối quan hệ cha con thông qua ADN mà không cần cung cấp thông tin cá nhân.',
-        price: '3.500.000 VNĐ',
-        duration: '3-5 ngày làm việc',
-      },
-      
-      {
-        id: 'prenatal',
-        name: 'Xét nghiệm ADN trước sinh không xâm lấn',
-        description: 'Xét nghiệm ADN thai nhi thông qua máu mẹ, không xâm lấn.',
-        price: '15.000.000 VNĐ',
-        duration: '7-12 ngày làm việc',
-      },
-    ],
-  },
-];
+import { getServices, Service } from '@/lib/api/services';
 
 export default function ServicesPage() {
-  const [selectedService, setSelectedService] = useState(services[0]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [servicesByType, setServicesByType] = useState<Record<string, Service[]>>({});
+  const [serviceTypes, setServiceTypes] = useState<string[]>([]);
+  const [selectedType, setSelectedType] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchServices() {
+      try {
+        setLoading(true);
+        console.log('Fetching services...');
+        const response = await getServices();
+        console.log('API response:', response);
+        
+        if (response.success && response.services) {
+          console.log('Raw API Services:', response.services);
+          
+          // Extract services from response
+          let servicesArray = [];
+          
+          // Check if response.services has a $values property that is an array
+          if (response.services && typeof response.services === 'object' && 
+              '$values' in response.services && Array.isArray(response.services.$values)) {
+            servicesArray = response.services.$values;
+            console.log('Extracted services from $values array:', servicesArray);
+          }
+          // Check if response.services itself is an array
+          else if (Array.isArray(response.services)) {
+            servicesArray = response.services;
+            console.log('Using services array directly:', servicesArray);
+          }
+          // Handle case where response.services might be a single service object
+          else if (response.services && typeof response.services === 'object') {
+            servicesArray = [response.services];
+            console.log('Converted single service object to array:', servicesArray);
+          }
+          
+          // Safety check for services array
+          if (!servicesArray.length) {
+            console.warn('Services array is empty after extraction');
+            setError('Không tìm thấy dịch vụ nào');
+            setLoading(false);
+            return;
+          }
+          
+          // Set all services
+          setServices(servicesArray);
+          
+          // Group services by type
+          const groupedByType: Record<string, Service[]> = {};
+          
+          servicesArray.forEach(service => {
+            // Use a default type if none is provided
+            const type = service.type || 'Khác';
+            
+            if (!groupedByType[type]) {
+              groupedByType[type] = [];
+            }
+            
+            groupedByType[type].push(service);
+          });
+          
+          setServicesByType(groupedByType);
+          
+          // Get array of types for navigation
+          const types = Object.keys(groupedByType);
+          setServiceTypes(types);
+          
+          // Set the first type as selected by default
+          if (types.length > 0) {
+            setSelectedType(types[0]);
+          }
+          
+        } else {
+          console.error('API error response:', response);
+          setError(response.message || 'Không thể lấy danh sách dịch vụ');
+        }
+      } catch (err) {
+        console.error('Error fetching services:', err);
+        setError('Có lỗi xảy ra khi tải dịch vụ');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchServices();
+  }, []);
 
   return (
-    <MainLayout>      {/* Hero section */}
+    <MainLayout>
+      {/* Hero section */}
       <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 py-8 sm:py-10 overflow-hidden">
         {/* Background image */}
         <div className="absolute inset-0">
@@ -148,44 +153,12 @@ export default function ServicesPage() {
             <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent mb-4">
               Dịch vụ xét nghiệm ADN
             </h1>
-              <p className="mt-2 text-base leading-6 text-blue-50 max-w-2xl mx-auto">
+            <p className="mt-2 text-base leading-6 text-blue-50 max-w-2xl mx-auto">
               Chúng tôi cung cấp nhiều loại dịch vụ xét nghiệm ADN khác nhau phù hợp với nhu cầu của bạn.
               <span className="block mt-1 text-sm text-blue-100">
                 Tất cả các xét nghiệm đều được thực hiện với độ chính xác cao và bảo mật thông tin tuyệt đối.
               </span>
             </p>
-              {/* Key features */}
-            <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
-                <div className="inline-flex items-center justify-center w-8 h-8 bg-white/20 rounded-lg mb-2">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-sm font-semibold text-white mb-1">Độ chính xác 99.99%</h3>
-                <p className="text-blue-100 text-xs">Công nghệ tiên tiến nhất hiện nay</p>
-              </div>
-              
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
-                <div className="inline-flex items-center justify-center w-8 h-8 bg-white/20 rounded-lg mb-2">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                </div>
-                <h3 className="text-sm font-semibold text-white mb-1">Bảo mật tuyệt đối</h3>
-                <p className="text-blue-100 text-xs">Thông tin được mã hóa và bảo vệ</p>
-              </div>
-              
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
-                <div className="inline-flex items-center justify-center w-8 h-8 bg-white/20 rounded-lg mb-2">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                </div>
-                <h3 className="text-sm font-semibold text-white mb-1">Kết quả nhanh</h3>
-                <p className="text-blue-100 text-xs">Từ 3-5 ngày làm việc</p>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -193,64 +166,104 @@ export default function ServicesPage() {
       {/* Services section */}
       <div className="py-16 sm:py-24">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          {/* Service tabs */}
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-              {services.map((service) => (
-                <button
-                  key={service.id}
-                  onClick={() => setSelectedService(service)}
-                  className={`
-                    whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg
-                    ${
-                      selectedService.id === service.id
-                        ? 'border-blue-600 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }
-                  `}
-                >
-                  {service.title}
-                </button>
-              ))}
-            </nav>
-          </div>
-
-          {/* Service details */}
-          <div className="mt-12">
-            <div className="space-y-8">
-              <div>
-                <h2 className="text-3xl font-bold tracking-tight text-gray-900">{selectedService.title}</h2>
-                <p className="mt-4 text-lg text-gray-500">{selectedService.description}</p>
-                <p className="mt-2 text-lg font-semibold text-gray-700">Giá: {selectedService.price}</p>
-              </div>
-
-              <div className="mt-10">
-                <h3 className="text-xl font-semibold text-gray-900 mb-6">Các loại xét nghiệm:</h3>
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {selectedService.testTypes.map((test) => (
-                    <div key={test.id} className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow">
-                      <div className="px-4 py-5 sm:p-6">
-                        <h4 className="text-lg font-bold text-gray-900">{test.name}</h4>
-                        <p className="mt-2 text-gray-600">{test.description}</p>
-                        <div className="mt-4 text-sm text-gray-500">
-                          <p><span className="font-medium">Giá:</span> {test.price}</p>
-                          <p><span className="font-medium">Thời gian:</span> {test.duration}</p>
-                        </div>
-                        <div className="mt-4">
-                          <Link 
-                            href={`/services/book?type=${test.id}`}
-                            className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500"
-                          >
-                            Đặt dịch vụ
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900 mb-10 text-center">
+            Dịch vụ xét nghiệm
+          </h2>
+          
+          {loading ? (
+            <div className="flex flex-col items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+              <p className="text-gray-600">Đang tải dịch vụ...</p>
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center bg-red-50 p-8 rounded-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <h3 className="text-lg font-medium text-red-800 mb-2">{error}</h3>
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+              >
+                Tải lại trang
+              </button>
+            </div>
+          ) : serviceTypes.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+              </svg>
+              <p className="text-gray-600">Không có dịch vụ nào khả dụng.</p>
+            </div>
+          ) : (
+            <>
+              {/* Service type tabs */}
+              <div className="border-b border-gray-200 mb-8">
+                <div className="overflow-x-auto -mb-px">
+                  <nav className="flex space-x-8 whitespace-nowrap px-4" aria-label="Tabs">
+                    {serviceTypes.map((type) => (
+                      <button
+                        key={type}
+                        onClick={() => setSelectedType(type)}
+                        className={`
+                          py-4 px-1 border-b-2 font-medium text-lg whitespace-nowrap
+                          ${
+                            selectedType === type
+                              ? 'border-blue-600 text-blue-600'
+                              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                          }
+                        `}
+                      >
+                        {type}
+                      </button>
+                    ))}
+                  </nav>
                 </div>
               </div>
-            </div>
-          </div>
+
+              {/* Selected type services */}
+              {selectedType && servicesByType[selectedType] && (
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-6">
+                    {selectedType === 'Khác' ? 'Các dịch vụ khác' : `Xét nghiệm ${selectedType}`}
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {servicesByType[selectedType].map((service, index) => (
+                      <div 
+                        key={service.id ? `service-${service.id}` : `service-${selectedType}-${index}`} 
+                        className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow"
+                      >
+                        {/* Keep existing content */}
+                        {service.image && (
+                          <div className="h-48 w-full bg-gray-200">
+                            <img 
+                              src={service.image} 
+                              alt={service.name} 
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                        <div className="p-6">
+                          <h4 className="text-xl font-bold text-gray-900 mb-2">{service.name}</h4>
+                          <p className="text-gray-600 mb-4 line-clamp-3">{service.description}</p>
+                          <div className="flex justify-between items-center">
+                            <p className="text-lg font-bold text-blue-600">{service.price+" VND"}</p>
+                            <Link 
+                              href={`/services/book?serviceId=${encodeURIComponent(String(service.id))}`}
+                              className="inline-block bg-blue-600 text-white text-sm px-4 py-2 rounded hover:bg-blue-700"
+                            >
+                              Xem chi tiết
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
 
           {/* Sample collection methods */}
           <div className="mt-24">
@@ -295,48 +308,7 @@ export default function ServicesPage() {
                   <li>Nhận kết quả theo phương thức đã chọn</li>
                 </ul>
               </div>
-
             </div>
-          </div>
-
-          {/* FAQs */}
-          <div className="mt-24">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 mb-8">Câu hỏi thường gặp</h2>
-            <dl className="space-y-6 divide-y divide-gray-200">
-              <div className="pt-6">
-                <dt className="text-lg font-medium text-gray-900">Độ chính xác của xét nghiệm ADN là bao nhiêu?</dt>
-                <dd className="mt-2 text-base text-gray-600">
-                  Độ chính xác của xét nghiệm ADN của chúng tôi đạt 99.9999% đối với xét nghiệm xác định quan hệ cha con và mẹ con. 
-                  Đối với các loại xét nghiệm khác, độ chính xác có thể dao động từ 95% đến 99.9% tùy thuộc vào loại xét nghiệm và mối quan hệ cần xác định.
-                </dd>
-              </div>
-
-              <div className="pt-6">
-                <dt className="text-lg font-medium text-gray-900">Xét nghiệm ADN có đau không?</dt>
-                <dd className="mt-2 text-base text-gray-600">
-                  Quá trình lấy mẫu ADN hoàn toàn không gây đau đớn. Các phương pháp thu mẫu phổ biến nhất bao gồm lấy tế bào má (bằng tăm bông), 
-                  lấy mẫu nước bọt hoặc lấy mẫu máu (chỉ cần một vài giọt máu từ đầu ngón tay).
-                </dd>
-              </div>
-
-              <div className="pt-6">
-                <dt className="text-lg font-medium text-gray-900">Thông tin và kết quả xét nghiệm có được bảo mật không?</dt>
-                <dd className="mt-2 text-base text-gray-600">
-                  Chúng tôi cam kết bảo mật tuyệt đối thông tin cá nhân và kết quả xét nghiệm của khách hàng. Kết quả xét nghiệm chỉ được 
-                  cung cấp cho người yêu cầu hoặc người được ủy quyền. Đối với xét nghiệm dân sự (không chính thức), chúng tôi có 
-                  dịch vụ xét nghiệm ẩn danh nếu bạn không muốn cung cấp thông tin cá nhân.
-                </dd>
-              </div>
-
-              <div className="pt-6">
-                <dt className="text-lg font-medium text-gray-900">Mất bao lâu để có kết quả xét nghiệm ADN?</dt>
-                <dd className="mt-2 text-base text-gray-600">
-                  Thời gian trả kết quả tùy thuộc vào loại xét nghiệm. Đối với xét nghiệm ADN huyết thống cơ bản, kết quả thường có 
-                  sau 3-5 ngày làm việc kể từ khi mẫu được gửi đến phòng xét nghiệm. Đối với các xét nghiệm phức tạp hơn như xét nghiệm 
-                  ADN trước sinh hoặc xét nghiệm quan hệ họ hàng xa, thời gian có thể kéo dài từ 7-12 ngày làm việc.
-                </dd>
-              </div>
-            </dl>
           </div>
 
           {/* CTA */}
