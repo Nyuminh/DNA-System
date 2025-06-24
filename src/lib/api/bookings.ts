@@ -4,20 +4,12 @@ import apiClient from './client';
 
 // Interface cho booking request
 export interface BookingRequest {
+  customerId: string;
   serviceId: string;
-  testType: string;
-  collectionMethod: string;
-  appointmentDate?: string;
-  appointmentTime?: string;
-  participants: Array<{
-    role: string;
-    name: string;
-    dob: string;
-    gender: string;
-    relationship?: string;
-    sampleType: string;
-  }>;
-  notes?: string;
+  address: string;
+  method: string;
+  date: string;
+  staffId?: string; // optional nếu muốn truyền, hoặc backend tự xử lý
 }
 
 // Interface cho booking response
@@ -32,51 +24,39 @@ export interface BookingResponse {
 }
 
 // Tạo booking mới
-export const createBooking = async (bookingData: BookingRequest): Promise<BookingResponse> => {
+export async function createBooking(data: BookingRequest): Promise<BookingResponse> {
   try {
-    const response = await apiClient.post('/Bookings', bookingData);
-    
-    if (response.status >= 200 && response.status < 300) {
-      return {
-        success: true,
-        message: 'Đặt lịch xét nghiệm thành công!',
-        booking: response.data
-      };
-    }
-    
-    return {
-      success: false,
-      message: response.data?.message || 'Đặt lịch thất bại'
+    // Đảm bảo gửi đúng format cho API backend
+    const payload = {
+      bookingId: "", // để trống theo yêu cầu
+      customerId: data.customerId,
+      date: data.date,
+      staffId: data.staffId ?? "", // để trống nếu không có
+      serviceId: data.serviceId,
+      address: data.address,
+      method: data.method,
     };
-  } catch (error) {
-    return {
-      success: false,
-      message: 'Có lỗi xảy ra khi đặt lịch'
-    };
-  }
-};
 
-// Lấy danh sách booking của user
-export const getUserBookings = async (userId?: string): Promise<any> => {
-  try {
-    const url = userId ? `/Bookings?userId=${userId}` : '/Bookings';
-    const response = await apiClient.get(url);
-    
-    if (response.status >= 200 && response.status < 300) {
-      return {
-        success: true,
-        bookings: response.data
-      };
-    }
-    
+    const response = await apiClient.post('/api/Appointments', payload);
     return {
-      success: false,
-      message: 'Không thể lấy danh sách booking'
+      success: true,
+      message: 'Đặt lịch thành công',
+      booking: response.data,
     };
-  } catch (error) {
+  } catch (error: any) {
     return {
       success: false,
-      message: 'Có lỗi xảy ra khi lấy danh sách booking'
+      message: error?.response?.data?.message || 'Đặt lịch thất bại',
     };
   }
-};
+}
+
+// Lấy danh sách booking từ API
+export async function getBookings(): Promise<BookingResponse[]> {
+  try {
+    const response = await apiClient.get('/api/Appointments');
+    return response.data;
+  } catch (error: any) {
+    return [];
+  }
+}

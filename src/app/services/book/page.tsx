@@ -4,27 +4,14 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import MainLayout from '@/components/layout/MainLayout';
-
-interface TestType {
-  id: string;
-  name: string;
-  description: string;
-  price: string;
-  duration: string;
-  expedited: {
-    available: boolean;
-    price?: string;
-    duration?: string;
-  };
-}
+import { getServiceById } from '@/lib/api/services';
+import axios from 'axios';
 
 interface Participant {
-  role: string;
   name: string;
+  phone: string;
   dob: string;
   gender: string;
-  relationship?: string;
-  sampleType: string;
 }
 
 interface ContactInfo {
@@ -45,120 +32,6 @@ interface FormData {
   termsAccepted: boolean;
 }
 
-type TestTypes = {
-  [key: string]: TestType;
-};
-
-// Mock data for test types - would come from API in real implementation
-const testTypes: TestTypes = {
-  'father-child': {
-    id: 'father-child',
-    name: 'Xét nghiệm Huyết thống Cha - Con',
-    description: 'Xác định mối quan hệ huyết thống giữa cha và con',
-    price: '4,000,000 VNĐ',
-    duration: '3-5 ngày làm việc',
-    expedited: {
-      available: true,
-      price: '6,000,000 VNĐ',
-      duration: '24-48 giờ'
-    }
-  },
-  'mother-child': {
-    id: 'mother-child',
-    name: 'Xét nghiệm Huyết thống Mẹ - Con',
-    description: 'Xác định mối quan hệ huyết thống giữa mẹ và con',
-    price: '4,000,000 VNĐ',
-    duration: '3-5 ngày làm việc',
-    expedited: {
-      available: true,
-      price: '6,000,000 VNĐ',
-      duration: '24-48 giờ'
-    }
-  },
-  'siblings': {
-    id: 'siblings',
-    name: 'Xét nghiệm Anh Chị Em',
-    description: 'Xác định mối quan hệ huyết thống giữa anh chị em ruột',
-    price: '5,000,000 VNĐ',
-    duration: '5-7 ngày làm việc',
-    expedited: {
-      available: true,
-      price: '7,500,000 VNĐ',
-      duration: '48-72 giờ'
-    }
-  },
-  'grandparent': {
-    id: 'grandparent',
-    name: 'Xét nghiệm ông bà cháu',
-    description: 'Xác định mối quan hệ ông bà cháu thông qua ADN, độ chính xác 99.9%.',
-    price: '5,500,000 VNĐ',
-    duration: '5-7 ngày làm việc',
-    expedited: {
-      available: false,
-    },
-  },
-  'immigration': {
-    id: 'immigration',
-    name: 'Xét nghiệm ADN cho di trú',
-    description: 'Chứng minh mối quan hệ huyết thống cho mục đích xin visa, quốc tịch, định cư nước ngoài.',
-    price: '6,500,000 VNĐ',
-    duration: '5-7 ngày làm việc',
-    expedited: {
-      available: true,
-      price: '10,000,000 VNĐ',
-      duration: '3-5 ngày làm việc',
-    },
-  },
-  'birth-certificate': {
-    id: 'birth-certificate',
-    name: 'Xét nghiệm ADN cho khai sinh',
-    description: 'Xác định mối quan hệ huyết thống cho việc đăng ký khai sinh.',
-    price: '5,500,000 VNĐ',
-    duration: '3-5 ngày làm việc',
-    expedited: {
-      available: true,
-      price: '8,000,000 VNĐ',
-      duration: '24-48 giờ',
-    },
-  },
-  'legal-inheritance': {
-    id: 'legal-inheritance',
-    name: 'Xét nghiệm ADN cho thừa kế',
-    description: 'Xác định mối quan hệ huyết thống cho mục đích pháp lý liên quan đến thừa kế.',
-    price: '6,000,000 VNĐ',
-    duration: '3-5 ngày làm việc',
-    expedited: {
-      available: true,
-      price: '9,000,000 VNĐ',
-      duration: '24-48 giờ',
-    },
-  },
-  'anonymous-paternity': {
-    id: 'anonymous-paternity',
-    name: 'Xét nghiệm cha con ẩn danh',
-    description: 'Xác định mối quan hệ cha con thông qua ADN mà không cần cung cấp thông tin cá nhân.',
-    price: '3,500,000 VNĐ',
-    duration: '3-5 ngày làm việc',
-    expedited: {
-      available: true,
-      price: '5,500,000 VNĐ',
-      duration: '24-48 giờ',
-    },
-  },
-  'prenatal': {
-    id: 'prenatal',
-    name: 'Xét nghiệm ADN trước sinh không xâm lấn',
-    description: 'Xét nghiệm ADN thai nhi thông qua máu mẹ, không xâm lấn.',
-    price: '15,000,000 VNĐ',
-    duration: '7-12 ngày làm việc',
-    expedited: {
-      available: true,
-      price: '20,000,000 VNĐ',
-      duration: '5-7 ngày làm việc',
-    },
-  },
-};
-
 export default function BookServicePage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
@@ -169,17 +42,35 @@ export default function BookServicePage() {
 
 function BookServiceContent() {
   const searchParams = useSearchParams();
-  const testType = searchParams.get('type') || 'father-child';
-  const [selectedTest, setSelectedTest] = useState<TestType>(testTypes[testType as keyof typeof testTypes] || testTypes['father-child']);
+  const serviceId = searchParams.get('serviceId');
+  const [service, setService] = useState<any>(null);
+  const [loadingService, setLoadingService] = useState(true);
+  const [errorService, setErrorService] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!serviceId) return;
+    setLoadingService(true);
+    fetchFullServiceById(serviceId)
+      .then((data) => {
+        setService(data);
+        setLoadingService(false);
+      })
+      .catch((err) => {
+        setErrorService('Không tìm thấy dịch vụ!');
+        setLoadingService(false);
+      });
+  }, [serviceId]);
+
+  // Khởi tạo formData với dữ liệu từ service (nếu có)
   const [formData, setFormData] = useState<FormData>({
-    serviceType: 'standard', // standard or expedited
-    collectionMethod: 'self', // self, facility, or home
+    serviceType: 'standard',
+    collectionMethod: 'self',
     appointmentDate: '',
     appointmentTime: '',
     address: '',
     cityProvince: '',
     participants: [
-      { role: '', name: '', dob: '', gender: '', relationship: '', sampleType: 'buccal' }
+      { name: '', phone: '', dob: '', gender: '' }
     ],
     contactInfo: {
       name: '',
@@ -189,12 +80,17 @@ function BookServiceContent() {
     termsAccepted: false,
   });
 
-  // Update selected test whenever URL param changes
+  // Cập nhật lại formData khi service thay đổi (nếu muốn prefill)
   useEffect(() => {
-    if (testType in testTypes) {
-      setSelectedTest(testTypes[testType]);
+    if (service) {
+      setFormData((prev) => ({
+        ...prev,
+        // Có thể prefill thêm nếu cần
+      }));
     }
-  }, [testType]);  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  }, [service]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined;
     
@@ -234,7 +130,7 @@ function BookServiceContent() {
       ...formData,
       participants: [
         ...formData.participants,
-        { role: '', name: '', dob: '', gender: '', relationship: '', sampleType: 'buccal' }
+        { name: '', phone: '', dob: '', gender: '' }
       ]
     });
   };
@@ -244,22 +140,59 @@ function BookServiceContent() {
     setFormData({ ...formData, participants: updatedParticipants });
   };  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     try {
       const { createBooking } = await import('@/lib/api/bookings');
-      
+      const customerId = "U03"; // TODO: Lấy từ user đăng nhập thực tế
+
+      // Xử lý giờ theo lựa chọn
+      let time = formData.appointmentTime;
+      if (time === 'buổi sáng') time = '08:00';
+      if (time === 'buổi chiều') time = '13:30';
+
+      // Ghép ngày và giờ thành ISO string
+      let date = '';
+      if (formData.appointmentDate && time) {
+        date = new Date(`${formData.appointmentDate}T${time}:00`).toISOString();
+      } else if (formData.appointmentDate) {
+        date = new Date(`${formData.appointmentDate}T08:00:00`).toISOString();
+      } else {
+        date = new Date().toISOString();
+      }
+
+      const address =
+        formData.collectionMethod === 'facility'
+          ? '123 Đường Cầu Giấy, Quận Cầu Giấy, Hà Nội'
+          : formData.address;
+
+      const method =
+        formData.collectionMethod === 'self'
+          ? 'Tự thu mẫu'
+          : formData.collectionMethod === 'facility'
+            ? 'Tại cơ sở y tế'
+            : formData.collectionMethod;
+
       const result = await createBooking({
-        serviceId: selectedTest.id,
-        testType: selectedTest.name,
-        collectionMethod: formData.collectionMethod,
-        appointmentDate: formData.appointmentDate,
-        appointmentTime: formData.appointmentTime,
-        participants: formData.participants,
-        notes: `Service Type: ${formData.serviceType}, Address: ${formData.address}, City: ${formData.cityProvince}`
+        customerId,
+        date,
+        staffId: "U02",
+        serviceId: serviceId ?? "",
+        address,
+        method, // dùng biến method đã chuyển đổi
       });
-      
+
+      console.log('Dữ liệu gửi lên API:', {
+        customerId,
+        date,
+        staffId: "",
+        serviceId: serviceId ?? "",
+        address,
+        method,
+      });
+      console.log('Kết quả trả về:', result);
+
       if (result.success) {
-        alert(`Đặt xét nghiệm thành công! Mã đặt lịch: ${result.booking?.id}. Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.`);
+        alert(`Đặt xét nghiệm thành công! Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.`);
         // TODO: Redirect to booking confirmation page
       } else {
         alert(result.message || 'Có lỗi xảy ra khi đặt lịch');
@@ -280,9 +213,15 @@ function BookServiceContent() {
               <h1 className="text-3xl font-extrabold text-white sm:text-4xl">
                 Đặt dịch vụ xét nghiệm ADN
               </h1>
-              <p className="mt-3 max-w-2xl mx-auto text-xl text-blue-200 sm:mt-4">
-                Đặt lịch xét nghiệm {selectedTest.name} với quy trình đơn giản và bảo mật
-              </p>
+              {loadingService ? (
+                <p className="mt-3 text-blue-200">Đang tải thông tin dịch vụ...</p>
+              ) : errorService ? (
+                <p className="mt-3 text-red-200">{errorService}</p>
+              ) : (
+                <p className="mt-3 max-w-2xl mx-auto text-xl text-blue-200 sm:mt-4">
+                  Đặt lịch xét nghiệm {service?.name} với quy trình đơn giản và bảo mật
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -295,43 +234,54 @@ function BookServiceContent() {
               <div className="bg-gray-50 rounded-lg p-6 shadow-sm sticky top-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">Thông tin dịch vụ</h2>
                 <div className="border-t border-gray-200 pt-4">
-                  <h3 className="text-lg font-medium text-gray-900">{selectedTest.name}</h3>
-                  <p className="mt-2 text-sm text-gray-600">{selectedTest.description}</p>
-                  
                   <div className="mt-6 space-y-4">
+                    
+                    <div className="flex justify-between">
+                      <dt className="text-sm font-medium text-gray-500">Tên dịch vụ:</dt>
+                      <dd className="text-sm font-medium text-gray-900">{service?.name || "Không có tên"}</dd>
+                    </div>
+                    <div className="flex justify-between">
+                      <dt className="text-sm font-medium text-gray-500">Loại dịch vụ:</dt>
+                      <dd className="text-sm font-medium text-gray-900">{service?.type || "Không xác định"}</dd>
+                    </div>
+                    <div className="flex justify-between">
+                      <dt className="text-sm font-medium text-gray-500">Giá dịch vụ:</dt>
+                      <dd className="text-sm font-medium text-gray-900">
+                        {(service?.price !== undefined && service?.price !== null)
+                          ? service.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })
+                          : "Liên hệ"}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between">
+                      <dt className="text-sm font-medium text-gray-500 w-2/5">Mô tả:</dt>
+                        <dd className="text-sm font-medium text-gray-900 w-3/5 text-right">
+                          {service?.description || "Không có mô tả"}
+                        </dd>
+                    </div>
                     <div className="flex justify-between">
                       <dt className="text-sm font-medium text-gray-500">Thời gian xét nghiệm:</dt>
-                      <dd className="text-sm font-medium text-gray-900">{selectedTest.duration}</dd>
+                      <dd className="text-sm font-medium text-gray-900">
+                        {service?.duration || "3 - 5 ngày"}
+                      </dd>
                     </div>
-                    <div className="flex justify-between">
-                      <dt className="text-sm font-medium text-gray-500">Giá dịch vụ tiêu chuẩn:</dt>
-                      <dd className="text-sm font-medium text-gray-900">{selectedTest.price}</dd>
-                    </div>
-                    {selectedTest.expedited.available && (
-                      <div className="flex justify-between">
-                        <dt className="text-sm font-medium text-gray-500">Giá dịch vụ nhanh:</dt>
-                        <dd className="text-sm font-medium text-gray-900">{selectedTest.expedited.price}</dd>
-                      </div>
-                    )}
                   </div>
-                  
-                  <div className="mt-6 border-t border-gray-200 pt-4">
-                    <h4 className="text-sm font-medium text-gray-900">Các bước thực hiện:</h4>
-                    <ol className="mt-2 text-sm text-gray-600 space-y-2 list-decimal list-inside">
+                  {/* Thêm các bước thực hiện và hotline ở đây */}
+                  <div className="mt-8 border-t border-gray-200 pt-4">
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Các bước thực hiện:</h4>
+                    <ol className="list-decimal list-inside text-sm text-gray-700 space-y-1 mb-4">
                       <li>Điền thông tin và chọn phương thức thu mẫu</li>
                       <li>Thanh toán phí dịch vụ</li>
                       <li>Thực hiện thu mẫu theo phương thức đã chọn</li>
                       <li>Nhận kết quả sau khi hoàn thành xét nghiệm</li>
                     </ol>
-                  </div>
-                  
-                  <div className="mt-6 border-t border-gray-200 pt-4">
-                    <p className="text-sm text-gray-600">
-                      Để được hỗ trợ và tư vấn thêm, vui lòng liên hệ hotline:{' '}
-                      <a href="tel:19001234" className="font-medium text-blue-600 hover:text-blue-500">
-                        1900 1234
-                      </a>
-                    </p>
+                    <div className="border-t border-gray-100 pt-3">
+                      <p className="text-sm text-gray-600">
+                        Để được hỗ trợ và tư vấn thêm, vui lòng liên hệ hotline:{" "}
+                        <a href="tel:19001234" className="font-medium text-blue-600 hover:text-blue-500">
+                          1900 1234
+                        </a>
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -340,79 +290,7 @@ function BookServiceContent() {
             {/* Form */}
             <div className="mt-12 lg:mt-0 lg:col-span-8">
               <form onSubmit={handleSubmit} className="space-y-8">
-                {/* Service type selection */}
-                <div className="bg-white shadow-sm rounded-lg p-6 border border-gray-200">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Chọn loại dịch vụ</h3>
-                  <div className="grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
-                    <div className="relative flex border rounded-lg overflow-hidden">
-                      <input
-                        type="radio"
-                        name="serviceType"
-                        id="standard-service"
-                        value="standard"
-                        className="sr-only"
-                        checked={formData.serviceType === 'standard'}
-                        onChange={handleInputChange}
-                      />
-                      <label
-                        htmlFor="standard-service"
-                        className={`flex-1 cursor-pointer p-4 ${
-                          formData.serviceType === 'standard'
-                            ? 'bg-blue-50 border-blue-500'
-                            : 'border-transparent'
-                        }`}
-                      >
-                        <span className="flex items-center">
-                          <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full border border-gray-300 mr-2">
-                            {formData.serviceType === 'standard' && (
-                              <span className="w-2.5 h-2.5 bg-blue-600 rounded-full" />
-                            )}
-                          </span>
-                          <span className="text-sm font-medium text-gray-900">Dịch vụ tiêu chuẩn</span>
-                        </span>
-                        <span className="block mt-1 text-sm text-gray-500">
-                          Kết quả trong {selectedTest.duration}
-                        </span>
-                        <span className="block mt-1 text-sm font-medium text-gray-900">{selectedTest.price}</span>
-                      </label>
-                    </div>
-
-                    {selectedTest.expedited.available && (
-                      <div className="relative flex border rounded-lg overflow-hidden">
-                        <input
-                          type="radio"
-                          name="serviceType"
-                          id="expedited-service"
-                          value="expedited"
-                          className="sr-only"
-                          checked={formData.serviceType === 'expedited'}
-                          onChange={handleInputChange}
-                        />
-                        <label
-                          htmlFor="expedited-service"
-                          className={`flex-1 cursor-pointer p-4 ${
-                            formData.serviceType === 'expedited'
-                              ? 'bg-blue-50 border-blue-500'
-                              : 'border-transparent'
-                          }`}
-                        >
-                          <span className="flex items-center">
-                            <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full border border-gray-300 mr-2">
-                              {formData.serviceType === 'expedited' && (
-                                <span className="w-2.5 h-2.5 bg-blue-600 rounded-full" />
-                              )}
-                            </span>
-                            <span className="text-sm font-medium text-gray-900">Dịch vụ nhanh</span>
-                          </span>
-                          <span className="block mt-1 text-sm text-gray-500">
-                            Kết quả trong {selectedTest.expedited.duration}
-                          </span>
-                          <span className="block mt-1 text-sm font-medium text-gray-900">{selectedTest.expedited.price}</span>
-                        </label>
-                      </div>
-                    )}
-                  </div>
-                </div>                {/* Collection method */}
+               {/* Collection method */}
                 <div className="bg-white shadow-sm rounded-lg p-6 border border-gray-200">
                   <h3 className="text-lg font-medium text-gray-900 mb-4">Phương thức thu mẫu</h3>                  <div className="grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
                     <div className="relative flex border rounded-lg overflow-hidden">
@@ -545,23 +423,7 @@ function BookServiceContent() {
                         </div>
                       </div>
                       
-                      <div className="sm:col-span-2">
-                        <label htmlFor="cityProvince" className="block text-sm font-medium text-gray-700">
-                          Tỉnh/Thành phố
-                        </label>
-                        <div className="mt-1">
-                          <input
-                            type="text"
-                            name="cityProvince"
-                            id="cityProvince"
-                            className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
-                            placeholder="Tỉnh/Thành phố"
-                            value={formData.cityProvince}
-                            onChange={handleInputChange}
-                            required={formData.collectionMethod === 'self'}
-                          />
-                        </div>
-                      </div>
+                      
                         <div>
                         <label htmlFor="appointmentDate" className="block text-sm font-medium text-gray-700">
                           Ngày nhận kit
@@ -604,24 +466,12 @@ function BookServiceContent() {
 
                 {/* Participants information */}
                 <div className="bg-white shadow-sm rounded-lg p-6 border border-gray-200">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">Thông tin người tham gia xét nghiệm</h3>
-                    <button
-                      type="button"
-                      onClick={addParticipant}
-                      className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-                      </svg>
-                      Thêm người tham gia
-                    </button>
-                  </div>
+                  
                   
                   {formData.participants.map((participant, index) => (
                     <div key={index} className="mb-8 pb-8 border-b border-gray-200 last:mb-0 last:pb-0 last:border-0">
                       <div className="flex justify-between items-center mb-4">
-                        <h4 className="text-md font-medium text-gray-900">Người tham gia #{index + 1}</h4>
+                        <h4 className="text-md font-medium text-gray-900">Người tham gia </h4>
                         {index > 0 && (
                           <button
                             type="button"
@@ -635,31 +485,7 @@ function BookServiceContent() {
                           </button>
                         )}
                       </div>
-                      
                       <div className="grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
-                        <div>
-                          <label htmlFor={`role-${index}`} className="block text-sm font-medium text-gray-700">
-                            Vai trò
-                          </label>
-                          <div className="mt-1">
-                            <select
-                              id={`role-${index}`}
-                              value={participant.role}
-                              onChange={(e) => handleParticipantChange(index, 'role', e.target.value)}
-                              className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
-                              required
-                            >
-                              <option value="">Chọn vai trò</option>
-                              <option value="father">Cha (giả định)</option>
-                              <option value="mother">Mẹ</option>
-                              <option value="child">Con</option>
-                              <option value="sibling">Anh/Chị/Em</option>
-                              <option value="grandparent">Ông/Bà</option>
-                              <option value="other">Khác</option>
-                            </select>
-                          </div>
-                        </div>
-                        
                         <div>
                           <label htmlFor={`name-${index}`} className="block text-sm font-medium text-gray-700">
                             Họ và tên
@@ -675,7 +501,23 @@ function BookServiceContent() {
                             />
                           </div>
                         </div>
-                        
+                        {/* Thêm số điện thoại */}
+                        <div>
+                          <label htmlFor={`phone-${index}`} className="block text-sm font-medium text-gray-700">
+                            Số điện thoại
+                          </label>
+                          <div className="mt-1">
+                            <input
+                              type="tel"
+                              id={`phone-${index}`}
+                              value={participant.phone || ''}
+                              onChange={(e) => handleParticipantChange(index, 'phone', e.target.value)}
+                              className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
+                              placeholder="Nhập số điện thoại"
+                              required
+                            />
+                          </div>
+                        </div>
                         <div>
                           <label htmlFor={`dob-${index}`} className="block text-sm font-medium text-gray-700">
                             Ngày sinh
@@ -691,7 +533,6 @@ function BookServiceContent() {
                             />
                           </div>
                         </div>
-                        
                         <div>
                           <label htmlFor={`gender-${index}`} className="block text-sm font-medium text-gray-700">
                             Giới tính
@@ -711,105 +552,9 @@ function BookServiceContent() {
                           </div>
                         </div>
                         
-                        <div>
-                          <label htmlFor={`sampleType-${index}`} className="block text-sm font-medium text-gray-700">
-                            Loại mẫu
-                          </label>
-                          <div className="mt-1">
-                            <select
-                              id={`sampleType-${index}`}
-                              value={participant.sampleType}
-                              onChange={(e) => handleParticipantChange(index, 'sampleType', e.target.value)}
-                              className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
-                              required
-                            >
-                              <option value="buccal">Tế bào má (Swab)</option>
-                              <option value="blood">Máu</option>
-                              <option value="hair">Tóc (có gốc)</option>
-                              <option value="other">Khác</option>
-                            </select>
-                          </div>
-                        </div>
-                        
-                        {participant.role === 'other' && (
-                          <div>
-                            <label htmlFor={`relationship-${index}`} className="block text-sm font-medium text-gray-700">
-                              Mối quan hệ
-                            </label>
-                            <div className="mt-1">
-                              <input
-                                type="text"
-                                id={`relationship-${index}`}
-                                value={participant.relationship || ''}
-                                onChange={(e) => handleParticipantChange(index, 'relationship', e.target.value)}
-                                placeholder="Vui lòng ghi rõ mối quan hệ"
-                                className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
-                                required={participant.role === 'other'}
-                              />
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </div>
                   ))}
-                </div>
-
-                {/* Contact information */}
-                <div className="bg-white shadow-sm rounded-lg p-6 border border-gray-200">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Thông tin liên hệ</h3>
-                  
-                  <div className="grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
-                    <div className="sm:col-span-2">
-                      <label htmlFor="contactName" className="block text-sm font-medium text-gray-700">
-                        Họ và tên người liên hệ
-                      </label>
-                      <div className="mt-1">
-                        <input
-                          type="text"
-                          id="contactName"
-                          name="contactInfo.name"
-                          value={formData.contactInfo.name}
-                          onChange={handleInputChange}
-                          className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
-                          required
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="contactPhone" className="block text-sm font-medium text-gray-700">
-                        Số điện thoại
-                      </label>
-                      <div className="mt-1">
-                        <input
-                          type="tel"
-                          id="contactPhone"
-                          name="contactInfo.phone"
-                          value={formData.contactInfo.phone}
-                          onChange={handleInputChange}
-                          className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
-                          required
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="contactEmail" className="block text-sm font-medium text-gray-700">
-                        Email
-                      </label>
-                      <div className="mt-1">
-                        <input
-                          type="email"
-                          id="contactEmail"
-                          name="contactInfo.email"
-                          value={formData.contactInfo.email}
-                          onChange={handleInputChange}
-                          className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
                 </div>
 
                 {/* Terms and conditions */}
@@ -860,4 +605,20 @@ function BookServiceContent() {
       </div>
     </MainLayout>
   );
+}
+
+async function fetchFullServiceById(id: string) {
+  const response = await axios.get(`http://localhost:5198/api/Services/${id}`);
+  // Nếu response.data là object dịch vụ, trả về luôn
+  return response.data;
+}
+
+export interface BookingRequest {
+  bookingId?: string;
+  customerId: string;
+  date: string;
+  staffId?: string;
+  serviceId: string;
+  address: string;
+  method: string;
 }

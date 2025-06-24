@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import MainLayout from '@/components/layout/MainLayout';
-import { getServices, Service } from '@/lib/api/services';
+import { getServices, getServiceById, Service } from '@/lib/api/services';
 
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
@@ -52,13 +52,22 @@ export default function ServicesPage() {
             return;
           }
           
-          // Set all services
-          setServices(servicesArray);
+          // Format and set all services
+          const formattedServices = servicesArray.map((service: any) => ({
+            id: service.id ?? service.serviceId, // lấy đúng id gốc từ backend
+            name: service.name,
+            description: service.description,
+            price: service.price,
+            image: service.image,
+            type: service.type,
+            // ... các trường khác nếu cần ...
+          }));
+          setServices(formattedServices);
           
           // Group services by type
           const groupedByType: Record<string, Service[]> = {};
           
-          servicesArray.forEach(service => {
+          formattedServices.forEach(service => {
             // Use a default type if none is provided
             const type = service.type || 'Khác';
             
@@ -93,6 +102,20 @@ export default function ServicesPage() {
     }
 
     fetchServices();
+  }, []);
+
+  // Ví dụ gọi khi cần lấy chi tiết service S02
+  useEffect(() => {
+    async function fetchServiceDetail() {
+      try {
+        const data = await getServiceById('S02');
+        console.log('Service S02:', data);
+        // Xử lý dữ liệu ở đây
+      } catch (error) {
+        console.error('Lỗi lấy chi tiết dịch vụ:', error);
+      }
+    }
+    fetchServiceDetail();
   }, []);
 
   return (
