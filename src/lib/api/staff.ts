@@ -3,6 +3,40 @@ import axios from 'axios';
 // Base API URL
 const API_BASE_URL = 'http://localhost:5198';
 
+// Additional Kit interface from kit.ts for compatibility
+export interface SimpleKit {
+  id?: string;
+  name: string;
+  description: string;
+  price: number;
+  type: string;
+  status?: 'active' | 'inactive';
+  stockQuantity?: number;
+  instructions?: string;
+  estimatedDeliveryDays?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Interface cho create kit request from kit.ts
+export interface CreateKitRequest {
+  name: string;
+  description: string;
+  price: number;
+  type: string;
+  stockQuantity?: number;
+  instructions?: string;
+  estimatedDeliveryDays?: number;
+}
+
+// Interface cho API response from kit.ts
+export interface KitApiResponse {
+  success: boolean;
+  message?: string;
+  kit?: SimpleKit;
+  kits?: SimpleKit[];
+}
+
 // Helper function to map frontend status to backend status
 const mapStatusToBackend = (status: Kit['status']): string => {
   // Map frontend status values to backend status values (matching database varchar(50))
@@ -272,14 +306,24 @@ export const kitApi = {  /**
    * @returns Promise<Kit>
    */  async createKit(kitData: Partial<Kit>): Promise<Kit> {
     try {
-      const response = await apiClient.post<Kit>('/api/Kit', {
-        kitID: kitData.kitID,
+      // Don't send kitID - let backend auto-generate it
+      const payload: any = {
         customerID: kitData.customerID,
         staffID: kitData.staffID,
         description: kitData.description,
         status: kitData.status || 'available',
         receivedate: kitData.receivedate
+      };
+
+      // Only include fields that have values (remove undefined/null fields)
+      Object.keys(payload).forEach(key => {
+        if (payload[key] === undefined || payload[key] === null || payload[key] === '') {
+          delete payload[key];
+        }
       });
+
+      console.log('Creating kit with payload:', payload);
+      const response = await apiClient.post<Kit>('/api/Kit', payload);
       
       return response.data;
     } catch (error) {
@@ -492,18 +536,178 @@ export const kitApi = {  /**
   },
 };
 
-// Export individual functions for convenience
+// Simple Kit API functions from kit.ts for compatibility
+export const simpleKitApi = {
+  // Thêm kit mới (from kit.ts)
+  async createSimpleKit(kitData: CreateKitRequest): Promise<KitApiResponse> {
+    try {
+      // Clean up the data - remove any undefined/null values and ensure no ID is sent
+      const cleanData = {
+        name: kitData.name,
+        description: kitData.description,
+        price: kitData.price,
+        type: kitData.type,
+        ...(kitData.stockQuantity !== undefined && { stockQuantity: kitData.stockQuantity }),
+        ...(kitData.instructions && { instructions: kitData.instructions }),
+        ...(kitData.estimatedDeliveryDays !== undefined && { estimatedDeliveryDays: kitData.estimatedDeliveryDays })
+      };
+
+      console.log('Creating simple kit with clean data:', cleanData);
+      const response = await apiClient.post('/api/Kit', cleanData);
+      
+      if (response.status >= 200 && response.status < 300) {
+        return {
+          success: true,
+          kit: response.data,
+          message: 'Kit đã được tạo thành công'
+        };
+      }
+      
+      return {
+        success: false,
+        message: 'Không thể tạo kit'
+      };
+    } catch (error: any) {
+      console.error('Error creating kit:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Có lỗi xảy ra khi tạo kit'
+      };
+    }
+  },
+
+  // Lấy danh sách kits (from kit.ts)
+  async getSimpleKits(): Promise<KitApiResponse> {
+    try {
+      const response = await apiClient.get('/api/Kit');
+      
+      if (response.status >= 200 && response.status < 300) {
+        return {
+          success: true,
+          kits: response.data
+        };
+      }
+      
+      return {
+        success: false,
+        message: 'Không thể lấy danh sách kit'
+      };
+    } catch (error: any) {
+      console.error('Error fetching kits:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Có lỗi xảy ra khi lấy danh sách kit'
+      };
+    }
+  },
+
+  // Lấy kit theo ID (from kit.ts)
+  async getSimpleKitById(id: string): Promise<KitApiResponse> {
+    try {
+      const response = await apiClient.get(`/api/Kit/${id}`);
+      
+      if (response.status >= 200 && response.status < 300) {
+        return {
+          success: true,
+          kit: response.data
+        };
+      }
+      
+      return {
+        success: false,
+        message: 'Không thể lấy thông tin kit'
+      };
+    } catch (error: any) {
+      console.error('Error fetching kit:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Có lỗi xảy ra khi lấy thông tin kit'
+      };
+    }
+  },
+
+  // Cập nhật kit (from kit.ts)
+  async updateSimpleKit(id: string, kitData: Partial<CreateKitRequest>): Promise<KitApiResponse> {
+    try {
+      const response = await apiClient.put(`/api/Kit/${id}`, kitData);
+      
+      if (response.status >= 200 && response.status < 300) {
+        return {
+          success: true,
+          kit: response.data,
+          message: 'Kit đã được cập nhật thành công'
+        };
+      }
+      
+      return {
+        success: false,
+        message: 'Không thể cập nhật kit'
+      };
+    } catch (error: any) {
+      console.error('Error updating kit:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật kit'
+      };
+    }
+  },
+
+  // Xóa kit (from kit.ts)
+  async deleteSimpleKit(id: string): Promise<KitApiResponse> {
+    try {
+      const response = await apiClient.delete(`/api/Kit/${id}`);
+      
+      if (response.status >= 200 && response.status < 300) {
+        return {
+          success: true,
+          message: 'Kit đã được xóa thành công'
+        };
+      }
+      
+      return {
+        success: false,
+        message: 'Không thể xóa kit'
+      };
+    } catch (error: any) {
+      console.error('Error deleting kit:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Có lỗi xảy ra khi xóa kit'
+      };
+    }
+  }
+};
+
+// Export individual functions for convenience (from kitApi)
 export const {
   getAllKits,
-  getKitById,
-  createKit,
-  updateKit,
-  updateKitStatus,
-  deleteKit,
   assignKit,
   getKitsByStatus,
   searchKits
 } = kitApi;
+
+// Export simple kit functions for compatibility with kit.ts
+export const {
+  createSimpleKit,
+  getSimpleKits,
+  getSimpleKitById,
+  updateSimpleKit,
+  deleteSimpleKit
+} = simpleKitApi;
+
+// Alias exports for backward compatibility with kit.ts (avoiding naming conflicts)
+export const createKitCompat = simpleKitApi.createSimpleKit;
+export const getKits = simpleKitApi.getSimpleKits;
+export const getKitByIdCompat = simpleKitApi.getSimpleKitById;
+export const updateKitCompat = simpleKitApi.updateSimpleKit;
+export const deleteKitCompat = simpleKitApi.deleteSimpleKit;
+
+// Export the original functions with different names to avoid conflicts
+export const getKitById = kitApi.getKitById;
+export const createKit = kitApi.createKit;
+export const updateKit = kitApi.updateKit;
+export const updateKitStatus = kitApi.updateKitStatus;
+export const deleteKit = kitApi.deleteKit;
 
 // Default export
 export default kitApi;

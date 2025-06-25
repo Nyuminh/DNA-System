@@ -6,7 +6,6 @@ import MainLayout from '@/components/layout/MainLayout';
 import { getServices, Service } from '@/lib/api/services';
 
 export default function ServicesPage() {
-  const [services, setServices] = useState<Service[]>([]);
   const [servicesByType, setServicesByType] = useState<Record<string, Service[]>>({});
   const [serviceTypes, setServiceTypes] = useState<string[]>([]);
   const [selectedType, setSelectedType] = useState<string>('');
@@ -51,9 +50,6 @@ export default function ServicesPage() {
             setLoading(false);
             return;
           }
-          
-          // Set all services
-          setServices(servicesArray);
           
           // Group services by type
           const groupedByType: Record<string, Service[]> = {};

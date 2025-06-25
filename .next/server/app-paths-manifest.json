@@ -1,5 +1,7 @@
 {
+  "/staff/kits/page": "app/staff/kits/page.js",
   "/page": "app/page.js",
+  "/auth/login/page": "app/auth/login/page.js",
   "/staff/page": "app/staff/page.js",
-  "/staff/kits/page": "app/staff/kits/page.js"
+  "/staff/test-results/page": "app/staff/test-results/page.js"
 }

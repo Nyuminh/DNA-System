@@ -14,7 +14,6 @@ import {
 import { kitApi, Kit } from '@/lib/api/staff';
 
 interface NewKitForm {
-  kitID: string;
   customerID: string;
   staffID: string;
   description: string;
@@ -30,7 +29,6 @@ export default function KitManagement() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData] = useState<NewKitForm>({
-    kitID: '',
     customerID: '',
     staffID: '',
     description: '',
@@ -89,10 +87,6 @@ export default function KitManagement() {
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
     
-    if (!formData.kitID.trim()) {
-      errors.kitID = 'Kit ID là bắt buộc';
-    }
-    
     if (!formData.customerID.trim()) {
       errors.customerID = 'Customer ID là bắt buộc';
     }
@@ -121,11 +115,16 @@ export default function KitManagement() {
     
     try {
       console.log('🚀 Creating new kit:', formData);
-      await kitApi.createKit(formData);
+      // Create kit data without kitID - let backend auto-generate it
+      const kitDataToCreate = {
+        ...formData,
+        // Backend will auto-generate kitID
+      };
+      
+      await kitApi.createKit(kitDataToCreate);
       
       // Reset form and refresh list
       setFormData({
-        kitID: '',
         customerID: '',
         staffID: '',
         description: '',
@@ -145,7 +144,6 @@ export default function KitManagement() {
   const handleCloseForm = () => {
     setShowAddForm(false);
     setFormData({
-      kitID: '',
       customerID: '',
       staffID: '',
       description: '',
@@ -492,27 +490,6 @@ export default function KitManagement() {
 
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Kit ID */}
-                <div>
-                  <label htmlFor="kitID" className="block text-sm font-medium text-slate-700 mb-2">
-                    Kit ID *
-                  </label>
-                  <input
-                    type="text"
-                    id="kitID"
-                    name="kitID"
-                    value={formData.kitID}
-                    onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      formErrors.kitID ? 'border-red-300' : 'border-slate-300'
-                    }`}
-                    placeholder="Nhập Kit ID"
-                  />
-                  {formErrors.kitID && (
-                    <p className="mt-1 text-sm text-red-600">{formErrors.kitID}</p>
-                  )}
-                </div>
-
                 {/* Customer ID */}
                 <div>
                   <label htmlFor="customerID" className="block text-sm font-medium text-slate-700 mb-2">
