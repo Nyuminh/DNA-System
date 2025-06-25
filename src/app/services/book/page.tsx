@@ -6,6 +6,8 @@ import Link from 'next/link';
 import MainLayout from '@/components/layout/MainLayout';
 import { getServiceById } from '@/lib/api/services';
 import axios from 'axios';
+import { useSession, signIn } from "next-auth/react";
+import { useRouter } from 'next/navigation';
 
 interface Participant {
   name: string;
@@ -32,15 +34,10 @@ interface FormData {
   termsAccepted: boolean;
 }
 
-export default function BookServicePage() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <BookServiceContent />
-    </Suspense>
-  );
-}
+
 
 function BookServiceContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const serviceId = searchParams.get('serviceId');
   const [service, setService] = useState<any>(null);
@@ -141,21 +138,33 @@ function BookServiceContent() {
   };  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    // Lấy username từ localStorage (nếu đã lưu sau login)
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const username = user.username;
+    if (!username) {
+      alert("Bạn cần đăng nhập để đặt lịch!");
+      router.push('/auth/login');
+      return;
+    }
+    const customerId = await getUserIdByUsername(username);
+    if (!customerId) {
+      alert("Không tìm thấy tài khoản người dùng!");
+      return;
+    }
+
     try {
       const { createBooking } = await import('@/lib/api/bookings');
-      const customerId = "U03"; // TODO: Lấy từ user đăng nhập thực tế
+      // const customerId = "U03"; // TODO: Lấy từ user đăng nhập thực tế
 
       // Xử lý giờ theo lựa chọn
-      let time = formData.appointmentTime;
-      if (time === 'buổi sáng') time = '08:00';
-      if (time === 'buổi chiều') time = '13:30';
-
+      let time = formData.appointmentTime || '08:00'; // fallback nếu chưa chọn
       // Ghép ngày và giờ thành ISO string
       let date = '';
       if (formData.appointmentDate && time) {
-        date = new Date(`${formData.appointmentDate}T${time}:00`).toISOString();
-      } else if (formData.appointmentDate) {
-        date = new Date(`${formData.appointmentDate}T08:00:00`).toISOString();
+        const localDate = new Date(`${formData.appointmentDate}T${time}:00`);
+        // Cộng thêm 7 tiếng (7 * 60 * 60 * 1000 ms)
+        const utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000);
+        date = utcDate.toISOString();
       } else {
         date = new Date().toISOString();
       }
@@ -172,13 +181,20 @@ function BookServiceContent() {
             ? 'Tại cơ sở y tế'
             : formData.collectionMethod;
 
+
+      const staffId = await getLeastLoadedStaffId();
+      if (!staffId) {
+        alert("Không tìm thấy nhân viên phù hợp!");
+        return;
+      }
+
       const result = await createBooking({
         customerId,
         date,
-        staffId: "U02",
+        staffId,
         serviceId: serviceId ?? "",
         address,
-        method, // dùng biến method đã chuyển đổi
+        method,
       });
 
       console.log('Dữ liệu gửi lên API:', {
@@ -193,7 +209,7 @@ function BookServiceContent() {
 
       if (result.success) {
         alert(`Đặt xét nghiệm thành công! Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.`);
-        // TODO: Redirect to booking confirmation page
+        router.push('/');
       } else {
         alert(result.message || 'Có lỗi xảy ra khi đặt lịch');
       }
@@ -455,8 +471,14 @@ function BookServiceContent() {
                             required={formData.collectionMethod === 'self'}
                           >
                             <option value="">Chọn thời gian</option>
-                            <option value="buổi sáng">Buổi sáng (8:00 - 12:00)</option>
-                            <option value="buổi chiều">Buổi chiều (13:30 - 17:30)</option>
+                            <option value="08:00">08:00</option>
+                            <option value="09:00">09:00</option>
+                            <option value="10:00">10:00</option>
+                            <option value="11:00">11:00</option>
+                            <option value="13:30">13:30</option>
+                            <option value="14:30">14:30</option>
+                            <option value="15:30">15:30</option>
+                            <option value="16:30">16:30</option>
                           </select>
                         </div>
                       </div>
@@ -613,6 +635,131 @@ async function fetchFullServiceById(id: string) {
   return response.data;
 }
 
+async function getRandomStaffId(): Promise<string | null> {
+  try {
+    const res = await fetch('http://localhost:5198/api/User');
+    let users = await res.json();
+    if (!Array.isArray(users)) {
+      if (users.$values && Array.isArray(users.$values)) {
+        users = users.$values;
+      } else {
+        console.error('API không trả về mảng user:', users);
+        return null;
+      }
+    }
+    // Lấy tất cả phần tử, không phân biệt gì cả
+    console.log('Tất cả phần tử trong danh sách user:', users);
+    // Ví dụ: random bất kỳ user nào
+    if (users.length === 0) return null;
+    const realUsers = users.filter((u: any) => u.userID);
+    console.log('Danh sách tài khoản thực:', realUsers);
+    const randomUser = realUsers[Math.floor(Math.random() * realUsers.length)];
+    console.log('User random được chọn:', randomUser);
+    return randomUser.userID || null;
+  } catch (e) {
+    console.error('Lỗi lấy user:', e);
+    return null;
+  }
+}
+
+async function getUserIdByUsername(username: string): Promise<string | null> {
+  try {
+    const res = await fetch('http://localhost:5198/api/User');
+    let users = await res.json();
+    if (!Array.isArray(users)) {
+      if (users.$values && Array.isArray(users.$values)) {
+        users = users.$values;
+      } else {
+        return null;
+      }
+    }
+    // Resolve $ref nếu có
+    const idMap: Record<string, any> = {};
+    users.forEach((u: any) => { if (u.$id) idMap[u.$id] = u; });
+    users = users.map((u: any) => (u.$ref ? idMap[u.$ref] : u));
+
+    // Log để kiểm tra dữ liệu thực tế
+    console.log('Username cần tìm:', username);
+    console.log('Danh sách user:', users);
+
+    // So sánh không phân biệt hoa thường và trim
+    const found = users.find((u: any) =>
+      (u.username || u.userName || u.UserName)?.toLowerCase().trim() === username.toLowerCase().trim()
+    );
+    console.log('User tìm được:', found);
+    return found?.userID || found?.id || found?.userId || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function getLeastLoadedStaffId(): Promise<string | null> {
+  try {
+    // Lấy danh sách staff
+    const res = await fetch('http://localhost:5198/api/User');
+    let users = await res.json();
+    if (!Array.isArray(users)) {
+      if (users.$values && Array.isArray(users.$values)) {
+        users = users.$values;
+      } else {
+        return null;
+      }
+    }
+    const idMap: Record<string, any> = {};
+    users.forEach((u: any) => { if (u.$id) idMap[u.$id] = u; });
+    users = users.map((u: any) => (u.$ref ? idMap[u.$ref] : u));
+    const staffList = users.filter((u: any) =>
+      (u.roleID || u.roleId || u.RoleID) === 'R02'
+    );
+    if (staffList.length === 0) return null;
+
+    // Lấy danh sách booking
+    const bookingRes = await fetch('http://localhost:5198/api/Appointments');
+    let bookings = await bookingRes.json();
+    if (!Array.isArray(bookings)) {
+      if (bookings.$values && Array.isArray(bookings.$values)) {
+        bookings = bookings.$values;
+      } else {
+        bookings = [];
+      }
+    }
+
+    // Đếm số booking của từng staff
+    const staffBookingCount: Record<string, number> = {};
+    staffList.forEach((staff: any) => {
+      const staffId = staff.userID || staff.id || staff.userId;
+      staffBookingCount[staffId] = bookings.filter(
+        (b: any) => (b.staffID || b.staffId) === staffId
+      ).length;
+    });
+
+    // Lọc ra staff có booking = 0
+    const neverPickedStaff = Object.keys(staffBookingCount).filter(
+      (staffId) => staffBookingCount[staffId] === 0
+    );
+    if (neverPickedStaff.length > 0) {
+      // Random giữa các staff chưa từng được chọn
+      const randomIdx = Math.floor(Math.random() * neverPickedStaff.length);
+      return neverPickedStaff[randomIdx];
+    }
+
+    // Nếu tất cả đều đã có booking, chọn staff ít booking nhất (chỉ random nếu có nhiều staff cùng min)
+    const minCount = Math.min(...Object.values(staffBookingCount));
+    const leastLoadedStaffIds = Object.keys(staffBookingCount).filter(
+      (staffId) => staffBookingCount[staffId] === minCount
+    );
+    if (leastLoadedStaffIds.length === 1) {
+      return leastLoadedStaffIds[0];
+    } else {
+      const selectedStaffId =
+        leastLoadedStaffIds[Math.floor(Math.random() * leastLoadedStaffIds.length)];
+      return selectedStaffId;
+    }
+  } catch (e) {
+    return null;
+  }
+}
+
 export interface BookingRequest {
   bookingId?: string;
   customerId: string;
@@ -622,3 +769,5 @@ export interface BookingRequest {
   address: string;
   method: string;
 }
+
+export default BookServiceContent;
