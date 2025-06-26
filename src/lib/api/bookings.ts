@@ -10,6 +10,7 @@ export interface BookingRequest {
   method: string;
   date: string;
   staffId?: string; // optional nếu muốn truyền, hoặc backend tự xử lý
+  status?: string; // optional, nếu không truyền thì backend sẽ tự xử lý
 }
 
 // Interface cho booking response
@@ -35,6 +36,7 @@ export async function createBooking(data: BookingRequest): Promise<BookingRespon
       serviceId: data.serviceId,
       address: data.address,
       method: data.method,
+      status: data.status ?? "", // Thêm dòng này để gửi status lên API
     };
 
     const response = await apiClient.post('/api/Appointments', payload);
