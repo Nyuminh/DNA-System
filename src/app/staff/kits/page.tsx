@@ -381,7 +381,8 @@ export default function KitManagement() {
       {/* Kit List */}
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200">            <thead className="bg-slate-50">
+          <table className="min-w-full divide-y divide-slate-200">
+            <thead className="bg-slate-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Kit ID
@@ -408,7 +409,8 @@ export default function KitManagement() {
                   Thao tác
                 </th>
               </tr>
-            </thead>            <tbody className="bg-white divide-y divide-slate-200">
+            </thead>
+            <tbody className="bg-white divide-y divide-slate-200">
               {filteredKits.map((kit, index) => (
                 <tr key={kit.kitID || `kit-${index}`} className="hover:bg-slate-50">
                   <td className="px-6 py-4 whitespace-nowrap">

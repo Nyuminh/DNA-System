@@ -147,45 +147,41 @@ export const kitApi = {  /**
       
       let kitsArray: ApiKitResponse[] = [];
       
-      // Function to recursively find all kit objects with actual data (not $ref)
-      const findAllKitObjects = (obj: unknown, found: ApiKitResponse[] = []): ApiKitResponse[] => {
-        if (obj && typeof obj === 'object') {
-          const objTyped = obj as Record<string, unknown>;
-          
-          // Check if this is a kit object with actual data
-          if (objTyped.kitId && typeof objTyped.kitId === 'string' && !objTyped.$ref) {
-            found.push(objTyped as ApiKitResponse);
-          }
-          
-          // Recursively search in nested objects and arrays
-          for (const key in objTyped) {
-            if (objTyped.hasOwnProperty(key) && key !== '$ref') {
-              if (Array.isArray(objTyped[key])) {
-                (objTyped[key] as unknown[]).forEach((item: unknown) => findAllKitObjects(item, found));
-              } else if (typeof objTyped[key] === 'object' && objTyped[key] !== null) {
-                findAllKitObjects(objTyped[key], found);
-              }
-            }
-          }
-        }
-        return found;
-      };
-      
-      // Handle different response formats
+      // Thay thế hàm findAllKitObjects bằng một cách tiếp cận đơn giản hơn
+      // để tránh thu thập các kit trùng lặp từ response API
       if (response.data && typeof response.data === 'object') {
         if ('$values' in response.data && Array.isArray(response.data.$values)) {
-          console.log('Found $values array, searching for all kit objects...');
-          kitsArray = findAllKitObjects(response.data);
+          console.log('Found $values array in response');
+          kitsArray = response.data.$values.filter((item: any) => 
+            item && typeof item === 'object' && item.kitId && !item.$ref
+          );
         } else if (Array.isArray(response.data)) {
-          console.log('Found direct array, searching for all kit objects...');
-          kitsArray = findAllKitObjects(response.data);
+          console.log('Found direct array in response');
+          kitsArray = response.data.filter((item: any) => 
+            item && typeof item === 'object' && item.kitId && !item.$ref
+          );
+        } else if (response.data.kitId) {
+          console.log('Found single kit object');
+          kitsArray = [response.data];
         } else {
-          console.log('Found single object, searching for kit objects...');
-          kitsArray = findAllKitObjects(response.data);
+          console.log('Unexpected response format, searching for top-level kit properties');
+          // Tìm các thuộc tính cấp cao nhất có thể chứa danh sách kit
+          Object.keys(response.data).forEach(key => {
+            const value = response.data[key];
+            if (Array.isArray(value)) {
+              const validKits = value.filter((item: any) => 
+                item && typeof item === 'object' && item.kitId && !item.$ref
+              );
+              if (validKits.length > 0) {
+                console.log(`Found ${validKits.length} kits in property '${key}'`);
+                kitsArray = [...kitsArray, ...validKits];
+              }
+            }
+          });
         }
       }
       
-      console.log('All found kit objects:', kitsArray);
+      console.log('Extracted kit objects:', kitsArray);
       console.log('Total kit objects found:', kitsArray.length);
       
       // Format and normalize kit data
@@ -193,9 +189,9 @@ export const kitApi = {  /**
         console.log(`Processing kit ${index + 1}:`, kit);
         
         const normalizedKit = {
-          kitID: kit.kitId?.toString() || `KIT_${Date.now()}_${index}`,  // Read kitId from backend
-          customerID: kit.customerId?.toString() || '',                   // Read customerId from backend  
-          staffID: kit.staffId?.toString() || '',                         // Read staffId from backend
+          kitID: kit.kitId?.toString() || `KIT_${Date.now()}_${index}`,
+          customerID: kit.customerId?.toString() || '',
+          staffID: kit.staffId?.toString() || '',
           bookingId: kit.bookingId?.toString(),
           description: kit.description || '',
           status: mapStatusFromBackend(kit.status || ''),
@@ -208,8 +204,23 @@ export const kitApi = {  /**
         return normalizedKit;
       });
       
+      // Lọc bỏ các kit trùng lặp dựa trên kitID
+      const uniqueKits: Kit[] = [];
+      const kitIDs = new Set<string>();
+      
+      normalizedKits.forEach(kit => {
+        if (!kitIDs.has(kit.kitID)) {
+          kitIDs.add(kit.kitID);
+          uniqueKits.push(kit);
+        } else {
+          console.warn(`Duplicated kitID found and removed: ${kit.kitID}`);
+        }
+      });
+      
+      console.log('After removing duplicates:', uniqueKits.length);
+      
       // Sort kits by kitID 
-      const sortedKits = normalizedKits.sort((a, b) => {
+      const sortedKits = uniqueKits.sort((a, b) => {
         // Extract numeric part from kitID for proper sorting (K01, K02, K10, etc.)
         const getNumericPart = (kitID: string) => {
           const match = kitID.match(/\d+/);
@@ -938,16 +949,65 @@ export const createTestResultV2 = async (token: string, resultData: Partial<Test
   }
 };
 
+// Hàm mới sử dụng endpoint /api/Results/by-booking/{bookingId}
 export const getTestResultsByBookingId = async (token: string, bookingId: string): Promise<TestResult[]> => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/TestResults/booking/${bookingId}`, {
+    console.log(`🔍 Fetching test results for booking ID: ${bookingId} using new API endpoint`);
+    console.log(`🔗 Endpoint: ${API_BASE_URL}/api/Results/by-booking/${bookingId}`);
+    
+    const response = await axios.get(`${API_BASE_URL}/api/Results/by-booking/${bookingId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
+        'Accept': '*/*'
       },
     });
-    return response.data;
-  } catch (error) {
-    console.error(`Error fetching test results for booking ${bookingId}:`, error);
+    
+    console.log('✅ Test results response:', response.data);
+    
+    // Xử lý response tương tự như các API khác
+    let results: TestResult[] = [];
+    
+    if (response.data) {
+      // Xử lý các định dạng response có thể có
+      if ('$values' in response.data && Array.isArray(response.data.$values)) {
+        console.log('Found $values array in results data');
+        results = response.data.$values;
+      } else if (Array.isArray(response.data)) {
+        console.log('Found direct array in results data');
+        results = response.data;
+      } else if (response.data.resultId) {
+        // Nếu API trả về một kết quả duy nhất
+        console.log('Found single result object');
+        results = [response.data];
+      }
+      
+      // Map và format dữ liệu nếu cần
+      results = results.map(result => ({
+        resultId: result.resultId || '',
+        customerId: result.customerId || '',
+        staffId: result.staffId || '',
+        serviceId: result.serviceId || '',
+        bookingId: result.bookingId || bookingId,
+        date: result.date || new Date().toISOString(),
+        description: result.description || '',
+        status: result.status || 'completed'
+      }));
+    }
+    
+    console.log(`Found ${results.length} test results for booking ID: ${bookingId}`);
+    return results;
+  } catch (error: any) {
+    if (error.response) {
+      console.error(`Error fetching test results for booking ${bookingId}:`, error.response.status, error.response.data);
+    } else if (error.request) {
+      console.error(`Error fetching test results for booking ${bookingId}: No response`, error.request);
+    } else {
+      console.error(`Error fetching test results for booking ${bookingId}:`, error.message);
+    }
+    console.log('🔄 Returning empty array due to API error');
     return [];
   }
 };
+
+// Các hàm đã được export ở trên
+

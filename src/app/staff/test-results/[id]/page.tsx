@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getAppointmentById, updateAppointment, Appointment, TestResult, createTestResultV2 } from '@/lib/api/staff';
+import { getAppointmentById, updateAppointment, Appointment, TestResult, createTestResultV2, getTestResultsByBookingId } from '@/lib/api/staff';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 
@@ -29,6 +29,10 @@ export default function AppointmentDetailPage() {
     description: '',
     status: 'Trùng nhau'
   });
+
+  // State để lưu kết quả xét nghiệm đã có
+  const [existingResults, setExistingResults] = useState<TestResult[]>([]);
+  const [loadingResults, setLoadingResults] = useState(false);
   
   // State hiển thị form kết quả
   const [showResultForm, setShowResultForm] = useState(false);
@@ -125,6 +129,11 @@ export default function AppointmentDetailPage() {
             bookingId: data.bookingId,
             status: 'Trùng nhau' // Đặt giá trị mặc định cho kết quả xét nghiệm
           }));
+          
+          // Lấy kết quả xét nghiệm nếu booking đã hoàn thành
+          if (data.status === 'Completed' || mapStatusToEnum(data.status) === 'completed') {
+            fetchTestResults(data.bookingId);
+          }
         }
       } catch (err) {
         setError('Failed to load appointment details');
@@ -136,6 +145,30 @@ export default function AppointmentDetailPage() {
 
     fetchAppointmentData();
   }, [id, user, token]);
+  
+  // Hàm lấy kết quả xét nghiệm theo booking ID
+  const fetchTestResults = async (bookingId: string) => {
+    if (!token) return;
+    
+    try {
+      setLoadingResults(true);
+      console.log(`🔍 Fetching test results for booking ID: ${bookingId}`);
+      
+      // Gọi API để lấy kết quả xét nghiệm
+      const results = await getTestResultsByBookingId(token, bookingId);
+      
+      console.log(`✅ Found ${results.length} test results:`, results);
+      setExistingResults(results);
+      
+      if (results.length === 0) {
+        console.log('No test results found for this booking');
+      }
+    } catch (error) {
+      console.error('Error fetching test results:', error);
+    } finally {
+      setLoadingResults(false);
+    }
+  };
   
   // Helper function to map status string to enum
   const mapStatusToEnum = (status: string): AppointmentStatus => {
@@ -409,6 +442,62 @@ export default function AppointmentDetailPage() {
             </div>
           </div>
         </div>
+        
+        {/* Hiển thị kết quả xét nghiệm nếu booking đã hoàn thành */}
+        {status === 'completed' && (
+          <div className="mt-8 border-t pt-6">
+            <h2 className="text-lg font-semibold mb-4">Kết quả xét nghiệm</h2>
+            
+            {loadingResults ? (
+              <div className="flex justify-center items-center h-24">
+                <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
+              </div>
+            ) : existingResults.length > 0 ? (
+              <div className="space-y-6">
+                {existingResults.map((result, index) => (
+                  <div key={result.resultId || index} className="bg-gray-50 p-4 rounded-md border">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-gray-500">Ngày có kết quả:</p>
+                        <p className="font-medium">{formatDate(result.date)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Kết quả:</p>
+                        <p className="font-semibold text-lg">
+                          <span className={`inline-block px-3 py-1 rounded-full ${
+                            result.status === 'Trùng nhau' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {result.status}
+                          </span>
+                        </p>
+                      </div>
+                      <div className="md:col-span-2">
+                        <p className="text-sm text-gray-500">Mô tả chi tiết:</p>
+                        <div className="mt-1 p-3 bg-white border rounded-md">
+                          <p className="whitespace-pre-line">{result.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 bg-gray-50 rounded-md">
+                <p className="text-gray-500">Không tìm thấy kết quả xét nghiệm cho booking này</p>
+                {user?.roleID?.toLowerCase() === 'staff' && (
+                  <button 
+                    onClick={() => setShowResultForm(true)}
+                    className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                  >
+                    Thêm kết quả xét nghiệm
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
         
         {/* Form nhập kết quả xét nghiệm */}
         {showResultForm && (
