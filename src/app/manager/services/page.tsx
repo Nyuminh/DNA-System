@@ -13,7 +13,32 @@ import {
 import axios from "axios";
 import Link from "next/link";
 import { deleteServiceById } from "@/lib/api/services"; // Import the deleteService function
-import { createService } from "@/lib/api/services"; // Import the createService function
+
+interface ApiCategory {
+  id?: string | number;
+  name?: string;
+  label?: string;
+  value?: string;
+}
+
+interface ApiServiceResponse {
+  id?: string | number;
+  serviceId?: string | number;
+  name?: string;
+  serviceName?: string;
+  description?: string;
+  price?: number | string;
+  duration?: string;
+  sampleTypes?: string[];
+  accuracy?: string;
+  features?: string[];
+  category?: string;
+  type?: string;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  image?: string;
+}
 
 interface Service {
   id: string;
@@ -35,8 +60,10 @@ type ModalType = 'create' | 'edit' | 'view' | 'delete' | null;
 
 export default function ServicesManagement() {
   const [services, setServices] = useState<Service[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [loading, setLoading] = useState(true); // Used in fetchServices
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars  
+  const [error, setError] = useState<string | null>(null); // Used for error handling
 
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<"all" | "paternity" | "forensic" | "ancestry" | "health">("all");
@@ -51,17 +78,17 @@ export default function ServicesManagement() {
     const fetchCategories = async () => {
       try {
         const res = await axios.get("http://localhost:5198/api/Services/categories");
-        let cats: any[] = [];
+        let cats: ApiCategory[] = [];
         if (res.data && Array.isArray(res.data)) {
           cats = res.data;
         } else if (res.data && res.data.$values) {
           cats = res.data.$values;
         }
         setCategories(
-          cats.map((cat: any) => ({
-            id: cat.id?.toString() || cat.value || cat,
-            name: cat.name || cat.label || cat,
-            value: cat.value || cat.id || cat,
+          cats.map((cat: ApiCategory) => ({
+            id: cat.id?.toString() || cat.value || String(cat),
+            name: cat.name || cat.label || String(cat),
+            value: cat.value || cat.id?.toString() || String(cat),
           }))
         );
       } catch {
@@ -93,7 +120,7 @@ export default function ServicesManagement() {
             servicesArray = [response.data];
           }
         }
-        const formattedServices = servicesArray.map((service: any, index: number) => ({
+        const formattedServices = servicesArray.map((service: ApiServiceResponse) => ({
           id: service.id?.toString() || service.serviceId?.toString() || "",
           name: service.name || service.serviceName || 'Không có tên',
           description: service.description || 'Không có mô tả',
@@ -109,10 +136,10 @@ export default function ServicesManagement() {
           category: service.category || service.type || 'paternity',
           status: service.status || 'active',
           createdAt: service.createdAt || new Date().toISOString().split('T')[0],
-          updatedAt: service.updatedAt || new Date().toISOString().split('T')[0]
-        }));
+          updatedAt: service.updatedAt || new Date().toISOString().split('T')[0]        }));
         setServices(formattedServices);
       } catch (err) {
+        console.error('Error fetching services:', err);
         setError("Không thể tải danh sách dịch vụ");
       } finally {
         setLoading(false);
@@ -244,11 +271,11 @@ export default function ServicesManagement() {
         closeModal();
         alert("✅ Thêm dịch vụ thành công!");
         window.location.reload();
-      }
-    } catch (error: any) {
+      }    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định.";
       alert(
         `❌ ${modalType === 'edit' ? 'Cập nhật' : 'Thêm'} dịch vụ thất bại!\n` +
-        (error?.response?.data?.message || error?.message || "Đã xảy ra lỗi không xác định.")
+        errorMessage
       );
     } finally {
       setLoading(false);
@@ -261,11 +288,11 @@ export default function ServicesManagement() {
         await deleteServiceById(selectedService.id); 
         setServices(services.filter(s => s.id !== selectedService.id));
         closeModal();
-        alert("✅ Xóa dịch vụ thành công!");
-      } catch (error: any) {
+        alert("✅ Xóa dịch vụ thành công!");      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định.";
         alert(
           "Xóa dịch vụ thất bại!\n" +
-          (error?.response?.data?.message || error?.message || "Đã xảy ra lỗi không xác định.")
+          errorMessage
         );
       }
     }

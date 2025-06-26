@@ -5,6 +5,7 @@ export * from './services';
 export * from './bookings';
 export * from './appointments';
 export * from './admin';
+export * from './staff'; // This now includes all kit functions
 
 // Export the API client
 export { default as apiClient } from './client';

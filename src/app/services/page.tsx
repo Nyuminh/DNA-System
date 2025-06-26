@@ -6,7 +6,6 @@ import MainLayout from '@/components/layout/MainLayout';
 import { getServices, getServiceById, Service } from '@/lib/api/services';
 
 export default function ServicesPage() {
-  const [services, setServices] = useState<Service[]>([]);
   const [servicesByType, setServicesByType] = useState<Record<string, Service[]>>({});
   const [serviceTypes, setServiceTypes] = useState<string[]>([]);
   const [selectedType, setSelectedType] = useState<string>('');
@@ -52,6 +51,7 @@ export default function ServicesPage() {
             return;
           }
           
+<<<<<<< HEAD
           // Format and set all services
           const formattedServices = servicesArray.map((service: any) => ({
             id: service.id ?? service.serviceId, // lấy đúng id gốc từ backend
@@ -64,6 +64,8 @@ export default function ServicesPage() {
           }));
           setServices(formattedServices);
           
+=======
+>>>>>>> Master
           // Group services by type
           const groupedByType: Record<string, Service[]> = {};
           
