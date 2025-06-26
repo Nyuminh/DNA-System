@@ -31,19 +31,16 @@ interface User {
 function resolveRefs<T extends { $id?: string; $ref?: string }>(data: T[]): T[] {
   const idMap = new Map<string, T>();
   for (const item of data) {
-    if (item.$id) idMap.set(item.$id, item);
+    if (item && item.$id) idMap.set(item.$id, item);
   }
-  // Resolve nhiều lớp cho toàn bộ mảng
+  // Resolve deeply for each item
   const resolve = (item: T, visited = new Set<string>()): T => {
-    while (item?.$ref && idMap.has(item.$ref) && !visited.has(item.$ref)) {
-      visited.add(item.$ref);
-      item = idMap.get(item.$ref)!;
+    let current = item;
+    while (current && current.$ref && idMap.has(current.$ref) && !visited.has(current.$ref)) {
+      visited.add(current.$ref);
+      current = idMap.get(current.$ref)!;
     }
-    // Nếu resolve ra object vẫn còn $ref, tiếp tục resolve
-    if (item?.$ref && idMap.has(item.$ref)) {
-      return resolve(item, visited);
-    }
-    return item;
+    return current;
   };
   return data.map((item) => resolve(item));
 }
