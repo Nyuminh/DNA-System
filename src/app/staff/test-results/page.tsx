@@ -264,22 +264,46 @@ export default function OrderManagement() {
     if (!token) return false;
     
     try {
-      // Find the order to update
+      // Tìm đơn hàng cần cập nhật
       const orderToUpdate = orders.find(order => order.id === orderId);
-      if (!orderToUpdate) return false;
+      if (!orderToUpdate) {
+        console.error(`Order with ID ${orderId} not found`);
+        toast.error('Không tìm thấy đơn hàng cần cập nhật');
+        return false;
+      }
       
-      // Create update payload
+      // Chuyển đổi trạng thái thành giá trị thích hợp cho API
+      let apiStatus = '';
+      switch (newStatus) {
+        case 'pending':
+          apiStatus = 'Pending';
+          break;
+        case 'in-progress':
+          apiStatus = 'Confirmed';
+          break;
+        case 'completed':
+          apiStatus = 'Completed';
+          break;
+        case 'cancelled':
+          apiStatus = 'Cancelled';
+          break;
+        default:
+          apiStatus = 'Pending';
+      }
+      
+      // Chuẩn bị dữ liệu cập nhật
       const updateData = {
         ...orderToUpdate,
-        status: newStatus
+        status: apiStatus
       };
       
-      // Call API to update status
-      console.log(`Updating order ${orderId} status to ${newStatus}...`);
+      console.log(`Updating order ${orderId} status to ${apiStatus}`);
+      
+      // Gọi API để cập nhật trạng thái
       const updatedOrder = await updateAppointment(token, orderId, updateData);
       
       if (updatedOrder) {
-        // Update local state for immediate UI update
+        // Cập nhật state nếu thành công
         setOrders(prev => 
           prev.map(order => 
             order.id === orderId 
@@ -287,16 +311,21 @@ export default function OrderManagement() {
               : order
           )
         );
-        console.log('Order status updated successfully');
-        toast.success(`Đã cập nhật trạng thái đơn hàng #${orderId}`);
+        toast.success(`Đã cập nhật trạng thái đơn hàng #${orderId} thành ${getStatusText(newStatus)}`);
         return true;
       } else {
         toast.error('Không thể cập nhật trạng thái đơn hàng');
         return false;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating order status:', error);
-      toast.error('Đã xảy ra lỗi khi cập nhật trạng thái');
+      let errorMessage = 'Đã xảy ra lỗi khi cập nhật trạng thái';
+      
+      if (error.response && error.response.data) {
+        errorMessage += `: ${error.response.data.message || JSON.stringify(error.response.data)}`;
+      }
+      
+      toast.error(errorMessage);
       return false;
     }
   };

@@ -51,11 +51,32 @@ export default function AppointmentDetailPage() {
     try {
       setUpdating(true);
       
+      // Chuyển đổi trạng thái thành giá trị thích hợp cho API
+      let apiStatus = '';
+      switch (newStatus) {
+        case 'pending':
+          apiStatus = 'Pending';
+          break;
+        case 'in-progress':
+          apiStatus = 'Confirmed';
+          break;
+        case 'completed':
+          apiStatus = 'Completed';
+          break;
+        case 'cancelled':
+          apiStatus = 'Cancelled';
+          break;
+        default:
+          apiStatus = 'Pending';
+      }
+      
       // Create update payload
       const updateData = {
         ...appointment,
-        status: newStatus
+        status: apiStatus
       };
+      
+      console.log(`Updating appointment ${id} status to ${apiStatus}`);
       
       // Call API to update appointment
       const updatedAppointment = await updateAppointment(token, id as string, updateData);
@@ -67,9 +88,15 @@ export default function AppointmentDetailPage() {
       } else {
         toast.error('Không thể cập nhật trạng thái');
       }
-    } catch (err) {
-      console.error('Error updating status:', err);
-      toast.error('Đã xảy ra lỗi khi cập nhật trạng thái');
+    } catch (error: any) {
+      console.error('Error updating status:', error);
+      let errorMessage = 'Đã xảy ra lỗi khi cập nhật trạng thái';
+      
+      if (error.response && error.response.data) {
+        errorMessage += `: ${error.response.data.message || JSON.stringify(error.response.data)}`;
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setUpdating(false);
     }

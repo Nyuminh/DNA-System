@@ -840,15 +840,37 @@ export const getAppointmentById = async (token: string, id: string): Promise<App
 
 export const updateAppointment = async (token: string, id: string, appointmentData: Partial<Appointment>): Promise<Appointment | null> => {
   try {
-    const response = await axios.put(`${API_BASE_URL}/api/Appointments/${id}`, appointmentData, {
+    console.log(`Updating appointment ${id} with data:`, appointmentData);
+    
+    // Đảm bảo dữ liệu gửi đi đúng định dạng
+    const apiPayload = {
+      bookingId: appointmentData.bookingId,
+      customerId: appointmentData.customerId,
+      date: appointmentData.date,
+      staffId: appointmentData.staffId || "",
+      serviceId: appointmentData.serviceId,
+      address: appointmentData.address || "",
+      method: appointmentData.method,
+      status: appointmentData.status
+    };
+    
+    const response = await axios.put(`${API_BASE_URL}/api/Appointments/${id}`, apiPayload, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });
+    
+    console.log('Update response:', response.data);
     return response.data;
-  } catch (error) {
-    console.error(`Error updating appointment with ID ${id}:`, error);
+  } catch (error: any) {
+    if (error.response) {
+      console.error(`Error updating appointment with ID ${id}:`, error.response.status, error.response.data);
+    } else if (error.request) {
+      console.error(`Error updating appointment with ID ${id}: No response`, error.request);
+    } else {
+      console.error(`Error updating appointment with ID ${id}:`, error.message);
+    }
     return null;
   }
 };
