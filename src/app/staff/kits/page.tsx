@@ -16,6 +16,7 @@ import { kitApi, Kit } from '@/lib/api/staff';
 interface NewKitForm {
   customerID: string;
   staffID: string;
+  bookingId: string;
   description: string;
   status: 'available' | 'in-use' | 'completed' | 'expired';
   receivedate: string;
@@ -31,6 +32,7 @@ export default function KitManagement() {
   const [formData, setFormData] = useState<NewKitForm>({
     customerID: '',
     staffID: '',
+    bookingId: '',
     description: '',
     status: 'available',
     receivedate: new Date().toISOString().split('T')[0]
@@ -127,6 +129,7 @@ export default function KitManagement() {
       setFormData({
         customerID: '',
         staffID: '',
+        bookingId: '',
         description: '',
         status: 'available',
         receivedate: new Date().toISOString().split('T')[0]
@@ -146,6 +149,7 @@ export default function KitManagement() {
     setFormData({
       customerID: '',
       staffID: '',
+      bookingId: '',
       description: '',
       status: 'available',
       receivedate: new Date().toISOString().split('T')[0]
@@ -228,6 +232,7 @@ export default function KitManagement() {
                          (kit.description && kit.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
                          (kit.customerID && kit.customerID.toLowerCase().includes(searchTerm.toLowerCase())) ||
                          (kit.staffID && kit.staffID.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                         (kit.bookingId && kit.bookingId.toLowerCase().includes(searchTerm.toLowerCase())) ||
                          (kit.customerName && kit.customerName.toLowerCase().includes(searchTerm.toLowerCase())) ||
                          (kit.staffName && kit.staffName.toLowerCase().includes(searchTerm.toLowerCase()));
     
@@ -388,6 +393,9 @@ export default function KitManagement() {
                   Staff ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  Booking ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Mô tả
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
@@ -414,6 +422,9 @@ export default function KitManagement() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
                     {kit.staffID || '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    {kit.bookingId || '-'}
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-slate-900 max-w-xs truncate" title={kit.description || ''}>
@@ -530,6 +541,22 @@ export default function KitManagement() {
                   {formErrors.staffID && (
                     <p className="mt-1 text-sm text-red-600">{formErrors.staffID}</p>
                   )}
+                </div>
+
+                {/* Booking ID */}
+                <div>
+                  <label htmlFor="bookingId" className="block text-sm font-medium text-slate-700 mb-2">
+                    Booking ID
+                  </label>
+                  <input
+                    type="text"
+                    id="bookingId"
+                    name="bookingId"
+                    value={formData.bookingId}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Nhập Booking ID"
+                  />
                 </div>
 
                 {/* Status */}

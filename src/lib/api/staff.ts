@@ -75,6 +75,7 @@ export interface Kit {
   kitID: string;
   customerID?: string;
   staffID?: string;
+  bookingId?: string;
   description?: string;
   status: 'available' | 'in-use' | 'completed' | 'expired';
   receivedate?: string;
@@ -88,6 +89,7 @@ interface ApiKitResponse {
   kitId?: string | number;        // Backend uses kitId (camelCase)
   customerId?: string | number;   // Backend uses customerId (camelCase) 
   staffId?: string | number;      // Backend uses staffId (camelCase)
+  bookingId?: string | number;    // Added bookingId field from backend
   description?: string;
   status?: string;                // Backend might use different status values
   receivedate?: string;
@@ -194,6 +196,7 @@ export const kitApi = {  /**
           kitID: kit.kitId?.toString() || `KIT_${Date.now()}_${index}`,  // Read kitId from backend
           customerID: kit.customerId?.toString() || '',                   // Read customerId from backend  
           staffID: kit.staffId?.toString() || '',                         // Read staffId from backend
+          bookingId: kit.bookingId?.toString(),
           description: kit.description || '',
           status: mapStatusFromBackend(kit.status || ''),
           receivedate: kit.receivedate || '',
@@ -278,6 +281,7 @@ export const kitApi = {  /**
         kitID: kit.kitId?.toString() || kitId,     // Read kitId from backend
         customerID: kit.customerId?.toString() || '',  // Read customerId from backend
         staffID: kit.staffId?.toString() || '',    // Read staffId from backend
+        bookingId: kit.bookingId?.toString(),
         description: kit.description || '',
         status: normalizedStatus,
         receivedate: kit.receivedate || '',
@@ -310,6 +314,7 @@ export const kitApi = {  /**
       const payload: any = {
         customerID: kitData.customerID,
         staffID: kitData.staffID,
+        bookingId: kitData.bookingId,
         description: kitData.description,
         status: kitData.status || 'available',
         receivedate: kitData.receivedate
@@ -344,7 +349,7 @@ export const kitApi = {  /**
       
       // Map frontend status to backend status
       const backendStatus = mapStatusToBackend(kitData.status);
-      console.log(`� Mapped status: ${kitData.status} -> ${backendStatus}`);
+      console.log(`🔄 Mapped status: ${kitData.status} -> ${backendStatus}`);
       
       // Based on your successful curl: -d '"Processing"'
       // The backend expects the status as a raw JSON string
@@ -398,7 +403,7 @@ export const kitApi = {  /**
       const backendStatus = mapStatusToBackend(kitData.status);
       console.log(`🚀 Updating kit ${kitData.kitID} status to: ${kitData.status} -> ${backendStatus}`);
       console.log(`📤 Sending raw JSON string: "${backendStatus}"`);
-      console.log(`� PUT URL: /api/Kit/${kitData.kitID}`);
+      console.log(`🔗 PUT URL: /api/Kit/${kitData.kitID}`);
       
       // Send the status as a raw JSON string, matching the working curl example:
       // curl -X 'PUT' 'http://localhost:5198/api/Kit/K04' -H 'Content-Type: application/json' -d '"Processing"'
@@ -445,6 +450,7 @@ export const kitApi = {  /**
         kitID: kitId,
         customerID: kitData.customerID,
         staffID: kitData.staffID,
+        bookingId: kitData.bookingId,
         description: kitData.description,
         status: kitData.status,
         receivedate: kitData.receivedate
@@ -480,11 +486,13 @@ export const kitApi = {  /**
     customerName?: string;
     staffID: string;
     staffName?: string;
+    bookingId?: string;
     description?: string;
   }): Promise<Kit> {    try {
       const response = await apiClient.patch<Kit>(`/api/Kit/${kitId}/assign`, {
         customerID: assignmentData.customerID,
         staffID: assignmentData.staffID,
+        bookingId: assignmentData.bookingId,
         description: assignmentData.description,
         status: 'in-use',
         receivedate: new Date().toISOString().split('T')[0]
@@ -524,6 +532,7 @@ export const kitApi = {  /**
       return allKits.filter(kit => 
         kit.kitID.toLowerCase().includes(lowerSearchTerm) ||
         (kit.description && kit.description.toLowerCase().includes(lowerSearchTerm)) ||
+        (kit.bookingId && kit.bookingId.toLowerCase().includes(lowerSearchTerm)) ||
         (kit.customerID && kit.customerID.toLowerCase().includes(lowerSearchTerm)) ||
         (kit.customerName && kit.customerName.toLowerCase().includes(lowerSearchTerm)) ||
         (kit.staffID && kit.staffID.toLowerCase().includes(lowerSearchTerm)) ||
