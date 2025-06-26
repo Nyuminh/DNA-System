@@ -2,5 +2,8 @@
   "/page": "app/page.js",
   "/auth/login/page": "app/auth/login/page.js",
   "/my-booking/page": "app/my-booking/page.js",
-  "/_not-found/page": "app/_not-found/page.js"
+  "/_not-found/page": "app/_not-found/page.js",
+  "/my-tests/page": "app/my-tests/page.js",
+  "/services/page": "app/services/page.js",
+  "/services/book/page": "app/services/book/page.js"
 }
