@@ -15,8 +15,10 @@ import {
   PencilSquareIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
-import { Appointment, getAppointments, updateAppointmentStatus } from '@/lib/api/staff';
+import { Appointment, getAppointments, updateAppointment } from '@/lib/api/staff';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
+import toast from 'react-hot-toast';
 
 interface Order {
   id: string;
@@ -44,6 +46,7 @@ export default function OrderManagement() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const { token } = useAuth();
 
   useEffect(() => {
     fetchOrders();
@@ -60,7 +63,7 @@ export default function OrderManagement() {
       
       // Map API appointments to the Order structure expected by the UI
       const mappedOrders: Order[] = apiAppointments.map(appointment => ({
-        id: appointment.id,
+        id: appointment.id || appointment.bookingId, // Fallback to bookingId if id is undefined
         bookingId: appointment.bookingId,
         customerId: appointment.customerId,
         date: appointment.date,
@@ -107,10 +110,21 @@ export default function OrderManagement() {
   // Helper function to map status string to enum
   const mapStatusToEnum = (status: string): Order['status'] => {
     if (!status) return 'pending';
+    
+    // Xử lý các giá trị status từ database
+    if (status === 'Pending') return 'pending';
+    if (status === 'Confirmed') return 'in-progress';
+    if (status === 'Completed') return 'completed';
+    if (status === 'Cancelled') return 'cancelled';
+    
+    // Giữ backward compatibility với các giá trị cũ
     const lowerStatus = status.toLowerCase();
+    if (lowerStatus.includes('pending')) return 'pending';
+    if (lowerStatus.includes('confirm')) return 'in-progress';
     if (lowerStatus.includes('progress')) return 'in-progress';
     if (lowerStatus.includes('complete')) return 'completed';
     if (lowerStatus.includes('cancel')) return 'cancelled';
+    
     return 'pending';
   };
   
@@ -141,13 +155,13 @@ export default function OrderManagement() {
   const getStatusText = (status: Order['status']) => {
     switch (status) {
       case 'pending':
-        return 'Chờ xử lý';
+        return 'Pending';
       case 'in-progress':
-        return 'Đang xử lý';
+        return 'Confirmed';
       case 'completed':
-        return 'Hoàn thành';
+        return 'Completed';
       case 'cancelled':
-        return 'Đã hủy';
+        return 'Cancelled';
       default:
         return '';
     }
@@ -193,6 +207,19 @@ export default function OrderManagement() {
         return 'bg-gray-100 text-gray-800';
     }
   };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN', {
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   const filteredOrders = orders.filter(order => {
     const matchesSearch = 
       order.bookingId.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -226,12 +253,7 @@ export default function OrderManagement() {
 
   const handleStatusChange = (orderId: string, newStatus: Order['status']) => {
     console.log('Change status of order', orderId, 'to', newStatus);
-    // Update the order status
-    setOrders((prevOrders) =>
-      prevOrders.map((order) =>
-        order.id === orderId ? { ...order, status: newStatus } : order
-      )
-    );
+    updateOrderStatus(orderId, newStatus);
   };
 
   const handleCreateOrder = () => {
@@ -239,12 +261,24 @@ export default function OrderManagement() {
   };
 
   const updateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
+    if (!token) return false;
+    
     try {
+      // Find the order to update
+      const orderToUpdate = orders.find(order => order.id === orderId);
+      if (!orderToUpdate) return false;
+      
+      // Create update payload
+      const updateData = {
+        ...orderToUpdate,
+        status: newStatus
+      };
+      
       // Call API to update status
       console.log(`Updating order ${orderId} status to ${newStatus}...`);
-      const success = await updateAppointmentStatus(orderId, newStatus);
+      const updatedOrder = await updateAppointment(token, orderId, updateData);
       
-      if (success) {
+      if (updatedOrder) {
         // Update local state for immediate UI update
         setOrders(prev => 
           prev.map(order => 
@@ -254,12 +288,16 @@ export default function OrderManagement() {
           )
         );
         console.log('Order status updated successfully');
+        toast.success(`Đã cập nhật trạng thái đơn hàng #${orderId}`);
+        return true;
       } else {
-        throw new Error('API returned failure status');
+        toast.error('Không thể cập nhật trạng thái đơn hàng');
+        return false;
       }
     } catch (error) {
       console.error('Error updating order status:', error);
-      alert('Có lỗi xảy ra khi cập nhật trạng thái đơn hàng. Vui lòng thử lại.');
+      toast.error('Đã xảy ra lỗi khi cập nhật trạng thái');
+      return false;
     }
   };
 
@@ -281,15 +319,15 @@ export default function OrderManagement() {
   const getNextStatusText = (currentStatus: Order['status']): string => {
     switch (currentStatus) {
       case 'pending':
-        return 'Đang xử lý';
+        return 'Confirm';
       case 'in-progress':
-        return 'Hoàn thành';
+        return 'Complete';
       case 'completed':
-        return 'Hoàn thành';
+        return 'Completed';
       case 'cancelled':
-        return 'Đã hủy';
+        return 'Cancelled';
       default:
-        return 'Chờ xử lý';
+        return 'Confirm';
     }
   };
 
@@ -412,105 +450,100 @@ export default function OrderManagement() {
           </div>
         </div>
       </div>      {/* Orders List */}
-      <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Booking ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Customer ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Ngày đặt
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Staff ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Service ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Địa chỉ
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Phương thức
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Thao tác
-                </th>
+      <div className="bg-white shadow-md rounded-lg overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Mã đơn hàng
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Khách hàng
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Ngày hẹn
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Phương thức
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Địa chỉ
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Trạng thái
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Thao tác
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {filteredOrders.map((order) => (
+              <tr key={order.id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm font-medium text-gray-900">#{order.bookingId}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900">{order.customerId}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900">{formatDate(order.date)}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900">{getMethodText(order.method)}</div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm text-gray-900 max-w-xs truncate" title={order.address}>
+                    {order.address || 'N/A'}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span
+                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(
+                      order.status
+                    )}`}
+                  >
+                    {getStatusText(order.status)}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <div className="flex items-center space-x-2">
+                    <Link href={`/staff/test-results/${order.bookingId}`} className="text-blue-600 hover:text-blue-900 mr-4">
+                      <EyeIcon className="h-4 w-4" />
+                    </Link>
+                    <button
+                      onClick={() => handleEditOrder(order)}
+                      className="text-yellow-600 hover:text-yellow-900"
+                      title="Chỉnh sửa"
+                    >
+                      <PencilSquareIcon className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => handleStatusChange(order.id, getNextStatus(order.status))}
+                      className="text-green-600 hover:text-green-900"
+                      title={getNextStatusText(order.status)}
+                    >
+                      <ArrowPathIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-slate-200">
-              {filteredOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-slate-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <ShoppingBagIcon className="h-5 w-5 text-slate-400 mr-2" />
-                      <span className="text-sm font-medium text-slate-900">{order.bookingId}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                    {order.customerId}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                    {new Date(order.date).toLocaleDateString('vi-VN')}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                    {order.staffId}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                    {order.serviceId}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-slate-900 max-w-xs truncate" title={order.address}>
-                      {order.address}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getMethodColor(order.method)}`}>
-                      {getMethodText(order.method)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center space-x-2">
-                      <Link href={`/staff/test-results/${order.bookingId}`} className="text-blue-600 hover:text-blue-900 mr-4">
-                        <EyeIcon className="h-4 w-4" />
-                      </Link>
-                      <button
-                        onClick={() => handleEditOrder(order)}
-                        className="text-yellow-600 hover:text-yellow-900"
-                        title="Chỉnh sửa"
-                      >
-                        <PencilSquareIcon className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleStatusChange(order.id, getNextStatus(order.status))}
-                        className="text-green-600 hover:text-green-900"
-                        title={getNextStatusText(order.status)}
-                      >
-                        <ArrowPathIcon className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-        {filteredOrders.length === 0 && (
-          <div className="text-center py-12">
-            <ShoppingBagIcon className="mx-auto h-12 w-12 text-slate-400" />
-            <h3 className="mt-2 text-sm font-medium text-slate-900">Không có đơn hàng nào</h3>
-            <p className="mt-1 text-sm text-slate-500">
-              Không tìm thấy đơn hàng nào phù hợp với bộ lọc hiện tại.
-            </p>
-          </div>
-        )}
-      </div>      {/* Order Detail Modal */}
+      {filteredOrders.length === 0 && (
+        <div className="text-center py-12">
+          <ShoppingBagIcon className="mx-auto h-12 w-12 text-slate-400" />
+          <h3 className="mt-2 text-sm font-medium text-slate-900">Không có đơn hàng nào</h3>
+          <p className="mt-1 text-sm text-slate-500">
+            Không tìm thấy đơn hàng nào phù hợp với bộ lọc hiện tại.
+          </p>
+        </div>
+      )}
+
+      {/* Order Detail Modal */}
       {showOrderModal && selectedOrder && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">

@@ -4,11 +4,9 @@
   "/staff/page": "app/staff/page.js",
   "/staff/kits/page": "app/staff/kits/page.js",
   "/staff/test-results/page": "app/staff/test-results/page.js",
-  "/_not-found/page": "app/_not-found/page.js",
-  "/staff/pending-results/page": "app/staff/pending-results/page.js",
-  "/staff/completed-results/page": "app/staff/completed-results/page.js",
   "/staff/profile/page": "app/staff/profile/page.js",
+  "/staff/pending-results/page": "app/staff/pending-results/page.js",
   "/services/page": "app/services/page.js",
-  "/staff/notifications/page": "app/staff/notifications/page.js",
-  "/staff/test-results/[id]/page": "app/staff/test-results/[id]/page.js"
+  "/_not-found/page": "app/_not-found/page.js",
+  "/staff/completed-results/page": "app/staff/completed-results/page.js"
 }

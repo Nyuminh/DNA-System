@@ -720,15 +720,15 @@ export const deleteKit = kitApi.deleteKit;
 
 // Appointments API
 export interface Appointment {
-  id: string;
+  id?: string;
   bookingId: string;
   customerId: string;
-  date: string; 
+  date: string;
   staffId: string;
   serviceId: string;
   address: string;
   method: string;
-  status?: string;
+  status: string;
   customerName?: string;
   serviceName?: string;
 }
@@ -834,6 +834,21 @@ export const getAppointmentById = async (token: string, id: string): Promise<App
     return response.data;
   } catch (error) {
     console.error(`Error fetching appointment with ID ${id}:`, error);
+    return null;
+  }
+};
+
+export const updateAppointment = async (token: string, id: string, appointmentData: Partial<Appointment>): Promise<Appointment | null> => {
+  try {
+    const response = await axios.put(`${API_BASE_URL}/api/Appointments/${id}`, appointmentData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error updating appointment with ID ${id}:`, error);
     return null;
   }
 };
