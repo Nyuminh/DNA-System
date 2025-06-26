@@ -718,5 +718,122 @@ export const updateKit = kitApi.updateKit;
 export const updateKitStatus = kitApi.updateKitStatus;
 export const deleteKit = kitApi.deleteKit;
 
+// Appointments API
+export interface Appointment {
+  id: string;
+  bookingId: string;
+  customerId: string;
+  date: string; 
+  staffId: string;
+  serviceId: string;
+  address: string;
+  method: string;
+  status?: string;
+  customerName?: string;
+  serviceName?: string;
+}
+
+export const appointmentsApi = {
+  async getAppointments(): Promise<Appointment[]> {
+    try {
+      console.log('🚀 Fetching appointments from API...');
+      console.log('API Endpoint:', `${API_BASE_URL}/api/Appointments`);
+      
+      const response = await apiClient.get('/api/Appointments');
+      console.log('✅ Raw API response:', response.data);
+      
+      let appointments: Appointment[] = [];
+      
+      // Handle different response formats (similar to Kit API)
+      if (response.data && typeof response.data === 'object') {
+        if ('$values' in response.data && Array.isArray(response.data.$values)) {
+          console.log('Found $values array in appointment data');
+          appointments = response.data.$values;
+        } else if (Array.isArray(response.data)) {
+          console.log('Found direct array in appointment data');
+          appointments = response.data;
+        } else {
+          console.log('Found single object or unexpected format in appointment data');
+          // Assuming it might be a single appointment or have a different structure
+          appointments = Array.isArray(response.data) ? response.data : [response.data];
+        }
+      }
+      
+      // Map and normalize the appointment data
+      const normalizedAppointments = appointments.map((item: any, index: number) => {
+        console.log(`Processing appointment ${index + 1}:`, item);
+        
+        // Convert nested objects if present
+        const appointment: Appointment = {
+          id: item.id || `appointment_${index}`,
+          bookingId: item.bookingId || '',
+          customerId: item.customerId || '',
+          date: item.date || '',
+          staffId: item.staffId || '',
+          serviceId: item.serviceId || '',
+          address: item.address || '',
+          method: item.method || '',
+          status: item.status || 'pending',
+          // Handle nested objects for name fields
+          customerName: item.customer?.fullname || '',
+          serviceName: item.service?.name || ''
+        };
+        
+        console.log(`Normalized appointment ${index + 1}:`, appointment);
+        return appointment;
+      });
+      
+      console.log('Total appointments found:', normalizedAppointments.length);
+      return normalizedAppointments;
+    } catch (error) {
+      console.error('❌ Error fetching appointments:', error);
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 404) {
+          console.error('Endpoint not found - check if backend is running');
+        } else if (error.response?.status === 500) {
+          console.error('Server error - check backend logs');
+        }
+      }
+      // Return empty array on error to prevent app crash
+      return [];
+    }
+  },
+  
+  async updateAppointmentStatus(id: string, status: string): Promise<boolean> {
+    try {
+      const response = await apiClient.put(`/api/Appointments/${id}/status`, JSON.stringify(status), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': '*/*'
+        }
+      });
+      
+      console.log(`✅ Updated appointment ${id} status to ${status}`);
+      return response.status >= 200 && response.status < 300;
+    } catch (error) {
+      console.error(`❌ Error updating appointment status:`, error);
+      return false;
+    }
+  }
+};
+
+// Export appointment functions
+export const getAppointments = appointmentsApi.getAppointments;
+export const updateAppointmentStatus = appointmentsApi.updateAppointmentStatus;
+
 // Default export
 export default kitApi;
+
+export const getAppointmentById = async (token: string, id: string): Promise<Appointment | null> => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/Appointments/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching appointment with ID ${id}:`, error);
+    return null;
+  }
+};

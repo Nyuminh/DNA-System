@@ -11,16 +11,20 @@ import {
   EyeIcon,
   XMarkIcon,
   MapPinIcon,
-  PlusIcon
+  PlusIcon,
+  PencilSquareIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline';
+import { Appointment, getAppointments, updateAppointmentStatus } from '@/lib/api/staff';
+import Link from 'next/link';
 
 interface Order {
   id: string;
-  bookingID: string;
-  customerID: string;
+  bookingId: string;
+  customerId: string;
   date: string;
-  staffID: string;
-  serviceID: string;
+  staffId: string;
+  serviceId: string;
   address: string;
   method: 'self-collection' | 'facility-collection' | 'home-collection';
   status: 'pending' | 'in-progress' | 'completed' | 'cancelled';
@@ -34,89 +38,91 @@ interface Order {
 export default function OrderManagement() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [methodFilter, setMethodFilter] = useState<string>('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+
   useEffect(() => {
     fetchOrders();
   }, []);
 
   const fetchOrders = async () => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      // Mock data - replace with actual API call
-      const mockOrders: Order[] = [
-        {
-          id: '1',
-          bookingID: 'BK001',
-          customerID: 'CUST001',
-          date: '2024-01-20',
-          staffID: 'STAFF001',
-          serviceID: 'SRV001',
-          address: '123 Nguyễn Văn Cừ, Quận 1, TP.HCM',
-          method: 'facility-collection',
-          status: 'pending',
-          priority: 'high',
-          customerName: 'Nguyễn Văn A',
-          serviceName: 'Xét nghiệm huyết thống cha con',
-          staffName: 'Nguyễn Thị Staff'
-        },
-        {
-          id: '2',
-          bookingID: 'BK002',
-          customerID: 'CUST002',
-          date: '2024-01-18',
-          staffID: 'STAFF002',
-          serviceID: 'SRV002',
-          address: '456 Lê Lợi, Quận 3, TP.HCM',
-          method: 'home-collection',
-          status: 'in-progress',
-          priority: 'normal',
-          customerName: 'Trần Thị B',
-          serviceName: 'Xét nghiệm tổ tiên',
-          staffName: 'Lê Văn Staff'
-        },
-        {
-          id: '3',
-          bookingID: 'BK003',
-          customerID: 'CUST003',
-          date: '2024-01-15',
-          staffID: 'STAFF001',
-          serviceID: 'SRV003',
-          address: '789 Võ Văn Tần, Quận 10, TP.HCM',
-          method: 'self-collection',
-          status: 'completed',
-          priority: 'normal',
-          customerName: 'Lê Văn C',
-          serviceName: 'Xét nghiệm sức khỏe',
-          staffName: 'Nguyễn Thị Staff'
-        },
-        {
-          id: '4',
-          bookingID: 'BK004',
-          customerID: 'CUST004',
-          date: '2024-01-12',
-          staffID: 'STAFF003',
-          serviceID: 'SRV001',
-          address: '321 Cách Mạng Tháng 8, Quận Tân Bình, TP.HCM',
-          method: 'facility-collection',
-          status: 'cancelled',
-          priority: 'urgent',
-          customerName: 'Phạm Thị D',
-          serviceName: 'Xét nghiệm huyết thống cha con',
-          staffName: 'Trần Văn Staff'
-        }
-      ];
+      console.log('Fetching appointments from API...');
+      const apiAppointments = await getAppointments();
+      console.log('Appointments received:', apiAppointments);
       
-      setOrders(mockOrders);
+      // Map API appointments to the Order structure expected by the UI
+      const mappedOrders: Order[] = apiAppointments.map(appointment => ({
+        id: appointment.id,
+        bookingId: appointment.bookingId,
+        customerId: appointment.customerId,
+        date: appointment.date,
+        staffId: appointment.staffId,
+        serviceId: appointment.serviceId,
+        address: appointment.address,
+        // Map method string to expected enum values
+        method: mapMethodToEnum(appointment.method),
+        // Map status string to expected enum values
+        status: mapStatusToEnum(appointment.status || 'pending'),
+        // Set a default priority based on status
+        priority: getPriorityFromStatus(appointment.status || 'pending'),
+        customerName: appointment.customerName,
+        serviceName: appointment.serviceName,
+        staffName: '' // API doesn't seem to provide staff name
+      }));
+      
+      console.log('Mapped orders:', mappedOrders);
+      setOrders(mappedOrders);
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.error('Error fetching appointments:', error);
+      setError('Không thể tải danh sách đơn đặt xét nghiệm. Vui lòng thử lại sau.');
     } finally {
       setLoading(false);
     }
   };
+  
+  // Helper function to map method string to enum
+  const mapMethodToEnum = (method: string): Order['method'] => {
+    if (!method) return 'facility-collection';
+    
+    // Với dữ liệu từ database là tiếng Việt
+    if (method === 'Tại nhà') return 'home-collection';
+    if (method === 'Tại cơ sở') return 'facility-collection';
+    
+    // Giữ backward compatibility với các giá trị cũ
+    const lowerMethod = method.toLowerCase();
+    if (lowerMethod.includes('self')) return 'self-collection';
+    if (lowerMethod.includes('home')) return 'home-collection';
+    
+    return 'facility-collection';
+  };
+  
+  // Helper function to map status string to enum
+  const mapStatusToEnum = (status: string): Order['status'] => {
+    if (!status) return 'pending';
+    const lowerStatus = status.toLowerCase();
+    if (lowerStatus.includes('progress')) return 'in-progress';
+    if (lowerStatus.includes('complete')) return 'completed';
+    if (lowerStatus.includes('cancel')) return 'cancelled';
+    return 'pending';
+  };
+  
+  // Helper function to determine priority based on status
+  const getPriorityFromStatus = (status: string): Order['priority'] => {
+    if (!status) return 'normal';
+    const lowerStatus = status.toLowerCase();
+    if (lowerStatus.includes('pending')) return 'high';
+    if (lowerStatus.includes('progress')) return 'normal';
+    return 'normal';
+  };
+
   const getStatusIcon = (status: Order['status']) => {
     switch (status) {
       case 'pending':
@@ -167,9 +173,9 @@ export default function OrderManagement() {
       case 'self-collection':
         return 'Tự lấy mẫu';
       case 'facility-collection':
-        return 'Lấy tại cơ sở';
+        return 'Tại cơ sở';
       case 'home-collection':
-        return 'Lấy tại nhà';
+        return 'Tại nhà';
       default:
         return '';
     }
@@ -189,15 +195,15 @@ export default function OrderManagement() {
   };
   const filteredOrders = orders.filter(order => {
     const matchesSearch = 
-      order.bookingID.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customerID.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (order.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (order.serviceName || '').toLowerCase().includes(searchTerm.toLowerCase());
+      order.bookingId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.customerId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.staffId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.serviceId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.address.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     const matchesMethod = methodFilter === 'all' || order.method === methodFilter;
     
-    return matchesSearch && matchesStatus && matchesMethod;
+    return matchesSearch && matchesMethod;
   });
 
   const stats = {
@@ -214,8 +220,18 @@ export default function OrderManagement() {
   };
 
   const handleEditOrder = (order: Order) => {
-    // Navigate to edit page or open edit modal
     console.log('Edit order:', order);
+    // Implement edit functionality
+  };
+
+  const handleStatusChange = (orderId: string, newStatus: Order['status']) => {
+    console.log('Change status of order', orderId, 'to', newStatus);
+    // Update the order status
+    setOrders((prevOrders) =>
+      prevOrders.map((order) =>
+        order.id === orderId ? { ...order, status: newStatus } : order
+      )
+    );
   };
 
   const handleCreateOrder = () => {
@@ -224,16 +240,56 @@ export default function OrderManagement() {
 
   const updateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
     try {
-      // Mock API call
-      setOrders(prev => 
-        prev.map(order => 
-          order.id === orderId 
-            ? { ...order, status: newStatus }
-            : order
-        )
-      );
+      // Call API to update status
+      console.log(`Updating order ${orderId} status to ${newStatus}...`);
+      const success = await updateAppointmentStatus(orderId, newStatus);
+      
+      if (success) {
+        // Update local state for immediate UI update
+        setOrders(prev => 
+          prev.map(order => 
+            order.id === orderId 
+              ? { ...order, status: newStatus }
+              : order
+          )
+        );
+        console.log('Order status updated successfully');
+      } else {
+        throw new Error('API returned failure status');
+      }
     } catch (error) {
       console.error('Error updating order status:', error);
+      alert('Có lỗi xảy ra khi cập nhật trạng thái đơn hàng. Vui lòng thử lại.');
+    }
+  };
+
+  const getNextStatus = (currentStatus: Order['status']): Order['status'] => {
+    switch (currentStatus) {
+      case 'pending':
+        return 'in-progress';
+      case 'in-progress':
+        return 'completed';
+      case 'completed':
+        return 'completed';
+      case 'cancelled':
+        return 'cancelled';
+      default:
+        return 'pending';
+    }
+  };
+
+  const getNextStatusText = (currentStatus: Order['status']): string => {
+    switch (currentStatus) {
+      case 'pending':
+        return 'Đang xử lý';
+      case 'in-progress':
+        return 'Hoàn thành';
+      case 'completed':
+        return 'Hoàn thành';
+      case 'cancelled':
+        return 'Đã hủy';
+      default:
+        return 'Chờ xử lý';
     }
   };
 
@@ -245,19 +301,40 @@ export default function OrderManagement() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <XMarkIcon className="mx-auto h-12 w-12 text-red-500" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900">Lỗi tải dữ liệu</h3>
+          <p className="mt-1 text-sm text-gray-500">{error}</p>
+          <div className="mt-6">
+            <button
+              onClick={fetchOrders}
+              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+            >
+              Thử lại
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Quản lý đơn hàng</h1>
-          <p className="text-slate-600">Quản lý các đơn đặt dịch vụ xét nghiệm của khách hàng</p>
+          <h1 className="text-2xl font-bold text-slate-900">Danh sách Booking</h1>
+          <p className="text-slate-600">Quản lý thông tin booking của khách hàng</p>
+          <p className="text-sm text-slate-500 mt-1">Đã tải {orders.length} booking</p>
         </div>
         <button
           onClick={handleCreateOrder}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
         >
           <PlusIcon className="h-5 w-5" />
-          <span>Tạo đơn mới</span>
+          <span>Tạo booking mới</span>
         </button>
       </div>
 
@@ -267,7 +344,7 @@ export default function OrderManagement() {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-2xl font-bold text-slate-900">{stats.total}</div>
-              <div className="text-sm text-slate-500">Tổng số đơn</div>
+              <div className="text-sm text-slate-500">Tổng số booking</div>
             </div>
             <ShoppingBagIcon className="h-8 w-8 text-slate-400" />
           </div>
@@ -310,7 +387,7 @@ export default function OrderManagement() {
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
             <input
               type="text"
-              placeholder="Tìm kiếm đơn hàng..."
+              placeholder="Tìm kiếm booking ID, customer ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-2 w-full border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -322,28 +399,16 @@ export default function OrderManagement() {
             <div className="flex items-center space-x-2">
               <AdjustmentsHorizontalIcon className="h-5 w-5 text-slate-400" />
               <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                value={methodFilter}
+                onChange={(e) => setMethodFilter(e.target.value)}
                 className="border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="all">Tất cả trạng thái</option>
-                <option value="pending">Chờ xử lý</option>
-                <option value="in-progress">Đang xử lý</option>
-                <option value="completed">Hoàn thành</option>
-                <option value="cancelled">Đã hủy</option>
+                <option value="all">Tất cả phương thức</option>
+                <option value="self-collection">Tự lấy mẫu</option>
+                <option value="facility-collection">Lấy tại cơ sở</option>
+                <option value="home-collection">Lấy tại nhà</option>
               </select>
             </div>
-
-            <select
-              value={methodFilter}
-              onChange={(e) => setMethodFilter(e.target.value)}
-              className="border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="all">Tất cả phương thức</option>
-              <option value="self-collection">Tự lấy mẫu</option>
-              <option value="facility-collection">Lấy tại cơ sở</option>
-              <option value="home-collection">Lấy tại nhà</option>
-            </select>
           </div>
         </div>
       </div>      {/* Orders List */}
@@ -356,19 +421,22 @@ export default function OrderManagement() {
                   Booking ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Khách hàng
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Dịch vụ
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Phương thức
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Trạng thái
+                  Customer ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Ngày đặt
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  Staff ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  Service ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  Địa chỉ
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  Phương thức
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Thao tác
@@ -381,22 +449,24 @@ export default function OrderManagement() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <ShoppingBagIcon className="h-5 w-5 text-slate-400 mr-2" />
-                      <div>
-                        <div className="text-sm font-medium text-slate-900">{order.bookingID}</div>
-                        <div className="text-sm text-slate-500">ID: {order.id}</div>
-                      </div>
+                      <span className="text-sm font-medium text-slate-900">{order.bookingId}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm text-slate-900">{order.customerName || 'N/A'}</div>
-                      <div className="text-sm text-slate-500">{order.customerID}</div>
-                    </div>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    {order.customerId}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm text-slate-900">{order.serviceName || 'N/A'}</div>
-                      <div className="text-sm text-slate-500">Service ID: {order.serviceID}</div>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    {new Date(order.date).toLocaleDateString('vi-VN')}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    {order.staffId}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    {order.serviceId}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-slate-900 max-w-xs truncate" title={order.address}>
+                      {order.address}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -404,57 +474,25 @@ export default function OrderManagement() {
                       {getMethodText(order.method)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
-                      {getStatusIcon(order.status)}
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
-                        {getStatusText(order.status)}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                    {new Date(order.date).toLocaleDateString('vi-VN')}
-                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleViewOrder(order)}
-                        className="text-blue-600 hover:text-blue-900"
-                        title="Xem chi tiết"
-                      >
+                      <Link href={`/staff/test-results/${order.bookingId}`} className="text-blue-600 hover:text-blue-900 mr-4">
                         <EyeIcon className="h-4 w-4" />
-                      </button>
+                      </Link>
                       <button
                         onClick={() => handleEditOrder(order)}
-                        className="text-green-600 hover:text-green-900"
+                        className="text-yellow-600 hover:text-yellow-900"
                         title="Chỉnh sửa"
                       >
-                        <PencilIcon className="h-4 w-4" />
+                        <PencilSquareIcon className="h-4 w-4" />
                       </button>
-                      {order.status === 'pending' && (
-                        <button
-                          onClick={() => updateOrderStatus(order.id, 'in-progress')}
-                          className="text-orange-600 hover:text-orange-900 text-xs"
-                        >
-                          Bắt đầu
-                        </button>
-                      )}
-                      {order.status === 'in-progress' && (
-                        <button
-                          onClick={() => updateOrderStatus(order.id, 'completed')}
-                          className="text-green-600 hover:text-green-900 text-xs"
-                        >
-                          Hoàn thành
-                        </button>
-                      )}
-                      {(order.status === 'pending' || order.status === 'in-progress') && (
-                        <button
-                          onClick={() => updateOrderStatus(order.id, 'cancelled')}
-                          className="text-red-600 hover:text-red-900 text-xs"
-                        >
-                          Hủy
-                        </button>
-                      )}
+                      <button
+                        onClick={() => handleStatusChange(order.id, getNextStatus(order.status))}
+                        className="text-green-600 hover:text-green-900"
+                        title={getNextStatusText(order.status)}
+                      >
+                        <ArrowPathIcon className="h-4 w-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -479,7 +517,7 @@ export default function OrderManagement() {
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-slate-900">
-                  Chi tiết đơn hàng - {selectedOrder.bookingID}
+                  Chi tiết Booking - {selectedOrder.bookingId}
                 </h3>
                 <button
                   onClick={() => setShowOrderModal(false)}
@@ -493,43 +531,28 @@ export default function OrderManagement() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700">Booking ID</label>
-                    <p className="text-slate-900">{selectedOrder.bookingID}</p>
+                    <p className="text-slate-900">{selectedOrder.bookingId}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700">Customer ID</label>
-                    <p className="text-slate-900">{selectedOrder.customerID}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700">Tên khách hàng</label>
-                    <p className="text-slate-900">{selectedOrder.customerName || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700">Dịch vụ</label>
-                    <p className="text-slate-900">{selectedOrder.serviceName || 'N/A'}</p>
-                    <p className="text-sm text-slate-500">Service ID: {selectedOrder.serviceID}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700">Staff ID</label>
-                    <p className="text-slate-900">{selectedOrder.staffID}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700">Nhân viên phụ trách</label>
-                    <p className="text-slate-900">{selectedOrder.staffName || 'N/A'}</p>
+                    <p className="text-slate-900">{selectedOrder.customerId}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700">Ngày đặt</label>
                     <p className="text-slate-900">{new Date(selectedOrder.date).toLocaleDateString('vi-VN')}</p>
                   </div>
                   <div>
+                    <label className="block text-sm font-medium text-slate-700">Staff ID</label>
+                    <p className="text-slate-900">{selectedOrder.staffId}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700">Service ID</label>
+                    <p className="text-slate-900">{selectedOrder.serviceId}</p>
+                  </div>
+                  <div>
                     <label className="block text-sm font-medium text-slate-700">Phương thức</label>
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getMethodColor(selectedOrder.method)}`}>
                       {getMethodText(selectedOrder.method)}
-                    </span>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700">Trạng thái</label>
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedOrder.status)}`}>
-                      {getStatusText(selectedOrder.status)}
                     </span>
                   </div>
                 </div>
@@ -541,13 +564,6 @@ export default function OrderManagement() {
                     <p className="text-slate-900">{selectedOrder.address}</p>
                   </div>
                 </div>
-
-                {selectedOrder.notes && (
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700">Ghi chú</label>
-                    <p className="text-slate-900">{selectedOrder.notes}</p>
-                  </div>
-                )}
 
                 <div className="flex justify-end space-x-3 pt-4 border-t">
                   <button
