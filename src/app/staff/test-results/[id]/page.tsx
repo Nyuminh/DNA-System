@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getAppointmentById, updateAppointment, Appointment } from '@/lib/api/staff';
+import { getAppointmentById, updateAppointment, Appointment, TestResult, createTestResultV2 } from '@/lib/api/staff';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 
@@ -15,8 +15,90 @@ export default function AppointmentDetailPage() {
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [submittingResult, setSubmittingResult] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<AppointmentStatus>('pending');
+  
+  // State cho form kết quả xét nghiệm
+  const [testResult, setTestResult] = useState<Partial<TestResult>>({
+    customerId: '',
+    staffId: '',
+    serviceId: '',
+    bookingId: id as string,
+    date: new Date().toISOString().slice(0, 16),
+    description: '',
+    status: 'Trùng nhau'
+  });
+  
+  // State hiển thị form kết quả
+  const [showResultForm, setShowResultForm] = useState(false);
+  
+  // Xử lý thay đổi input form kết quả
+  const handleResultInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setTestResult(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  
+  // Xử lý submit form kết quả
+  const handleSubmitResult = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!token || !appointment) return;
+    
+    try {
+      setSubmittingResult(true);
+      
+      // Chuẩn bị dữ liệu kết quả cho API mới /api/Results
+      const resultData: Partial<TestResult> = {
+        customerId: appointment.customerId,
+        staffId: appointment.staffId || user?.userID || '',
+        serviceId: appointment.serviceId,
+        bookingId: appointment.bookingId,
+        date: new Date(testResult.date || '').toISOString(),
+        description: testResult.description,
+        status: testResult.status // Trùng nhau hoặc Không trùng nhau
+      };
+      
+      console.log('Submitting test result to /api/Results:', resultData);
+      
+      // Gọi API tạo kết quả xét nghiệm với endpoint mới /api/Results
+      const result = await createTestResultV2(token, resultData);
+      
+      if (result) {
+        toast.success('Đã lưu kết quả xét nghiệm thành công');
+        // Cập nhật trạng thái booking thành Completed
+        await handleUpdateStatus('completed');
+        // Ẩn form sau khi lưu thành công
+        setShowResultForm(false);
+        // Reset form
+        setTestResult({
+          customerId: '',
+          staffId: '',
+          serviceId: '',
+          bookingId: id as string,
+          date: new Date().toISOString().slice(0, 16),
+          description: '',
+          status: 'Trùng nhau' // Đặt lại giá trị mặc định
+        });
+      } else {
+        toast.error('Không thể lưu kết quả xét nghiệm');
+      }
+    } catch (error: any) {
+      console.error('Error submitting test result:', error);
+      let errorMessage = 'Đã xảy ra lỗi khi lưu kết quả xét nghiệm';
+      
+      if (error.response && error.response.data) {
+        errorMessage += `: ${error.response.data.message || JSON.stringify(error.response.data)}`;
+      }
+      
+      toast.error(errorMessage);
+    } finally {
+      setSubmittingResult(false);
+    }
+  };
 
   useEffect(() => {
     const fetchAppointmentData = async () => {
@@ -31,8 +113,18 @@ export default function AppointmentDetailPage() {
           
           // Determine status from appointment data
           if (data.status) {
-            setStatus(data.status as AppointmentStatus);
+            setStatus(mapStatusToEnum(data.status));
           }
+          
+          // Khởi tạo giá trị cho form kết quả
+          setTestResult(prev => ({
+            ...prev,
+            customerId: data.customerId,
+            staffId: data.staffId || '',
+            serviceId: data.serviceId,
+            bookingId: data.bookingId,
+            status: 'Trùng nhau' // Đặt giá trị mặc định cho kết quả xét nghiệm
+          }));
         }
       } catch (err) {
         setError('Failed to load appointment details');
@@ -44,6 +136,23 @@ export default function AppointmentDetailPage() {
 
     fetchAppointmentData();
   }, [id, user, token]);
+  
+  // Helper function to map status string to enum
+  const mapStatusToEnum = (status: string): AppointmentStatus => {
+    if (status === 'Pending') return 'pending';
+    if (status === 'Confirmed') return 'in-progress';
+    if (status === 'Completed') return 'completed';
+    if (status === 'Cancelled') return 'cancelled';
+    
+    // Fallback for other values
+    const lowerStatus = status.toLowerCase();
+    if (lowerStatus.includes('pending')) return 'pending';
+    if (lowerStatus.includes('confirm')) return 'in-progress';
+    if (lowerStatus.includes('complet')) return 'completed';
+    if (lowerStatus.includes('cancel')) return 'cancelled';
+    
+    return 'pending';
+  };
 
   const handleUpdateStatus = async (newStatus: AppointmentStatus) => {
     if (!appointment || !token) return;
@@ -77,6 +186,7 @@ export default function AppointmentDetailPage() {
       };
       
       console.log(`Updating appointment ${id} status to ${apiStatus}`);
+      console.log('Update payload:', updateData);
       
       // Call API to update appointment
       const updatedAppointment = await updateAppointment(token, id as string, updateData);
@@ -221,7 +331,7 @@ export default function AppointmentDetailPage() {
             <h2 className="text-lg font-semibold mb-4">Trạng thái xử lý</h2>
             <div className="space-y-4">
               <div className="flex items-center">
-                <div className={`w-8 h-8 rounded-full ${status !== 'pending' ? 'bg-green-500' : 'bg-gray-300'} flex items-center justify-center text-white`}>
+                <div className={`w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white`}>
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
@@ -273,15 +383,15 @@ export default function AppointmentDetailPage() {
                 </button>
                 
                 <button 
-                  onClick={() => handleUpdateStatus('completed')}
-                  disabled={updating || status === 'completed' || status === 'cancelled' || status === 'pending'}
+                  onClick={() => setShowResultForm(true)}
+                  disabled={updating || status === 'completed' || status === 'cancelled' || status !== 'in-progress'}
                   className={`px-4 py-2 rounded ${
-                    updating || status === 'completed' || status === 'cancelled' || status === 'pending'
+                    updating || status === 'completed' || status === 'cancelled' || status !== 'in-progress'
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : 'bg-green-500 text-white hover:bg-green-600'
                   }`}
                 >
-                  {updating ? 'Processing...' : 'Complete'}
+                  {updating ? 'Processing...' : 'Nhập kết quả'}
                 </button>
                 
                 <button 
@@ -299,6 +409,88 @@ export default function AppointmentDetailPage() {
             </div>
           </div>
         </div>
+        
+        {/* Form nhập kết quả xét nghiệm */}
+        {showResultForm && (
+          <div className="mt-8 border-t pt-6">
+            <h2 className="text-lg font-semibold mb-4">Nhập kết quả xét nghiệm</h2>
+            <form onSubmit={handleSubmitResult} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="date" className="block text-sm font-medium text-gray-700">
+                    Ngày có kết quả <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="datetime-local"
+                    id="date"
+                    name="date"
+                    value={testResult.date}
+                    onChange={handleResultInputChange}
+                    required
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+                    Kết quả xét nghiệm <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="status"
+                    name="status"
+                    value={testResult.status}
+                    onChange={handleResultInputChange}
+                    required
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="Trùng nhau">Trùng nhau</option>
+                    <option value="Không trùng nhau">Không trùng nhau</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div>
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                  Mô tả kết quả <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  value={testResult.description}
+                  onChange={handleResultInputChange}
+                  required
+                  rows={4}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Nhập mô tả chi tiết về kết quả xét nghiệm..."
+                ></textarea>
+              </div>
+              
+              <div className="flex justify-between items-center pt-4">
+                <div className="text-sm text-gray-500">
+                  <span className="font-medium">Booking ID:</span> {appointment.bookingId}<br />
+                  <span className="font-medium">Khách hàng:</span> {appointment.customerId}<br />
+                  <span className="font-medium">Dịch vụ:</span> {appointment.serviceId}
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowResultForm(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingResult}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-300"
+                  >
+                    {submittingResult ? 'Đang lưu...' : 'Lưu kết quả'}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );

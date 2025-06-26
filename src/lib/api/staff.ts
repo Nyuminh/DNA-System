@@ -874,3 +874,80 @@ export const updateAppointment = async (token: string, id: string, appointmentDa
     return null;
   }
 };
+
+// Test Result API
+export interface TestResult {
+  resultId?: string;
+  customerId: string;
+  staffId: string;
+  serviceId: string;
+  bookingId: string;
+  date: string;
+  description: string;
+  status: string;
+}
+
+export const createTestResult = async (token: string, resultData: Partial<TestResult>): Promise<TestResult | null> => {
+  try {
+    console.log('Creating test result with data:', resultData);
+    
+    const response = await axios.post(`${API_BASE_URL}/api/TestResults`, resultData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    console.log('Create test result response:', response.data);
+    return response.data;
+  } catch (error: any) {
+    if (error.response) {
+      console.error('Error creating test result:', error.response.status, error.response.data);
+    } else if (error.request) {
+      console.error('Error creating test result: No response received', error.request);
+    } else {
+      console.error('Error creating test result:', error.message);
+    }
+    return null;
+  }
+};
+
+// Hàm mới sử dụng endpoint /api/Results
+export const createTestResultV2 = async (token: string, resultData: Partial<TestResult>): Promise<TestResult | null> => {
+  try {
+    console.log('Creating test result with new API endpoint:', resultData);
+    
+    const response = await axios.post(`${API_BASE_URL}/api/Results`, resultData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+     
+    console.log('Create test result V2 response:', response.data);
+    return response.data;
+  } catch (error: any) {
+    if (error.response) {
+      console.error('Error creating test result V2:', error.response.status, error.response.data);
+    } else if (error.request) {
+      console.error('Error creating test result V2: No response received', error.request);
+    } else {
+      console.error('Error creating test result V2:', error.message);
+    }
+    return null;
+  }
+};
+
+export const getTestResultsByBookingId = async (token: string, bookingId: string): Promise<TestResult[]> => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/TestResults/booking/${bookingId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching test results for booking ${bookingId}:`, error);
+    return [];
+  }
+};
