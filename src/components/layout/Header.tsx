@@ -119,6 +119,13 @@ export default function Header() {
                           Xét nghiệm của tôi
                         </Link>
                         <Link
+                          href="/my-booking"
+                          className="block px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-100 transition-colors duration-200"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          Lịch Sử Đơn Hàng
+                        </Link>
+                        <Link
                           href="/dashboard?tab=Đổi mật khẩu"
                           className="block px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-100 transition-colors duration-200"
                           onClick={() => setShowUserMenu(false)}
@@ -243,6 +250,13 @@ export default function Header() {
                             onClick={() => setMobileMenuOpen(false)}
                           >
                             Xét nghiệm của tôi
+                          </Link>
+                          <Link
+                            href="/invoice"
+                            className="block rounded-lg px-4 py-3 text-base font-medium text-secondary-700 hover:bg-secondary-100 hover:text-primary-600 transition-colors duration-200"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            Hóa đơn của tôi
                           </Link>
                           <Link
                             href="/dashboard?tab=Đổi mật khẩu"

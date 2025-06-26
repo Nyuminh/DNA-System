@@ -51,8 +51,7 @@ export default function ServicesPage() {
             return;
           }
           
-<<<<<<< HEAD
-          // Format and set all services
+          // Format all services
           const formattedServices = servicesArray.map((service: any) => ({
             id: service.id ?? service.serviceId, // lấy đúng id gốc từ backend
             name: service.name,
@@ -62,30 +61,21 @@ export default function ServicesPage() {
             type: service.type,
             // ... các trường khác nếu cần ...
           }));
-          setServices(formattedServices);
-          
-=======
->>>>>>> Master
+
           // Group services by type
           const groupedByType: Record<string, Service[]> = {};
-          
           formattedServices.forEach(service => {
             // Use a default type if none is provided
             const type = service.type || 'Khác';
-            
             if (!groupedByType[type]) {
               groupedByType[type] = [];
             }
-            
             groupedByType[type].push(service);
           });
-          
           setServicesByType(groupedByType);
-          
           // Get array of types for navigation
           const types = Object.keys(groupedByType);
           setServiceTypes(types);
-          
           // Set the first type as selected by default
           if (types.length > 0) {
             setSelectedType(types[0]);

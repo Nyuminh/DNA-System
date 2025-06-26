@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { 
   CalendarIcon, 
@@ -15,82 +15,32 @@ import {
   EyeIcon,
   ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
-
-// Mock data for test history
-const testHistory = [
-  {
-    id: 'TEST123',
-    serviceType: 'Xét nghiệm Huyết thống',
-    testType: 'Xét nghiệm cha con',
-    status: 'Đã hoàn thành',
-    requestDate: '12/05/2025',
-    completionDate: '15/05/2025',
-    sampleMethod: 'Tự thu mẫu',
-    amount: '4,000,000 VNĐ',
-    participants: [
-      { role: 'Cha giả định', name: 'Nguyễn Văn A', age: 45 },
-      { role: 'Con', name: 'Nguyễn Văn B', age: 15 },
-    ],
-    timeline: [
-      { status: 'Đã đặt xét nghiệm', date: '12/05/2025', description: 'Đơn hàng đã được tạo và thanh toán' },
-      { status: 'Đã gửi kit thu mẫu', date: '13/05/2025', description: 'Kit thu mẫu đã được gửi đến địa chỉ của bạn' },
-      { status: 'Đã nhận mẫu', date: '14/05/2025', description: 'Phòng xét nghiệm đã nhận được mẫu' },
-      { status: 'Đang xét nghiệm', date: '14/05/2025', description: 'Mẫu đang được xét nghiệm' },
-      { status: 'Đã hoàn thành', date: '15/05/2025', description: 'Kết quả xét nghiệm đã có' },
-    ],
-    result: {
-      conclusion: 'Có quan hệ huyết thống',
-      probability: '99.9999%',
-      reportUrl: '/reports/TEST123.pdf',
-    },
-  },
-  {
-    id: 'TEST124',
-    serviceType: 'Xét nghiệm ADN Dân sự',
-    testType: 'Xét nghiệm cha con ẩn danh',
-    status: 'Đang xử lý',
-    requestDate: '20/05/2025',
-    completionDate: '-',
-    sampleMethod: 'Thu mẫu tận nơi',
-    amount: '3,500,000 VNĐ',
-    participants: [
-      { role: 'Cha giả định', name: 'Ẩn danh', age: 'Không cung cấp' },
-      { role: 'Con', name: 'Ẩn danh', age: 'Không cung cấp' },
-    ],
-    timeline: [
-      { status: 'Đã đặt xét nghiệm', date: '20/05/2025', description: 'Đơn hàng đã được tạo và thanh toán' },
-      { status: 'Đã đặt lịch thu mẫu', date: '21/05/2025', description: 'Lịch hẹn thu mẫu đã được xác nhận: 22/05/2025, 10:00' },
-      { status: 'Đã thu mẫu', date: '22/05/2025', description: 'Nhân viên đã thu mẫu thành công' },
-      { status: 'Đang xét nghiệm', date: '22/05/2025', description: 'Mẫu đang được xét nghiệm' },
-    ],
-    result: null,
-  },
-  {
-    id: 'TEST125',
-    serviceType: 'Xét nghiệm ADN Dân sự',
-    testType: 'Xét nghiệm anh em ruột',
-    status: 'Chờ thu mẫu',
-    requestDate: '25/05/2025',
-    completionDate: '-',
-    sampleMethod: 'Thu mẫu tại trung tâm',
-    amount: '3,200,000 VNĐ',
-    participants: [
-      { role: 'Anh', name: 'Trần Minh C', age: 28 },
-      { role: 'Em', name: 'Trần Minh D', age: 25 },
-    ],
-    timeline: [
-      { status: 'Đã đặt xét nghiệm', date: '25/05/2025', description: 'Đơn hàng đã được tạo và thanh toán' },
-      { status: 'Chờ thu mẫu', date: '25/05/2025', description: 'Vui lòng đến trung tâm để thu mẫu theo lịch hẹn' },
-    ],
-    result: null,
-  },
-];
+import { getTestResults, TestResult } from '@/lib/api/testResults';
 
 export default function MyTestsPage() {
   const router = useRouter();
+  const [testResults, setTestResults] = useState<TestResult[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('Tất cả');
   const [showFilters, setShowFilters] = useState(false);
+
+  useEffect(() => {
+    async function fetchResults() {
+      setLoading(true);
+      try {
+        const results = await getTestResults();
+        setTestResults(Array.isArray(results) ? results : []);
+      } catch (err) {
+        setError('Không thể tải dữ liệu xét nghiệm');
+        setTestResults([]); // Ensure it's always an array on error
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchResults();
+  }, []);
 
   const handleLogout = () => {
     // Clear user session/token here
@@ -99,7 +49,7 @@ export default function MyTestsPage() {
     router.push('/');
   };
 
-  const filteredTests = testHistory.filter(test => {
+  const filteredTests = testResults.filter(test => {
     const matchesSearch = test.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          test.testType.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          test.serviceType.toLowerCase().includes(searchTerm.toLowerCase());
@@ -159,7 +109,7 @@ export default function MyTestsPage() {
                   <div className="ml-5 w-0 flex-1">
                     <dl>
                       <dt className="text-sm font-medium text-gray-500 truncate">Tổng xét nghiệm</dt>
-                      <dd className="text-lg font-medium text-gray-900">{testHistory.length}</dd>
+                      <dd className="text-lg font-medium text-gray-900">{testResults.length}</dd>
                     </dl>
                   </div>
                 </div>
@@ -176,7 +126,7 @@ export default function MyTestsPage() {
                     <dl>
                       <dt className="text-sm font-medium text-gray-500 truncate">Đang xử lý</dt>
                       <dd className="text-lg font-medium text-gray-900">
-                        {testHistory.filter(test => test.status === 'Đang xử lý' || test.status === 'Chờ thu mẫu').length}
+                        {testResults.filter(test => test.status === 'Đang xử lý' || test.status === 'Chờ thu mẫu').length}
                       </dd>
                     </dl>
                   </div>
@@ -194,7 +144,7 @@ export default function MyTestsPage() {
                     <dl>
                       <dt className="text-sm font-medium text-gray-500 truncate">Đã hoàn thành</dt>
                       <dd className="text-lg font-medium text-gray-900">
-                        {testHistory.filter(test => test.status === 'Đã hoàn thành').length}
+                        {testResults.filter(test => test.status === 'Đã hoàn thành').length}
                       </dd>
                     </dl>
                   </div>
@@ -212,7 +162,7 @@ export default function MyTestsPage() {
                     <dl>
                       <dt className="text-sm font-medium text-gray-500 truncate">Tháng này</dt>
                       <dd className="text-lg font-medium text-gray-900">
-                        {testHistory.filter(test => test.requestDate.includes('05/2025')).length}
+                        {testResults.filter(test => test.requestDate.includes('05/2025')).length}
                       </dd>
                     </dl>
                   </div>
