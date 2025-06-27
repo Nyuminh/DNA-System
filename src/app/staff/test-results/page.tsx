@@ -287,7 +287,7 @@ export default function OrderManagement() {
           apiStatus = 'Đang thực hiện';
           break;
         case 'completed':
-          apiStatus = 'Đã hoàn thành';
+          apiStatus = 'Hoàn thành';
           break;
         case 'cancelled':
           apiStatus = 'Hủy';

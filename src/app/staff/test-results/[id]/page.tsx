@@ -185,6 +185,12 @@ export default function AppointmentDetailPage() {
   
   // Helper function to map status string to enum
   const mapStatusToEnum = (status: string): AppointmentStatus => {
+    if (status === 'Đã xác nhận') return 'pending';
+    if (status === 'Đang thực hiện') return 'in-progress';
+    if (status === 'Hoàn thành') return 'completed';
+    if (status === 'Hủy') return 'cancelled';
+    
+    // Legacy mappings cho các giá trị cũ
     if (status === 'Pending') return 'pending';
     if (status === 'Confirmed') return 'in-progress';
     if (status === 'Completed') return 'completed';
@@ -192,10 +198,10 @@ export default function AppointmentDetailPage() {
     
     // Fallback for other values
     const lowerStatus = status.toLowerCase();
-    if (lowerStatus.includes('pending')) return 'pending';
-    if (lowerStatus.includes('confirm')) return 'in-progress';
-    if (lowerStatus.includes('complet')) return 'completed';
-    if (lowerStatus.includes('cancel')) return 'cancelled';
+    if (lowerStatus.includes('xác nhận')) return 'pending';
+    if (lowerStatus.includes('thực hiện')) return 'in-progress';
+    if (lowerStatus.includes('hoàn thành')) return 'completed';
+    if (lowerStatus.includes('hủy')) return 'cancelled';
     
     return 'pending';
   };
@@ -210,19 +216,19 @@ export default function AppointmentDetailPage() {
       let apiStatus = '';
       switch (newStatus) {
         case 'pending':
-          apiStatus = 'Pending';
+          apiStatus = 'Đã xác nhận';
           break;
         case 'in-progress':
-          apiStatus = 'Confirmed';
+          apiStatus = 'Đang thực hiện';
           break;
         case 'completed':
-          apiStatus = 'Completed';
+          apiStatus = 'Hoàn thành';
           break;
         case 'cancelled':
-          apiStatus = 'Cancelled';
+          apiStatus = 'Hủy';
           break;
         default:
-          apiStatus = 'Pending';
+          apiStatus = 'Đã xác nhận';
       }
       
       console.log(`Updating appointment ${id} status to ${apiStatus}`);
