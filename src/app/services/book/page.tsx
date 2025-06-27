@@ -195,7 +195,7 @@ function BookServiceContent() {
         serviceId: serviceId ?? "",
         address,
         method,
-        status: "Đang thực hiện", // Thêm dòng này để gửi status lên API
+        status: "Đã xác nhận", // Thêm dòng này để gửi status lên API
       });
 
       console.log('Dữ liệu gửi lên API:', {

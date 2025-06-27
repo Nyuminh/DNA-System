@@ -3,43 +3,22 @@
     "[project]/src/app/page": [
       "static/media/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw-s.p.0faac26c.woff2"
     ],
-    "[project]/src/app/blog/page": [
-      "static/media/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw-s.p.0faac26c.woff2"
-    ],
-    "[project]/src/app/about/page": [
-      "static/media/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw-s.p.0faac26c.woff2"
-    ],
-    "[project]/src/app/contact/page": [
-      "static/media/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw-s.p.0faac26c.woff2"
-    ],
     "[project]/src/app/auth/login/page": [
       "static/media/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw-s.p.0faac26c.woff2"
     ],
-    "[project]/src/app/manager/page": [
-      "static/media/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw-s.p.0faac26c.woff2"
-    ],
-    "[project]/src/app/manager/services/page": [
-      "static/media/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw-s.p.0faac26c.woff2"
-    ],
-    "[project]/src/app/services/page": [
-      "static/media/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw-s.p.0faac26c.woff2"
-    ],
-    "[project]/src/app/_not-found/page": [
-      "static/media/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw-s.p.0faac26c.woff2"
-    ],
-    "[project]/src/app/manager/services/[id]/page": [
+    "[project]/src/app/auth/register/page": [
       "static/media/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw-s.p.0faac26c.woff2"
     ],
     "[project]/src/app/my-booking/page": [
       "static/media/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw-s.p.0faac26c.woff2"
     ],
-    "[project]/src/app/my-tests/page": [
+    "[project]/src/app/my-booking/result/[bookingId]/page": [
+      "static/media/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw-s.p.0faac26c.woff2"
+    ],
+    "[project]/src/app/services/page": [
       "static/media/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw-s.p.0faac26c.woff2"
     ],
     "[project]/src/app/services/book/page": [
-      "static/media/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw-s.p.0faac26c.woff2"
-    ],
-    "[project]/src/app/my-booking/result/[bookingId]/page": [
       "static/media/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw-s.p.0faac26c.woff2"
     ]
   },

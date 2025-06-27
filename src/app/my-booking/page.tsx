@@ -27,6 +27,7 @@ export default function MyBookingPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [kitStatuses, setKitStatuses] = useState<Record<string, string>>({});
 
   useEffect(() => {
     async function fetchData() {
@@ -159,6 +160,25 @@ export default function MyBookingPage() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    async function fetchKitStatuses() {
+      const statuses: Record<string, string> = {};
+      await Promise.all(
+        bookings.map(async (booking) => {
+          try {
+            const res = await fetch(`http://localhost:5198/api/Kit/by-booking/${booking.bookingId}`);
+            const data = await res.json();
+            statuses[booking.bookingId] = data?.status || data?.kitStatus || "---";
+          } catch {
+            statuses[booking.bookingId] = "---";
+          }
+        })
+      );
+      setKitStatuses(statuses);
+    }
+    if (bookings.length > 0) fetchKitStatuses();
+  }, [bookings]);
+
   return (
     <MainLayout>
       <div className="bg-gray-50 min-h-screen py-10">
@@ -174,50 +194,84 @@ export default function MyBookingPage() {
             <div className="text-center py-10 text-gray-500">Bạn chưa có lịch đặt nào.</div>
           ) : (
             <div className="bg-white rounded-xl shadow border border-gray-200 w-full text-xs">
-              <div className="grid grid-cols-12 px-2 py-3 bg-gray-50 font-semibold text-gray-500 uppercase gap-x-1">
-                <div className="col-span-1">MÃ ĐẶT</div>
+              {/* Header */}
+              <div className="grid grid-cols-12 px-2 py-3 bg-gray-50 font-semibold text-gray-500 uppercase gap-x-1 border-b border-gray-200">
+                <div className="col-span-1 text-center">MÃ ĐẶT</div>
                 <div className="col-span-2">TÊN DỊCH VỤ</div>
                 <div className="col-span-2">NHÂN VIÊN</div>
                 <div className="col-span-2">ĐỊA CHỈ</div>
-                <div className="col-span-1">NGÀY HẸN</div>
-                <div className="col-span-2">PHƯƠNG THỨC</div>
-                <div className="col-span-1">TRẠNG THÁI</div>
-                <div className="col-span-1">KẾT QUẢ</div> {/* Thêm cột này */}
+                <div className="col-span-1 text-center">NGÀY HẸN</div>
+                <div className="col-span-1">PHƯƠNG THỨC</div>
+                <div className="col-span-1 text-center">TRẠNG THÁI</div>
+                <div className="col-span-1 text-center">TRẠNG THÁI KIT</div>
+                <div className="col-span-1 text-center">KẾT QUẢ</div>
               </div>
+              {/* Body */}
               {bookings.map((booking, idx) => (
                 <div
                   key={booking.id ? `booking-form-${booking.id}` : `booking-form-${idx}`}
-                  className="grid grid-cols-12 px-2 py-4 border-t border-gray-100 items-center hover:bg-gray-50 transition gap-x-1"
+                  className="grid grid-cols-12 px-2 py-4 items-center gap-x-1 border-b border-gray-100 hover:bg-gray-50 transition"
                 >
-                  <div className="col-span-1 font-semibold text-blue-700 break-words">{booking.bookingId}</div>
+                  <div className="col-span-1 font-semibold text-blue-700 text-center break-words">{booking.bookingId}</div>
                   <div className="col-span-2 text-gray-900 break-words">
-                    {
-                      services.find(
-                        s => String(s.id).trim() === String(booking.serviceId).trim()
-                      )?.name || <span className="italic text-gray-400">---</span>
-                    }
+                    {services.find(s => String(s.id).trim() === String(booking.serviceId).trim())?.name || <span className="italic text-gray-400">---</span>}
                   </div>
                   <div className="col-span-2 text-gray-900 break-words">
                     {booking.staffName || <span className="italic text-gray-400">---</span>}
                   </div>
-                  <div className="col-span-2 text-gray-900 break-words">{booking.address}</div>
-                  <div className="col-span-1 text-gray-900">{booking.date}</div>
-                  <div className="col-span-2">
-                    <span className="inline-block bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium">
-                      {booking.method}
+                  <div className="col-span-2 text-gray-900 break-words">{booking.address || <span className="italic text-gray-400">---</span>}</div>
+                  <div className="col-span-1 text-gray-900 text-center">{booking.date || <span className="italic text-gray-400">---</span>}</div>
+                  <div className="col-span-1">
+                    <span className="inline-block bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium w-full text-center">
+                      {booking.method || <span className="italic text-gray-400">---</span>}
                     </span>
                   </div>
-                  <div className="col-span-1">
-                    <span className={`inline-block px-2 py-1 rounded-full font-semibold ${
-                      booking.status === 'Đã xác nhận'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
+                  <div className="col-span-1 text-center">
+                    <span
+                      className={`inline-block px-2 py-[2px] rounded-full font-bold uppercase text-center w-full text-[11px] ${
+                        booking.status === 'Hoàn thành'
+                          ? 'bg-green-100 text-green-800'
+                          : booking.status === 'Đang thực hiện'
+                          ? 'bg-blue-100 text-blue-800'
+                          : booking.status === 'Hủy'
+                          ? 'bg-red-100 text-red-700'
+                          : booking.status === 'Đã xác nhận'
+                          ? 'bg-yellow-300 text-yellow-900 border border-yellow-400'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}
+                      style={{ letterSpacing: 1 }}
+                    >
                       {booking.status}
                     </span>
                   </div>
-                  <div className="col-span-1">
-                    {booking.status === 'Đã xác nhận' ? (
+                  <div className="col-span-1 text-center">
+                    <span
+                      className={`inline-block px-2 py-[2px] rounded-full font-bold uppercase text-center w-full text-[11px] ${
+                        kitStatuses[booking.bookingId] === 'Đã nhận'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : kitStatuses[booking.bookingId] === 'Đang giao'
+                          ? 'bg-yellow-200 text-yellow-900'
+                          : kitStatuses[booking.bookingId] === 'Chưa nhận'
+                          ? 'bg-gray-200 text-gray-700'
+                          : kitStatuses[booking.bookingId] === 'Đang vận chuyển'
+                          ? 'bg-blue-200 text-blue-900'
+                          : kitStatuses[booking.bookingId] === 'Đã vận chuyển'
+                          ? 'bg-indigo-200 text-indigo-900'
+                          : kitStatuses[booking.bookingId] === 'Đang vận chuyển mẫu'
+                          ? 'bg-orange-200 text-orange-900'
+                          : kitStatuses[booking.bookingId] === 'Đã lấy mẫu'
+                          ? 'bg-teal-200 text-teal-900'
+                          : kitStatuses[booking.bookingId] === 'Đã tới kho'
+                          ? 'bg-purple-200 text-purple-900'
+                          : 'bg-gray-50 text-gray-400'
+                      }`}
+                      style={{ letterSpacing: 1 }}
+                    >
+                      {kitStatuses[booking.bookingId] || <span className="italic text-gray-400">---</span>}
+                    </span>
+                  </div>
+                  <div className="col-span-1 text-center">
+                    {booking.status === 'Hoàn thành' ? (
                       <Link
                         href={`/my-booking/result/${booking.bookingId}`}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs inline-block text-center"

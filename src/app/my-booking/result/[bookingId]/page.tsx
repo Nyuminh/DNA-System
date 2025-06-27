@@ -15,62 +15,85 @@ interface ResultDetail {
   [key: string]: any;
 }
 
-function getStatusColor(status: string) {
-  switch (status) {
-    case "Đã hoàn thành":
-      return "bg-green-100 text-green-800";
-    case "Đang xử lý":
-      return "bg-yellow-100 text-yellow-800";
-    case "Chờ thu mẫu":
-      return "bg-blue-100 text-blue-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-}
-
 export default function ResultDetailPage() {
   const { bookingId } = useParams<{ bookingId: string }>();
   const [result, setResult] = useState<ResultDetail | null>(null);
+  const [kitStatus, setKitStatus] = useState<string>("---");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchResult() {
+    async function fetchResultAndKit() {
       setLoading(true);
       try {
+        // Lấy kết quả xét nghiệm
         const res = await fetch(`http://localhost:5198/api/Results/by-booking/${bookingId}`);
         if (!res.ok) throw new Error("Không tìm thấy kết quả!");
         const data = await res.json();
         setResult(data);
+
+        // Lấy trạng thái kit
+        const kitRes = await fetch(`http://localhost:5198/api/Kit/by-booking/${bookingId}`);
+        const kitData = await kitRes.json();
+        setKitStatus(kitData?.status || kitData?.kitStatus || "---");
       } catch (e: any) {
-        setError(e.message || "Lỗi khi tải kết quả");
+        setError(e.message || "Lỗi khi tải dữ liệu");
       } finally {
         setLoading(false);
       }
     }
-    if (bookingId) fetchResult();
+    if (bookingId) fetchResultAndKit();
   }, [bookingId]);
 
+  function getKitStatusColor(status: string) {
+    switch (status) {
+      case "Đã nhận":
+        return "bg-emerald-100 text-emerald-700";
+      case "Đang giao":
+        return "bg-yellow-200 text-yellow-900";
+      case "Chưa nhận":
+        return "bg-gray-200 text-gray-700";
+      case "Đang vận chuyển":
+        return "bg-blue-200 text-blue-900";
+      case "Đã vận chuyển":
+        return "bg-indigo-200 text-indigo-900";
+      case "Đang vận chuyển mẫu":
+        return "bg-orange-200 text-orange-900";
+      case "Đã lấy mẫu":
+        return "bg-teal-200 text-teal-900";
+      case "Đã tới kho":
+        return "bg-purple-200 text-purple-900";
+      default:
+        return "bg-gray-50 text-gray-400";
+    }
+  }
+
   return (
-    <div className="max-w-2xl mx-auto mt-10 bg-white rounded shadow p-8">
-      <div className="flex items-center mb-6">
-        <DocumentTextIcon className="h-8 w-8 text-blue-600 mr-2" />
-        <h1 className="text-2xl font-bold text-blue-700">Chi tiết kết quả xét nghiệm</h1>
+    <div className="max-w-2xl mx-auto mt-12 bg-white rounded-xl shadow-lg p-8">
+      <div className="flex items-center mb-8">
+        <DocumentTextIcon className="h-10 w-10 text-blue-600 mr-3" />
+        <div>
+          <h1 className="text-2xl font-bold text-blue-700">Kết quả xét nghiệm</h1>
+          <p className="text-gray-500 text-sm">
+            Chi tiết kết quả theo mã đặt:{" "}
+            <span className="font-semibold text-blue-600">{bookingId}</span>
+          </p>
+        </div>
       </div>
       <Link href="/my-booking" className="text-blue-500 hover:underline text-sm mb-6 inline-block">
         ← Quay lại danh sách đặt lịch
       </Link>
       {loading ? (
-        <div className="text-gray-500 py-8 text-center">Đang tải...</div>
+        <div className="text-gray-500 py-12 text-center text-lg">Đang tải...</div>
       ) : error ? (
-        <div className="text-red-500 py-8 text-center">{error}</div>
+        <div className="text-red-500 py-12 text-center text-lg">{error}</div>
       ) : result ? (
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 mb-6">
+          <table className="min-w-full divide-y divide-gray-200 mb-8">
             <tbody className="divide-y divide-gray-100">
               <tr>
                 <td className="py-2 pr-4 font-medium text-gray-500">Mã kết quả</td>
-                <td className="py-2">{result.resultId}</td>
+                <td className="py-2 font-semibold text-blue-700">{result.resultId}</td>
               </tr>
               <tr>
                 <td className="py-2 pr-4 font-medium text-gray-500">Mã booking</td>
@@ -91,13 +114,20 @@ export default function ResultDetailPage() {
               <tr>
                 <td className="py-2 pr-4 font-medium text-gray-500">Trạng thái</td>
                 <td className="py-2">
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(result.status)}`}>
-                    {result.status === "Đã hoàn thành" ? (
-                      <CheckCircleIcon className="h-5 w-5 mr-1 text-green-600" />
-                    ) : (
-                      <ExclamationCircleIcon className="h-5 w-5 mr-1 text-yellow-600" />
-                    )}
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-800">
                     {result.status}
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td className="py-2 pr-4 font-medium text-gray-500">Trạng thái Kit</td>
+                <td className="py-2">
+                  <span
+                    className={`inline-block px-2 py-[2px] rounded-full font-bold uppercase text-[11px] ${getKitStatusColor(
+                      kitStatus
+                    )}`}
+                  >
+                    {kitStatus}
                   </span>
                 </td>
               </tr>
@@ -111,21 +141,20 @@ export default function ResultDetailPage() {
                   "date",
                   "status",
                   "booking",
-                  "customer",
                   "service",
-                  "staff"
+                  "staff",
                 ].includes(key) && value !== null && value !== undefined ? (
-                  <tr key={key}>
-                    <td className="py-2 pr-4 font-medium text-gray-500 capitalize">{key}</td>
-                    <td className="py-2">{String(value)}</td>
-                  </tr>
-                ) : null
-              )}
+    <tr key={key}>
+      <td className="py-2 pr-4 font-medium text-gray-500 capitalize">{key}</td>
+      <td className="py-2">{String(value)}</td>
+    </tr>
+  ) : null
+)}
             </tbody>
           </table>
         </div>
       ) : (
-        <div className="text-gray-500 py-8 text-center">Không có dữ liệu kết quả.</div>
+        <div className="text-gray-500 py-12 text-center text-lg">Không có dữ liệu kết quả.</div>
       )}
     </div>
   );
