@@ -2,117 +2,44 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import MainLayout from '@/components/layout/MainLayout';
-
-const blogPosts = [
-  {
-    id: 'understanding-dna-testing',
-    title: 'Hiểu về xét nghiệm ADN: Tất cả những gì bạn cần biết',
-    excerpt: 'Một bài viết toàn diện về cách thức hoạt động của xét nghiệm ADN, các loại xét nghiệm hiện có và khi nào bạn nên cân nhắc xét nghiệm.',
-    category: 'Kiến thức cơ bản',
-    date: '15/05/2025',
-    author: 'TS. Nguyễn Văn A',
-    authorRole: 'Giám đốc Phòng xét nghiệm',
-    readTime: '8 phút đọc',
-    imageUrl: '/images/blog/blog-1.jpg',
-    featured: true,
-    content: '',
-  },
-  {
-    id: 'paternity-testing-guide',
-    title: 'Hướng dẫn đầy đủ về xét nghiệm huyết thống cha con',
-    excerpt: 'Tìm hiểu quá trình xét nghiệm huyết thống cha con, độ chính xác, chi phí và những điều cần lưu ý trước khi thực hiện xét nghiệm.',
-    category: 'Hướng dẫn xét nghiệm',
-    date: '10/05/2025',
-    author: 'ThS. Lê Văn C',
-    authorRole: 'Chuyên gia Tư vấn Di truyền',
-    readTime: '10 phút đọc',
-    imageUrl: '/images/blog/xet-nghiem-adn-cha-con.jpg',
-    featured: true,
-    content: '',
-  },
-  {
-    id: 'dna-test-for-immigration',
-    title: 'Xét nghiệm ADN cho mục đích di trú: Điều kiện và yêu cầu',
-    excerpt: 'Bài viết này giải thích về các yêu cầu xét nghiệm ADN cho mục đích di trú, quy trình và tài liệu cần thiết để đáp ứng yêu cầu của cơ quan di trú.',
-    category: 'ADN hành chính',
-    date: '05/05/2025',
-    author: 'TS. Trần Thị B',
-    authorRole: 'Trưởng phòng Xét nghiệm ADN',
-    readTime: '7 phút đọc',
-    imageUrl: '/images/blog/xet-nghiem-adn-hanh-chinh.jpg',
-    featured: false,
-    content: '',
-  },
-  {
-    id: 'privacy-in-dna-testing',
-    title: 'Bảo mật và riêng tư trong xét nghiệm ADN',
-    excerpt: 'Tìm hiểu cách thông tin di truyền của bạn được bảo vệ và những biện pháp mà các phòng xét nghiệm thực hiện để đảm bảo quyền riêng tư của khách hàng.',
-    category: 'Quyền riêng tư',
-    date: '01/05/2025',
-    author: 'TS. Nguyễn Văn A',
-    authorRole: 'Giám đốc Phòng xét nghiệm',
-    readTime: '6 phút đọc',
-    imageUrl: '/images/blog/bao-mat-adn.jpg',
-    featured: false,
-    content: '',
-  },
-  {
-    id: 'dna-collection-methods',
-    title: 'Các phương pháp thu thập mẫu ADN hiện đại',
-    excerpt: 'Khám phá các phương pháp thu thập mẫu ADN khác nhau, từ que bông ngoáy má đến các phương pháp không xâm lấn khác.',
-    category: 'Công nghệ',
-    date: '25/04/2025',
-    author: 'TS. Trần Thị B',
-    authorRole: 'Trưởng phòng Xét nghiệm ADN',
-    readTime: '5 phút đọc',
-    imageUrl: '/images/blog/cac-phuong-phap-xet-nghiem.jpg',
-    featured: false,
-    content: '',
-  },
-  {
-    id: 'dna-testing-myths',
-    title: 'Những hiểu lầm phổ biến về xét nghiệm ADN',
-    excerpt: 'Bài viết này làm rõ những hiểu lầm phổ biến về xét nghiệm ADN và cung cấp thông tin chính xác về quá trình, kết quả và ý nghĩa của chúng.',
-    category: 'Kiến thức cơ bản',
-    date: '20/04/2025',
-    author: 'ThS. Lê Văn C',
-    authorRole: 'Chuyên gia Tư vấn Di truyền',
-    readTime: '8 phút đọc',
-    imageUrl: '/images/blog/kien-thuc-adn.jpg',
-    featured: false,
-    content: '',
-  },
-];
-
-const categories = [
-  'Tất cả',
-  'Kiến thức cơ bản',
-  'Hướng dẫn xét nghiệm',
-  'ADN hành chính',
-  'Quyền riêng tư',
-  'Công nghệ',
-];
 
 export default function BlogPage() {
   const [activeCategory, setActiveCategory] = useState('Tất cả');
   const [searchTerm, setSearchTerm] = useState('');
+  const [courses, setCourses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredPosts = blogPosts.filter((post) => {
+  useEffect(() => {
+    setLoading(true);
+    axios.get('http://localhost:5198/api/Courses')
+      .then(res => setCourses(res.data))
+      .catch(() => setError('Không thể tải danh sách khóa học'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filteredPosts = courses.filter((post) => {
     // Filter by category
     const categoryMatch = activeCategory === 'Tất cả' || post.category === activeCategory;
     
     // Filter by search term
     const searchMatch = 
-      post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      post.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      post.author.toLowerCase().includes(searchTerm.toLowerCase());
+      (post.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (post.excerpt || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (post.author || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     return categoryMatch && searchMatch;
   });
 
-  const featuredPosts = blogPosts.filter(post => post.featured);
+  const featuredPosts = courses.filter(post => post.featured);
+
+  const categories = Array.from(new Set([
+    'Tất cả',
+    ...courses.map((c) => c.category).filter(Boolean)
+  ]));
 
   return (
     <MainLayout>
@@ -149,7 +76,8 @@ export default function BlogPage() {
               <h2 className="text-2xl font-extrabold tracking-tight text-gray-900 mb-8">Bài viết nổi bật</h2>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-12">
                 {featuredPosts.map((post) => (
-                  <div key={post.id} className="group relative">                    <div className="relative h-80 w-full overflow-hidden rounded-lg bg-gray-200 group-hover:opacity-90 sm:aspect-w-2 sm:aspect-h-1 sm:h-64 lg:aspect-w-1 lg:aspect-h-1">
+                  <div key={post.id} className="group relative">                    
+                    <div className="relative h-80 w-full overflow-hidden rounded-lg bg-gray-200 group-hover:opacity-90 sm:aspect-w-2 sm:aspect-h-1 sm:h-64 lg:aspect-w-1 lg:aspect-h-1">
                       <Image
                         src={post.imageUrl}
                         alt={post.title}
@@ -170,16 +98,16 @@ export default function BlogPage() {
                         {post.title}
                       </Link>
                     </h3>
-                    <p className="mt-3 text-base text-gray-500">{post.excerpt}</p>
+                    <p className="mt-3 text-base text-gray-500">{post.excerpt || post.description || ''}</p>
                     <div className="mt-4 flex items-center">
                       <div className="flex-shrink-0">
                         <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                          <span className="text-xs font-medium text-gray-500">{post.author.split(' ').map(n => n[0]).join('')}</span>
+                          <span className="text-xs font-medium text-gray-500">{(post.author || post.instructor || '').split(' ').map((n: string) => n[0]).join('')}</span>
                         </div>
                       </div>
                       <div className="ml-3">
-                        <p className="text-sm font-medium text-gray-900">{post.author}</p>
-                        <p className="text-xs text-gray-500">{post.authorRole}</p>
+                        <p className="text-sm font-medium text-gray-900">{post.author || post.instructor || ''}</p>
+                        <p className="text-xs text-gray-500">{post.authorRole || ''}</p>
                       </div>
                     </div>
                   </div>
