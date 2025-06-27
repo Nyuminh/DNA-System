@@ -1,9 +1,13 @@
 {
   "/page": "app/page.js",
-  "/auth/login/page": "app/auth/login/page.js",
-  "/auth/register/page": "app/auth/register/page.js",
-  "/my-booking/page": "app/my-booking/page.js",
-  "/my-booking/result/[bookingId]/page": "app/my-booking/result/[bookingId]/page.js",
   "/services/page": "app/services/page.js",
-  "/services/book/page": "app/services/book/page.js"
+  "/_not-found/page": "app/_not-found/page.js",
+  "/services/book/page": "app/services/book/page.js",
+  "/auth/login/page": "app/auth/login/page.js",
+  "/staff/page": "app/staff/page.js",
+  "/staff/kits/page": "app/staff/kits/page.js",
+  "/staff/test-results/page": "app/staff/test-results/page.js",
+  "/staff/test-results/[id]/page": "app/staff/test-results/[id]/page.js",
+  "/my-booking/page": "app/my-booking/page.js",
+  "/my-booking/result/[bookingId]/page": "app/my-booking/result/[bookingId]/page.js"
 }

@@ -16,6 +16,7 @@ import { kitApi, Kit } from '@/lib/api/staff';
 interface NewKitForm {
   customerID: string;
   staffID: string;
+  bookingId: string;
   description: string;
   status: 'available' | 'in-use' | 'completed' | 'expired';
   receivedate: string;
@@ -31,6 +32,7 @@ export default function KitManagement() {
   const [formData, setFormData] = useState<NewKitForm>({
     customerID: '',
     staffID: '',
+    bookingId: '',
     description: '',
     status: 'available',
     receivedate: new Date().toISOString().split('T')[0]
@@ -127,6 +129,7 @@ export default function KitManagement() {
       setFormData({
         customerID: '',
         staffID: '',
+        bookingId: '',
         description: '',
         status: 'available',
         receivedate: new Date().toISOString().split('T')[0]
@@ -146,6 +149,7 @@ export default function KitManagement() {
     setFormData({
       customerID: '',
       staffID: '',
+      bookingId: '',
       description: '',
       status: 'available',
       receivedate: new Date().toISOString().split('T')[0]
@@ -198,13 +202,13 @@ export default function KitManagement() {
   const getStatusText = (status: Kit['status']) => {
     switch (status) {
       case 'available':
-        return 'Đã nhận';          // Maps to "Received" in database
+        return 'Đã vận chuyển';
       case 'in-use':
-        return 'Đang xử lý';       // Maps to "Processing" in database
+        return 'Đang vận chuyển';
       case 'completed':
-        return 'Chờ xử lý';        // Maps to "Pending" in database
+        return 'Đã lấy mẫu';
       case 'expired':
-        return 'Hết hạn';
+        return 'Đã tới kho';
       default:
         return 'Không xác định';
     }
@@ -228,6 +232,7 @@ export default function KitManagement() {
                          (kit.description && kit.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
                          (kit.customerID && kit.customerID.toLowerCase().includes(searchTerm.toLowerCase())) ||
                          (kit.staffID && kit.staffID.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                         (kit.bookingId && kit.bookingId.toLowerCase().includes(searchTerm.toLowerCase())) ||
                          (kit.customerName && kit.customerName.toLowerCase().includes(searchTerm.toLowerCase())) ||
                          (kit.staffName && kit.staffName.toLowerCase().includes(searchTerm.toLowerCase()));
     
@@ -303,7 +308,7 @@ export default function KitManagement() {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-2xl font-bold text-green-600">{stats.available}</div>
-              <div className="text-sm text-slate-500">Đã nhận</div>
+              <div className="text-sm text-slate-500">Đã vận chuyển</div>
             </div>
             <CheckCircleIcon className="h-8 w-8 text-green-400" />
           </div>
@@ -312,7 +317,7 @@ export default function KitManagement() {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-2xl font-bold text-blue-600">{stats.inUse}</div>
-              <div className="text-sm text-slate-500">Đang xử lý</div>
+              <div className="text-sm text-slate-500">Đang vận chuyển</div>
             </div>
             <CheckCircleIcon className="h-8 w-8 text-blue-400" />
           </div>
@@ -322,7 +327,7 @@ export default function KitManagement() {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-2xl font-bold text-purple-600">{stats.completed}</div>
-              <div className="text-sm text-slate-500">Chờ xử lý</div>
+              <div className="text-sm text-slate-500">Đã lấy mẫu</div>
             </div>
             <CheckCircleIcon className="h-8 w-8 text-purple-400" />
           </div>
@@ -332,7 +337,7 @@ export default function KitManagement() {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-2xl font-bold text-orange-600">{stats.expired}</div>
-              <div className="text-sm text-slate-500">Hết hạn</div>
+              <div className="text-sm text-slate-500">Đã tới kho</div>
             </div>
             <ExclamationTriangleIcon className="h-8 w-8 text-orange-400" />
           </div>
@@ -363,10 +368,10 @@ export default function KitManagement() {
                 className="border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">Tất cả trạng thái</option>
-                <option value="available">Đã nhận (Received)</option>
-                <option value="in-use">Đang xử lý (Processing)</option>
-                <option value="completed">Chờ xử lý (Pending)</option>
-                <option value="expired">Hết hạn</option>
+                <option value="available">Đã vận chuyển</option>
+                <option value="in-use">Đang vận chuyển</option>
+                <option value="completed">Đã lấy mẫu</option>
+                <option value="expired">Đã tới kho</option>
               </select>
             </div>
           </div>
@@ -376,7 +381,8 @@ export default function KitManagement() {
       {/* Kit List */}
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200">            <thead className="bg-slate-50">
+          <table className="min-w-full divide-y divide-slate-200">
+            <thead className="bg-slate-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Kit ID
@@ -386,6 +392,9 @@ export default function KitManagement() {
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Staff ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  Booking ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Mô tả
@@ -400,7 +409,8 @@ export default function KitManagement() {
                   Thao tác
                 </th>
               </tr>
-            </thead>            <tbody className="bg-white divide-y divide-slate-200">
+            </thead>
+            <tbody className="bg-white divide-y divide-slate-200">
               {filteredKits.map((kit, index) => (
                 <tr key={kit.kitID || `kit-${index}`} className="hover:bg-slate-50">
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -414,6 +424,9 @@ export default function KitManagement() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
                     {kit.staffID || '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    {kit.bookingId || '-'}
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-slate-900 max-w-xs truncate" title={kit.description || ''}>
@@ -431,10 +444,10 @@ export default function KitManagement() {
                           className="text-xs font-semibold rounded-full px-2 py-1 border focus:ring-2 focus:ring-blue-500"
                           autoFocus
                         >
-                          <option value="available">Đã nhận (Received)</option>
-                          <option value="in-use">Đang xử lý (Processing)</option>
-                          <option value="completed">Chờ xử lý (Pending)</option>
-                          <option value="expired">Hết hạn</option>
+                          <option value="available">Đã vận chuyển</option>
+                          <option value="in-use">Đang vận chuyển</option>
+                          <option value="completed">Đã lấy mẫu</option>
+                          <option value="expired">Đã tới kho</option>
                         </select>
                       ) : (
                         <button
@@ -532,6 +545,22 @@ export default function KitManagement() {
                   )}
                 </div>
 
+                {/* Booking ID */}
+                <div>
+                  <label htmlFor="bookingId" className="block text-sm font-medium text-slate-700 mb-2">
+                    Booking ID
+                  </label>
+                  <input
+                    type="text"
+                    id="bookingId"
+                    name="bookingId"
+                    value={formData.bookingId}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Nhập Booking ID"
+                  />
+                </div>
+
                 {/* Status */}
                 <div>
                   <label htmlFor="status" className="block text-sm font-medium text-slate-700 mb-2">
@@ -544,10 +573,10 @@ export default function KitManagement() {
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option value="available">Đã nhận (Received)</option>
-                    <option value="in-use">Đang xử lý (Processing)</option>
-                    <option value="completed">Chờ xử lý (Pending)</option>
-                    <option value="expired">Hết hạn</option>
+                    <option value="available">Đã vận chuyển</option>
+                    <option value="in-use">Đang vận chuyển</option>
+                    <option value="completed">Đã lấy mẫu</option>
+                    <option value="expired">Đã tới kho</option>
                   </select>
                 </div>
 

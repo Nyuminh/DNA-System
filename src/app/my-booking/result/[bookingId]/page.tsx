@@ -143,13 +143,17 @@ export default function ResultDetailPage() {
                   "booking",
                   "service",
                   "staff",
+                  "customerId",
+                  "customer"
                 ].includes(key) && value !== null && value !== undefined ? (
-    <tr key={key}>
-      <td className="py-2 pr-4 font-medium text-gray-500 capitalize">{key}</td>
-      <td className="py-2">{String(value)}</td>
-    </tr>
-  ) : null
-)}
+                  <tr key={key}>
+                    <td className="py-2 pr-4 font-medium text-gray-500 capitalize">
+                      {key === "description" ? "Mô tả" : key}
+                    </td>
+                    <td className="py-2">{String(value)}</td>
+                  </tr>
+                ) : null
+              )}
             </tbody>
           </table>
         </div>

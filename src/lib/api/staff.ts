@@ -41,12 +41,12 @@ export interface KitApiResponse {
 const mapStatusToBackend = (status: Kit['status']): string => {
   // Map frontend status values to backend status values (matching database varchar(50))
   const statusMap: Record<Kit['status'], string> = {
-    'available': 'Received',     // Kit đã nhận và sẵn sàng sử dụng
-    'in-use': 'Processing',      // Kit đang được xử lý/sử dụng
-    'completed': 'Pending',      // Kit đã hoàn thành và đang chờ
-    'expired': 'Received'        // Kit hết hạn quay về trạng thái đã nhận
+    'available': 'Đã vận chuyển',     // Kit đã nhận và sẵn sàng sử dụng
+    'in-use': 'Đang vận chuyển',      // Kit đang được xử lý/sử dụng
+    'completed': 'Đã lấy mẫu',        // Kit đã hoàn thành và đang chờ
+    'expired': 'Đã tới kho'           // Kit hết hạn quay về trạng thái đã nhận
   };
-  return statusMap[status] || 'Received';
+  return statusMap[status] || 'Đã vận chuyển';
 };
 
 // Helper function to map backend status to frontend status
@@ -54,12 +54,18 @@ const mapStatusFromBackend = (backendStatus: string): Kit['status'] => {
   // Map backend status values (from database) to frontend status values
   const normalizedStatus = backendStatus?.toLowerCase() || '';
   
-  // Mapping based on actual database values: Received, Pending, Processing
-  if (normalizedStatus === 'received') return 'available';        // Received -> Available for use
-  if (normalizedStatus === 'processing') return 'in-use';         // Processing -> In use
-  if (normalizedStatus === 'pending') return 'completed';         // Pending -> Completed/waiting
+  // Mapping based on actual database values
+  if (normalizedStatus === 'đã vận chuyển' || normalizedStatus === 'da van chuyen') return 'available';
+  if (normalizedStatus === 'đã lấy mẫu' || normalizedStatus === 'da lay mau') return 'available';
+  if (normalizedStatus === 'đã tới kho' || normalizedStatus === 'da toi kho') return 'available';
+  if (normalizedStatus === 'đang vận chuyển' || normalizedStatus === 'dang van chuyen') return 'in-use';
+  if (normalizedStatus === 'đang vận chuyển mẫu' || normalizedStatus === 'dang van chuyen mau') return 'in-use';
   
-  // Legacy/additional mappings for backward compatibility
+  // Legacy mappings for backward compatibility
+  if (normalizedStatus === 'received') return 'available';
+  if (normalizedStatus === 'processing') return 'in-use';
+  if (normalizedStatus === 'pending') return 'completed';
+  
   if (normalizedStatus.includes('available')) return 'available';
   if (normalizedStatus.includes('inuse') || normalizedStatus.includes('in-use')) return 'in-use';
   if (normalizedStatus.includes('completed')) return 'completed';
@@ -75,6 +81,7 @@ export interface Kit {
   kitID: string;
   customerID?: string;
   staffID?: string;
+  bookingId?: string;
   description?: string;
   status: 'available' | 'in-use' | 'completed' | 'expired';
   receivedate?: string;
@@ -88,6 +95,7 @@ interface ApiKitResponse {
   kitId?: string | number;        // Backend uses kitId (camelCase)
   customerId?: string | number;   // Backend uses customerId (camelCase) 
   staffId?: string | number;      // Backend uses staffId (camelCase)
+  bookingId?: string | number;    // Added bookingId field from backend
   description?: string;
   status?: string;                // Backend might use different status values
   receivedate?: string;
@@ -145,45 +153,41 @@ export const kitApi = {  /**
       
       let kitsArray: ApiKitResponse[] = [];
       
-      // Function to recursively find all kit objects with actual data (not $ref)
-      const findAllKitObjects = (obj: unknown, found: ApiKitResponse[] = []): ApiKitResponse[] => {
-        if (obj && typeof obj === 'object') {
-          const objTyped = obj as Record<string, unknown>;
-          
-          // Check if this is a kit object with actual data
-          if (objTyped.kitId && typeof objTyped.kitId === 'string' && !objTyped.$ref) {
-            found.push(objTyped as ApiKitResponse);
-          }
-          
-          // Recursively search in nested objects and arrays
-          for (const key in objTyped) {
-            if (objTyped.hasOwnProperty(key) && key !== '$ref') {
-              if (Array.isArray(objTyped[key])) {
-                (objTyped[key] as unknown[]).forEach((item: unknown) => findAllKitObjects(item, found));
-              } else if (typeof objTyped[key] === 'object' && objTyped[key] !== null) {
-                findAllKitObjects(objTyped[key], found);
-              }
-            }
-          }
-        }
-        return found;
-      };
-      
-      // Handle different response formats
+      // Thay thế hàm findAllKitObjects bằng một cách tiếp cận đơn giản hơn
+      // để tránh thu thập các kit trùng lặp từ response API
       if (response.data && typeof response.data === 'object') {
         if ('$values' in response.data && Array.isArray(response.data.$values)) {
-          console.log('Found $values array, searching for all kit objects...');
-          kitsArray = findAllKitObjects(response.data);
+          console.log('Found $values array in response');
+          kitsArray = response.data.$values.filter((item: any) => 
+            item && typeof item === 'object' && item.kitId && !item.$ref
+          );
         } else if (Array.isArray(response.data)) {
-          console.log('Found direct array, searching for all kit objects...');
-          kitsArray = findAllKitObjects(response.data);
+          console.log('Found direct array in response');
+          kitsArray = response.data.filter((item: any) => 
+            item && typeof item === 'object' && item.kitId && !item.$ref
+          );
+        } else if (response.data.kitId) {
+          console.log('Found single kit object');
+          kitsArray = [response.data];
         } else {
-          console.log('Found single object, searching for kit objects...');
-          kitsArray = findAllKitObjects(response.data);
+          console.log('Unexpected response format, searching for top-level kit properties');
+          // Tìm các thuộc tính cấp cao nhất có thể chứa danh sách kit
+          Object.keys(response.data).forEach(key => {
+            const value = response.data[key];
+            if (Array.isArray(value)) {
+              const validKits = value.filter((item: any) => 
+                item && typeof item === 'object' && item.kitId && !item.$ref
+              );
+              if (validKits.length > 0) {
+                console.log(`Found ${validKits.length} kits in property '${key}'`);
+                kitsArray = [...kitsArray, ...validKits];
+              }
+            }
+          });
         }
       }
       
-      console.log('All found kit objects:', kitsArray);
+      console.log('Extracted kit objects:', kitsArray);
       console.log('Total kit objects found:', kitsArray.length);
       
       // Format and normalize kit data
@@ -191,9 +195,10 @@ export const kitApi = {  /**
         console.log(`Processing kit ${index + 1}:`, kit);
         
         const normalizedKit = {
-          kitID: kit.kitId?.toString() || `KIT_${Date.now()}_${index}`,  // Read kitId from backend
-          customerID: kit.customerId?.toString() || '',                   // Read customerId from backend  
-          staffID: kit.staffId?.toString() || '',                         // Read staffId from backend
+          kitID: kit.kitId?.toString() || `KIT_${Date.now()}_${index}`,
+          customerID: kit.customerId?.toString() || '',
+          staffID: kit.staffId?.toString() || '',
+          bookingId: kit.bookingId?.toString(),
           description: kit.description || '',
           status: mapStatusFromBackend(kit.status || ''),
           receivedate: kit.receivedate || '',
@@ -205,8 +210,23 @@ export const kitApi = {  /**
         return normalizedKit;
       });
       
+      // Lọc bỏ các kit trùng lặp dựa trên kitID
+      const uniqueKits: Kit[] = [];
+      const kitIDs = new Set<string>();
+      
+      normalizedKits.forEach(kit => {
+        if (!kitIDs.has(kit.kitID)) {
+          kitIDs.add(kit.kitID);
+          uniqueKits.push(kit);
+        } else {
+          console.warn(`Duplicated kitID found and removed: ${kit.kitID}`);
+        }
+      });
+      
+      console.log('After removing duplicates:', uniqueKits.length);
+      
       // Sort kits by kitID 
-      const sortedKits = normalizedKits.sort((a, b) => {
+      const sortedKits = uniqueKits.sort((a, b) => {
         // Extract numeric part from kitID for proper sorting (K01, K02, K10, etc.)
         const getNumericPart = (kitID: string) => {
           const match = kitID.match(/\d+/);
@@ -278,6 +298,7 @@ export const kitApi = {  /**
         kitID: kit.kitId?.toString() || kitId,     // Read kitId from backend
         customerID: kit.customerId?.toString() || '',  // Read customerId from backend
         staffID: kit.staffId?.toString() || '',    // Read staffId from backend
+        bookingId: kit.bookingId?.toString(),
         description: kit.description || '',
         status: normalizedStatus,
         receivedate: kit.receivedate || '',
@@ -310,6 +331,7 @@ export const kitApi = {  /**
       const payload: any = {
         customerID: kitData.customerID,
         staffID: kitData.staffID,
+        bookingId: kitData.bookingId,
         description: kitData.description,
         status: kitData.status || 'available',
         receivedate: kitData.receivedate
@@ -344,7 +366,7 @@ export const kitApi = {  /**
       
       // Map frontend status to backend status
       const backendStatus = mapStatusToBackend(kitData.status);
-      console.log(`� Mapped status: ${kitData.status} -> ${backendStatus}`);
+      console.log(`🔄 Mapped status: ${kitData.status} -> ${backendStatus}`);
       
       // Based on your successful curl: -d '"Processing"'
       // The backend expects the status as a raw JSON string
@@ -398,7 +420,7 @@ export const kitApi = {  /**
       const backendStatus = mapStatusToBackend(kitData.status);
       console.log(`🚀 Updating kit ${kitData.kitID} status to: ${kitData.status} -> ${backendStatus}`);
       console.log(`📤 Sending raw JSON string: "${backendStatus}"`);
-      console.log(`� PUT URL: /api/Kit/${kitData.kitID}`);
+      console.log(`🔗 PUT URL: /api/Kit/${kitData.kitID}`);
       
       // Send the status as a raw JSON string, matching the working curl example:
       // curl -X 'PUT' 'http://localhost:5198/api/Kit/K04' -H 'Content-Type: application/json' -d '"Processing"'
@@ -445,6 +467,7 @@ export const kitApi = {  /**
         kitID: kitId,
         customerID: kitData.customerID,
         staffID: kitData.staffID,
+        bookingId: kitData.bookingId,
         description: kitData.description,
         status: kitData.status,
         receivedate: kitData.receivedate
@@ -480,11 +503,13 @@ export const kitApi = {  /**
     customerName?: string;
     staffID: string;
     staffName?: string;
+    bookingId?: string;
     description?: string;
   }): Promise<Kit> {    try {
       const response = await apiClient.patch<Kit>(`/api/Kit/${kitId}/assign`, {
         customerID: assignmentData.customerID,
         staffID: assignmentData.staffID,
+        bookingId: assignmentData.bookingId,
         description: assignmentData.description,
         status: 'in-use',
         receivedate: new Date().toISOString().split('T')[0]
@@ -524,6 +549,7 @@ export const kitApi = {  /**
       return allKits.filter(kit => 
         kit.kitID.toLowerCase().includes(lowerSearchTerm) ||
         (kit.description && kit.description.toLowerCase().includes(lowerSearchTerm)) ||
+        (kit.bookingId && kit.bookingId.toLowerCase().includes(lowerSearchTerm)) ||
         (kit.customerID && kit.customerID.toLowerCase().includes(lowerSearchTerm)) ||
         (kit.customerName && kit.customerName.toLowerCase().includes(lowerSearchTerm)) ||
         (kit.staffID && kit.staffID.toLowerCase().includes(lowerSearchTerm)) ||
@@ -709,5 +735,374 @@ export const updateKit = kitApi.updateKit;
 export const updateKitStatus = kitApi.updateKitStatus;
 export const deleteKit = kitApi.deleteKit;
 
+// Appointments API
+export interface Appointment {
+  id?: string;
+  bookingId: string;
+  customerId: string;
+  date: string;
+  staffId: string;
+  serviceId: string;
+  address: string;
+  method: string;
+  status: string;
+  customerName?: string;
+  serviceName?: string;
+}
+
+export const appointmentsApi = {
+  async getAppointments(): Promise<Appointment[]> {
+    try {
+      console.log('🚀 Fetching appointments from API...');
+      console.log('API Endpoint:', `${API_BASE_URL}/api/Appointments`);
+      
+      const response = await apiClient.get('/api/Appointments');
+      console.log('✅ Raw API response:', response.data);
+      
+      let appointments: Appointment[] = [];
+      
+      // Handle different response formats (similar to Kit API)
+      if (response.data && typeof response.data === 'object') {
+        if ('$values' in response.data && Array.isArray(response.data.$values)) {
+          console.log('Found $values array in appointment data');
+          appointments = response.data.$values;
+        } else if (Array.isArray(response.data)) {
+          console.log('Found direct array in appointment data');
+          appointments = response.data;
+        } else {
+          console.log('Found single object or unexpected format in appointment data');
+          // Assuming it might be a single appointment or have a different structure
+          appointments = Array.isArray(response.data) ? response.data : [response.data];
+        }
+      }
+      
+      // Map and normalize the appointment data
+      const normalizedAppointments = appointments.map((item: any, index: number) => {
+        console.log(`Processing appointment ${index + 1}:`, item);
+        
+        // Convert nested objects if present
+        const appointment: Appointment = {
+          id: item.id || `appointment_${index}`,
+          bookingId: item.bookingId || '',
+          customerId: item.customerId || '',
+          date: item.date || '',
+          staffId: item.staffId || '',
+          serviceId: item.serviceId || '',
+          address: item.address || '',
+          method: item.method || '',
+          status: item.status || 'pending',
+          // Handle nested objects for name fields
+          customerName: item.customer?.fullname || '',
+          serviceName: item.service?.name || ''
+        };
+        
+        console.log(`Normalized appointment ${index + 1}:`, appointment);
+        return appointment;
+      });
+      
+      console.log('Total appointments found:', normalizedAppointments.length);
+      return normalizedAppointments;
+    } catch (error) {
+      console.error('❌ Error fetching appointments:', error);
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 404) {
+          console.error('Endpoint not found - check if backend is running');
+        } else if (error.response?.status === 500) {
+          console.error('Server error - check backend logs');
+        }
+      }
+      // Return empty array on error to prevent app crash
+      return [];
+    }
+  },
+  
+  async updateAppointmentStatus(id: string, status: string): Promise<boolean> {
+    try {
+      console.log(`📤 Updating appointment ${id} status to: ${status}`);
+      console.log(`📝 API Endpoint: ${API_BASE_URL}/api/Appointments/${id}/status`);
+      console.log(`📝 Payload: "${status}"`);
+      
+      // Chuẩn bị payload như một chuỗi JSON đơn giản, đưa vào dấu ngoặc kép
+      const payload = JSON.stringify(status);
+      console.log('Raw payload:', payload);
+      
+      // Gửi request cập nhật status
+      const response = await apiClient.put(`/api/Appointments/${id}/status`, payload, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': '*/*'
+        }
+      });
+      
+      console.log(`✅ Status code: ${response.status}`);
+      console.log(`✅ Updated appointment ${id} status to ${status}`);
+      console.log('Response data:', response.data);
+      
+      return response.status >= 200 && response.status < 300;
+    } catch (error) {
+      console.error(`❌ Error updating appointment status:`, error);
+      
+      // Log chi tiết về lỗi
+      if (axios.isAxiosError(error)) {
+        console.error('Status:', error.response?.status);
+        console.error('Response data:', error.response?.data);
+        console.error('Request config:', error.config?.data);
+        console.error('Request URL:', error.config?.url);
+      }
+      
+      return false;
+    }
+  }
+};
+
+// Export appointment functions
+export const getAppointments = appointmentsApi.getAppointments;
+export const updateAppointmentStatus = appointmentsApi.updateAppointmentStatus;
+
 // Default export
 export default kitApi;
+
+export const getAppointmentById = async (token: string, id: string): Promise<Appointment | null> => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/Appointments/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching appointment with ID ${id}:`, error);
+    return null;
+  }
+};
+
+export const updateAppointment = async (token: string, id: string, appointmentData: Partial<Appointment>): Promise<Appointment | null> => {
+  try {
+    console.log(`Updating appointment ${id} with data:`, appointmentData);
+    
+    // Đảm bảo dữ liệu gửi đi đúng định dạng
+    const apiPayload = {
+      id: appointmentData.id,
+      bookingId: appointmentData.bookingId,
+      customerId: appointmentData.customerId,
+      date: appointmentData.date,
+      staffId: appointmentData.staffId || "",
+      serviceId: appointmentData.serviceId,
+      address: appointmentData.address || "",
+      method: appointmentData.method,
+      status: appointmentData.status,
+      // Giữ lại các trường bổ sung nếu có
+      customerName: appointmentData.customerName,
+      serviceName: appointmentData.serviceName
+    };
+    
+    console.log('API payload for update:', apiPayload);
+    
+    const response = await axios.put(`${API_BASE_URL}/api/Appointments/${id}`, apiPayload, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    console.log('Update response:', response.data);
+    
+    // Nếu API không trả về dữ liệu đầy đủ, trả về dữ liệu ban đầu với status đã cập nhật
+    if (!response.data || typeof response.data !== 'object') {
+      console.log('API returned invalid data, using original data with updated status');
+      return {
+        ...appointmentData,
+        status: appointmentData.status
+      } as Appointment;
+    }
+    
+    return response.data;
+  } catch (error: any) {
+    if (error.response) {
+      console.error(`Error updating appointment with ID ${id}:`, error.response.status, error.response.data);
+    } else if (error.request) {
+      console.error(`Error updating appointment with ID ${id}: No response`, error.request);
+    } else {
+      console.error(`Error updating appointment with ID ${id}:`, error.message);
+    }
+    
+    // Nếu có lỗi, trả về dữ liệu ban đầu để tránh mất dữ liệu trong giao diện
+    console.log('Returning original appointment data due to API error');
+    return appointmentData as Appointment;
+  }
+};
+
+// Test Result API
+export interface TestResult {
+  resultId?: string;
+  customerId: string;
+  staffId: string;
+  serviceId: string;
+  bookingId: string;
+  date: string;
+  description: string;
+  status: string;
+}
+
+export const createTestResult = async (token: string, resultData: Partial<TestResult>): Promise<TestResult | null> => {
+  try {
+    console.log('Creating test result with data:', resultData);
+    
+    const response = await axios.post(`${API_BASE_URL}/api/TestResults`, resultData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    console.log('Create test result response:', response.data);
+    return response.data;
+  } catch (error: any) {
+    if (error.response) {
+      console.error('Error creating test result:', error.response.status, error.response.data);
+    } else if (error.request) {
+      console.error('Error creating test result: No response received', error.request);
+    } else {
+      console.error('Error creating test result:', error.message);
+    }
+    return null;
+  }
+};
+
+// Hàm mới sử dụng endpoint /api/Results
+export const createTestResultV2 = async (token: string, resultData: Partial<TestResult>): Promise<TestResult | null> => {
+  try {
+    console.log('Creating test result with new API endpoint:', resultData);
+    
+    const response = await axios.post(`${API_BASE_URL}/api/Results`, resultData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+     
+    console.log('Create test result V2 response:', response.data);
+    return response.data;
+  } catch (error: any) {
+    if (error.response) {
+      console.error('Error creating test result V2:', error.response.status, error.response.data);
+    } else if (error.request) {
+      console.error('Error creating test result V2: No response received', error.request);
+    } else {
+      console.error('Error creating test result V2:', error.message);
+    }
+    return null;
+  }
+};
+
+// Hàm mới sử dụng endpoint /api/Results/by-booking/{bookingId}
+export const getTestResultsByBookingId = async (token: string, bookingId: string): Promise<TestResult[]> => {
+  try {
+    console.log(`🔍 Fetching test results for booking ID: ${bookingId} using new API endpoint`);
+    console.log(`🔗 Endpoint: ${API_BASE_URL}/api/Results/by-booking/${bookingId}`);
+    
+    const response = await axios.get(`${API_BASE_URL}/api/Results/by-booking/${bookingId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Accept': '*/*'
+      },
+    });
+    
+    console.log('✅ Test results response:', response.data);
+    
+    // Xử lý response tương tự như các API khác
+    let results: TestResult[] = [];
+    
+    if (response.data) {
+      // Xử lý các định dạng response có thể có
+      if ('$values' in response.data && Array.isArray(response.data.$values)) {
+        console.log('Found $values array in results data');
+        results = response.data.$values;
+      } else if (Array.isArray(response.data)) {
+        console.log('Found direct array in results data');
+        results = response.data;
+      } else if (response.data.resultId) {
+        // Nếu API trả về một kết quả duy nhất
+        console.log('Found single result object');
+        results = [response.data];
+      }
+      
+      // Map và format dữ liệu nếu cần
+      results = results.map(result => ({
+        resultId: result.resultId || '',
+        customerId: result.customerId || '',
+        staffId: result.staffId || '',
+        serviceId: result.serviceId || '',
+        bookingId: result.bookingId || bookingId,
+        date: result.date || new Date().toISOString(),
+        description: result.description || '',
+        status: result.status || 'completed'
+      }));
+    }
+    
+    console.log(`Found ${results.length} test results for booking ID: ${bookingId}`);
+    return results;
+  } catch (error: any) {
+    if (error.response) {
+      console.error(`Error fetching test results for booking ${bookingId}:`, error.response.status, error.response.data);
+    } else if (error.request) {
+      console.error(`Error fetching test results for booking ${bookingId}: No response`, error.request);
+    } else {
+      console.error(`Error fetching test results for booking ${bookingId}:`, error.message);
+    }
+    console.log('🔄 Returning empty array due to API error');
+    return [];
+  }
+};
+
+// Hàm cập nhật trạng thái an toàn - thử nhiều phương pháp khác nhau nếu cần
+export const updateAppointmentStatusSafe = async (token: string, id: string, status: string): Promise<boolean> => {
+  try {
+    console.log(`🚀 Attempting to update appointment ${id} status to: ${status}`);
+    
+    // Phương pháp 1: Thử cập nhật với endpoint PUT /api/Appointments/{id}
+    // Lấy dữ liệu hiện tại trước
+    const currentAppointment = await getAppointmentById(token, id);
+    
+    if (!currentAppointment) {
+      console.error('❌ Cannot update status: Failed to fetch current appointment data');
+      return false;
+    }
+    
+    console.log('✅ Current appointment data:', currentAppointment);
+    
+    // Cập nhật chỉ trường status
+    const updateData = {
+      ...currentAppointment,
+      status: status
+    };
+    
+    console.log('📤 Updating with payload:', updateData);
+    
+    // Gửi request cập nhật toàn bộ đối tượng
+    const response = await axios.put(`${API_BASE_URL}/api/Appointments/${id}`, updateData, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': '*/*'
+      },
+    });
+    
+    console.log(`✅ Update response status: ${response.status}`);
+    console.log('✅ Update response data:', response.data);
+    
+    return response.status >= 200 && response.status < 300;
+  } catch (error) {
+    console.error(`❌ Error in safe update for appointment status:`, error);
+    
+    if (axios.isAxiosError(error)) {
+      console.error('Status:', error.response?.status);
+      console.error('Response data:', error.response?.data);
+      console.error('Request URL:', error.config?.url);
+      console.error('Request payload:', error.config?.data);
+    }
+    
+    return false;
+  }
+};
+
