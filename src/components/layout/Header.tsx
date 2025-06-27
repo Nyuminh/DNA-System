@@ -111,13 +111,7 @@ export default function Header() {
                       {/* Menu cho Customer */}
                     {!isAdmin() && !isManager() && (
                       <>
-                        <Link
-                          href="/my-tests"
-                          className="block px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-100 transition-colors duration-200"
-                          onClick={() => setShowUserMenu(false)}
-                        >
-                          Xét nghiệm của tôi
-                        </Link>
+                        
                         <Link
                           href="/my-booking"
                           className="block px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-100 transition-colors duration-200"

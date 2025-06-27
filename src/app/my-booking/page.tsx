@@ -174,7 +174,7 @@ export default function MyBookingPage() {
             <div className="text-center py-10 text-gray-500">Bạn chưa có lịch đặt nào.</div>
           ) : (
             <div className="bg-white rounded-xl shadow border border-gray-200 w-full text-xs">
-              <div className="grid grid-cols-11 px-2 py-3 bg-gray-50 font-semibold text-gray-500 uppercase gap-x-1">
+              <div className="grid grid-cols-12 px-2 py-3 bg-gray-50 font-semibold text-gray-500 uppercase gap-x-1">
                 <div className="col-span-1">MÃ ĐẶT</div>
                 <div className="col-span-2">TÊN DỊCH VỤ</div>
                 <div className="col-span-2">NHÂN VIÊN</div>
@@ -182,11 +182,12 @@ export default function MyBookingPage() {
                 <div className="col-span-1">NGÀY HẸN</div>
                 <div className="col-span-2">PHƯƠNG THỨC</div>
                 <div className="col-span-1">TRẠNG THÁI</div>
+                <div className="col-span-1">KẾT QUẢ</div> {/* Thêm cột này */}
               </div>
               {bookings.map((booking, idx) => (
                 <div
                   key={booking.id ? `booking-form-${booking.id}` : `booking-form-${idx}`}
-                  className="grid grid-cols-11 px-2 py-4 border-t border-gray-100 items-center hover:bg-gray-50 transition gap-x-1"
+                  className="grid grid-cols-12 px-2 py-4 border-t border-gray-100 items-center hover:bg-gray-50 transition gap-x-1"
                 >
                   <div className="col-span-1 font-semibold text-blue-700 break-words">{booking.bookingId}</div>
                   <div className="col-span-2 text-gray-900 break-words">
@@ -214,6 +215,18 @@ export default function MyBookingPage() {
                     }`}>
                       {booking.status}
                     </span>
+                  </div>
+                  <div className="col-span-1">
+                    {booking.status === 'Đã xác nhận' ? (
+                      <Link
+                        href={`/my-booking/result/${booking.bookingId}`}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs inline-block text-center"
+                      >
+                        Xem kết quả
+                      </Link>
+                    ) : (
+                      <span className="text-gray-400 italic">---</span>
+                    )}
                   </div>
                 </div>
               ))}
