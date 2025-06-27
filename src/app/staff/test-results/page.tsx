@@ -112,18 +112,23 @@ export default function OrderManagement() {
     if (!status) return 'pending';
     
     // Xử lý các giá trị status từ database
+    if (status === 'Đã xác nhận') return 'pending';
+    if (status === 'Đang thực hiện') return 'in-progress';
+    if (status === 'Đã hoàn thành') return 'completed';
+    if (status === 'Hủy') return 'cancelled';
+    
+    // Giữ backward compatibility với các giá trị cũ
     if (status === 'Pending') return 'pending';
     if (status === 'Confirmed') return 'in-progress';
     if (status === 'Completed') return 'completed';
     if (status === 'Cancelled') return 'cancelled';
     
-    // Giữ backward compatibility với các giá trị cũ
+    // Xử lý các trường hợp khác
     const lowerStatus = status.toLowerCase();
-    if (lowerStatus.includes('pending')) return 'pending';
-    if (lowerStatus.includes('confirm')) return 'in-progress';
-    if (lowerStatus.includes('progress')) return 'in-progress';
-    if (lowerStatus.includes('complete')) return 'completed';
-    if (lowerStatus.includes('cancel')) return 'cancelled';
+    if (lowerStatus.includes('xác nhận')) return 'pending';
+    if (lowerStatus.includes('thực hiện')) return 'in-progress';
+    if (lowerStatus.includes('hoàn thành')) return 'completed';
+    if (lowerStatus.includes('hủy')) return 'cancelled';
     
     return 'pending';
   };
@@ -155,13 +160,13 @@ export default function OrderManagement() {
   const getStatusText = (status: Order['status']) => {
     switch (status) {
       case 'pending':
-        return 'Pending';
+        return 'Đã xác nhận';
       case 'in-progress':
-        return 'Confirmed';
+        return 'Đang thực hiện';
       case 'completed':
-        return 'Completed';
+        return 'Hoàn thành';
       case 'cancelled':
-        return 'Cancelled';
+        return 'Hủy';
       default:
         return '';
     }
@@ -276,19 +281,19 @@ export default function OrderManagement() {
       let apiStatus = '';
       switch (newStatus) {
         case 'pending':
-          apiStatus = 'Pending';
+          apiStatus = 'Đã xác nhận';
           break;
         case 'in-progress':
-          apiStatus = 'Confirmed';
+          apiStatus = 'Đang thực hiện';
           break;
         case 'completed':
-          apiStatus = 'Completed';
+          apiStatus = 'Đã hoàn thành';
           break;
         case 'cancelled':
-          apiStatus = 'Cancelled';
+          apiStatus = 'Hủy';
           break;
         default:
-          apiStatus = 'Pending';
+          apiStatus = 'Đã xác nhận';
       }
       
       // Chuẩn bị dữ liệu cập nhật
@@ -348,15 +353,15 @@ export default function OrderManagement() {
   const getNextStatusText = (currentStatus: Order['status']): string => {
     switch (currentStatus) {
       case 'pending':
-        return 'Confirm';
+        return 'Xác nhận';
       case 'in-progress':
-        return 'Complete';
+        return 'Hoàn thành';
       case 'completed':
-        return 'Completed';
+        return 'Đã hoàn thành';
       case 'cancelled':
-        return 'Cancelled';
+        return 'Đã hủy';
       default:
-        return 'Confirm';
+        return 'Xác nhận';
     }
   };
 

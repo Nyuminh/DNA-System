@@ -202,13 +202,13 @@ export default function KitManagement() {
   const getStatusText = (status: Kit['status']) => {
     switch (status) {
       case 'available':
-        return 'Đã nhận';          // Maps to "Received" in database
+        return 'Đã vận chuyển';
       case 'in-use':
-        return 'Đang xử lý';       // Maps to "Processing" in database
+        return 'Đang vận chuyển';
       case 'completed':
-        return 'Chờ xử lý';        // Maps to "Pending" in database
+        return 'Đã lấy mẫu';
       case 'expired':
-        return 'Hết hạn';
+        return 'Đã tới kho';
       default:
         return 'Không xác định';
     }
@@ -308,7 +308,7 @@ export default function KitManagement() {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-2xl font-bold text-green-600">{stats.available}</div>
-              <div className="text-sm text-slate-500">Đã nhận</div>
+              <div className="text-sm text-slate-500">Đã vận chuyển</div>
             </div>
             <CheckCircleIcon className="h-8 w-8 text-green-400" />
           </div>
@@ -317,7 +317,7 @@ export default function KitManagement() {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-2xl font-bold text-blue-600">{stats.inUse}</div>
-              <div className="text-sm text-slate-500">Đang xử lý</div>
+              <div className="text-sm text-slate-500">Đang vận chuyển</div>
             </div>
             <CheckCircleIcon className="h-8 w-8 text-blue-400" />
           </div>
@@ -327,7 +327,7 @@ export default function KitManagement() {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-2xl font-bold text-purple-600">{stats.completed}</div>
-              <div className="text-sm text-slate-500">Chờ xử lý</div>
+              <div className="text-sm text-slate-500">Đã lấy mẫu</div>
             </div>
             <CheckCircleIcon className="h-8 w-8 text-purple-400" />
           </div>
@@ -337,7 +337,7 @@ export default function KitManagement() {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-2xl font-bold text-orange-600">{stats.expired}</div>
-              <div className="text-sm text-slate-500">Hết hạn</div>
+              <div className="text-sm text-slate-500">Đã tới kho</div>
             </div>
             <ExclamationTriangleIcon className="h-8 w-8 text-orange-400" />
           </div>
@@ -368,10 +368,10 @@ export default function KitManagement() {
                 className="border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">Tất cả trạng thái</option>
-                <option value="available">Đã nhận (Received)</option>
-                <option value="in-use">Đang xử lý (Processing)</option>
-                <option value="completed">Chờ xử lý (Pending)</option>
-                <option value="expired">Hết hạn</option>
+                <option value="available">Đã vận chuyển</option>
+                <option value="in-use">Đang vận chuyển</option>
+                <option value="completed">Đã lấy mẫu</option>
+                <option value="expired">Đã tới kho</option>
               </select>
             </div>
           </div>
@@ -444,10 +444,10 @@ export default function KitManagement() {
                           className="text-xs font-semibold rounded-full px-2 py-1 border focus:ring-2 focus:ring-blue-500"
                           autoFocus
                         >
-                          <option value="available">Đã nhận (Received)</option>
-                          <option value="in-use">Đang xử lý (Processing)</option>
-                          <option value="completed">Chờ xử lý (Pending)</option>
-                          <option value="expired">Hết hạn</option>
+                          <option value="available">Đã vận chuyển</option>
+                          <option value="in-use">Đang vận chuyển</option>
+                          <option value="completed">Đã lấy mẫu</option>
+                          <option value="expired">Đã tới kho</option>
                         </select>
                       ) : (
                         <button
@@ -573,10 +573,10 @@ export default function KitManagement() {
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option value="available">Đã nhận (Received)</option>
-                    <option value="in-use">Đang xử lý (Processing)</option>
-                    <option value="completed">Chờ xử lý (Pending)</option>
-                    <option value="expired">Hết hạn</option>
+                    <option value="available">Đã vận chuyển</option>
+                    <option value="in-use">Đang vận chuyển</option>
+                    <option value="completed">Đã lấy mẫu</option>
+                    <option value="expired">Đã tới kho</option>
                   </select>
                 </div>
 

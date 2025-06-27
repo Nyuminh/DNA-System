@@ -41,12 +41,12 @@ export interface KitApiResponse {
 const mapStatusToBackend = (status: Kit['status']): string => {
   // Map frontend status values to backend status values (matching database varchar(50))
   const statusMap: Record<Kit['status'], string> = {
-    'available': 'Received',     // Kit đã nhận và sẵn sàng sử dụng
-    'in-use': 'Processing',      // Kit đang được xử lý/sử dụng
-    'completed': 'Pending',      // Kit đã hoàn thành và đang chờ
-    'expired': 'Received'        // Kit hết hạn quay về trạng thái đã nhận
+    'available': 'Đã vận chuyển',     // Kit đã nhận và sẵn sàng sử dụng
+    'in-use': 'Đang vận chuyển',      // Kit đang được xử lý/sử dụng
+    'completed': 'Đã lấy mẫu',        // Kit đã hoàn thành và đang chờ
+    'expired': 'Đã tới kho'           // Kit hết hạn quay về trạng thái đã nhận
   };
-  return statusMap[status] || 'Received';
+  return statusMap[status] || 'Đã vận chuyển';
 };
 
 // Helper function to map backend status to frontend status
@@ -54,12 +54,18 @@ const mapStatusFromBackend = (backendStatus: string): Kit['status'] => {
   // Map backend status values (from database) to frontend status values
   const normalizedStatus = backendStatus?.toLowerCase() || '';
   
-  // Mapping based on actual database values: Received, Pending, Processing
-  if (normalizedStatus === 'received') return 'available';        // Received -> Available for use
-  if (normalizedStatus === 'processing') return 'in-use';         // Processing -> In use
-  if (normalizedStatus === 'pending') return 'completed';         // Pending -> Completed/waiting
+  // Mapping based on actual database values
+  if (normalizedStatus === 'đã vận chuyển' || normalizedStatus === 'da van chuyen') return 'available';
+  if (normalizedStatus === 'đã lấy mẫu' || normalizedStatus === 'da lay mau') return 'available';
+  if (normalizedStatus === 'đã tới kho' || normalizedStatus === 'da toi kho') return 'available';
+  if (normalizedStatus === 'đang vận chuyển' || normalizedStatus === 'dang van chuyen') return 'in-use';
+  if (normalizedStatus === 'đang vận chuyển mẫu' || normalizedStatus === 'dang van chuyen mau') return 'in-use';
   
-  // Legacy/additional mappings for backward compatibility
+  // Legacy mappings for backward compatibility
+  if (normalizedStatus === 'received') return 'available';
+  if (normalizedStatus === 'processing') return 'in-use';
+  if (normalizedStatus === 'pending') return 'completed';
+  
   if (normalizedStatus.includes('available')) return 'available';
   if (normalizedStatus.includes('inuse') || normalizedStatus.includes('in-use')) return 'in-use';
   if (normalizedStatus.includes('completed')) return 'completed';
@@ -812,17 +818,38 @@ export const appointmentsApi = {
   
   async updateAppointmentStatus(id: string, status: string): Promise<boolean> {
     try {
-      const response = await apiClient.put(`/api/Appointments/${id}/status`, JSON.stringify(status), {
+      console.log(`📤 Updating appointment ${id} status to: ${status}`);
+      console.log(`📝 API Endpoint: ${API_BASE_URL}/api/Appointments/${id}/status`);
+      console.log(`📝 Payload: "${status}"`);
+      
+      // Chuẩn bị payload như một chuỗi JSON đơn giản, đưa vào dấu ngoặc kép
+      const payload = JSON.stringify(status);
+      console.log('Raw payload:', payload);
+      
+      // Gửi request cập nhật status
+      const response = await apiClient.put(`/api/Appointments/${id}/status`, payload, {
         headers: {
           'Content-Type': 'application/json',
           'Accept': '*/*'
         }
       });
       
+      console.log(`✅ Status code: ${response.status}`);
       console.log(`✅ Updated appointment ${id} status to ${status}`);
+      console.log('Response data:', response.data);
+      
       return response.status >= 200 && response.status < 300;
     } catch (error) {
       console.error(`❌ Error updating appointment status:`, error);
+      
+      // Log chi tiết về lỗi
+      if (axios.isAxiosError(error)) {
+        console.error('Status:', error.response?.status);
+        console.error('Response data:', error.response?.data);
+        console.error('Request config:', error.config?.data);
+        console.error('Request URL:', error.config?.url);
+      }
+      
       return false;
     }
   }
@@ -855,6 +882,7 @@ export const updateAppointment = async (token: string, id: string, appointmentDa
     
     // Đảm bảo dữ liệu gửi đi đúng định dạng
     const apiPayload = {
+      id: appointmentData.id,
       bookingId: appointmentData.bookingId,
       customerId: appointmentData.customerId,
       date: appointmentData.date,
@@ -862,8 +890,13 @@ export const updateAppointment = async (token: string, id: string, appointmentDa
       serviceId: appointmentData.serviceId,
       address: appointmentData.address || "",
       method: appointmentData.method,
-      status: appointmentData.status
+      status: appointmentData.status,
+      // Giữ lại các trường bổ sung nếu có
+      customerName: appointmentData.customerName,
+      serviceName: appointmentData.serviceName
     };
+    
+    console.log('API payload for update:', apiPayload);
     
     const response = await axios.put(`${API_BASE_URL}/api/Appointments/${id}`, apiPayload, {
       headers: {
@@ -873,6 +906,16 @@ export const updateAppointment = async (token: string, id: string, appointmentDa
     });
     
     console.log('Update response:', response.data);
+    
+    // Nếu API không trả về dữ liệu đầy đủ, trả về dữ liệu ban đầu với status đã cập nhật
+    if (!response.data || typeof response.data !== 'object') {
+      console.log('API returned invalid data, using original data with updated status');
+      return {
+        ...appointmentData,
+        status: appointmentData.status
+      } as Appointment;
+    }
+    
     return response.data;
   } catch (error: any) {
     if (error.response) {
@@ -882,7 +925,10 @@ export const updateAppointment = async (token: string, id: string, appointmentDa
     } else {
       console.error(`Error updating appointment with ID ${id}:`, error.message);
     }
-    return null;
+    
+    // Nếu có lỗi, trả về dữ liệu ban đầu để tránh mất dữ liệu trong giao diện
+    console.log('Returning original appointment data due to API error');
+    return appointmentData as Appointment;
   }
 };
 
@@ -1009,5 +1055,54 @@ export const getTestResultsByBookingId = async (token: string, bookingId: string
   }
 };
 
-// Các hàm đã được export ở trên
+// Hàm cập nhật trạng thái an toàn - thử nhiều phương pháp khác nhau nếu cần
+export const updateAppointmentStatusSafe = async (token: string, id: string, status: string): Promise<boolean> => {
+  try {
+    console.log(`🚀 Attempting to update appointment ${id} status to: ${status}`);
+    
+    // Phương pháp 1: Thử cập nhật với endpoint PUT /api/Appointments/{id}
+    // Lấy dữ liệu hiện tại trước
+    const currentAppointment = await getAppointmentById(token, id);
+    
+    if (!currentAppointment) {
+      console.error('❌ Cannot update status: Failed to fetch current appointment data');
+      return false;
+    }
+    
+    console.log('✅ Current appointment data:', currentAppointment);
+    
+    // Cập nhật chỉ trường status
+    const updateData = {
+      ...currentAppointment,
+      status: status
+    };
+    
+    console.log('📤 Updating with payload:', updateData);
+    
+    // Gửi request cập nhật toàn bộ đối tượng
+    const response = await axios.put(`${API_BASE_URL}/api/Appointments/${id}`, updateData, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': '*/*'
+      },
+    });
+    
+    console.log(`✅ Update response status: ${response.status}`);
+    console.log('✅ Update response data:', response.data);
+    
+    return response.status >= 200 && response.status < 300;
+  } catch (error) {
+    console.error(`❌ Error in safe update for appointment status:`, error);
+    
+    if (axios.isAxiosError(error)) {
+      console.error('Status:', error.response?.status);
+      console.error('Response data:', error.response?.data);
+      console.error('Request URL:', error.config?.url);
+      console.error('Request payload:', error.config?.data);
+    }
+    
+    return false;
+  }
+};
 

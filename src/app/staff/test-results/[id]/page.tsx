@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getAppointmentById, updateAppointment, Appointment, TestResult, createTestResultV2, getTestResultsByBookingId } from '@/lib/api/staff';
+import { getAppointmentById, updateAppointment, updateAppointmentStatus, updateAppointmentStatusSafe, Appointment, TestResult, createTestResultV2, getTestResultsByBookingId } from '@/lib/api/staff';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 
@@ -73,10 +73,16 @@ export default function AppointmentDetailPage() {
       
       if (result) {
         toast.success('Đã lưu kết quả xét nghiệm thành công');
+        
+        // Thêm kết quả mới vào danh sách kết quả hiện có
+        setExistingResults(prev => [result, ...prev]);
+        
         // Cập nhật trạng thái booking thành Completed
         await handleUpdateStatus('completed');
+        
         // Ẩn form sau khi lưu thành công
         setShowResultForm(false);
+        
         // Reset form
         setTestResult({
           customerId: '',
@@ -88,7 +94,13 @@ export default function AppointmentDetailPage() {
           status: 'Trùng nhau' // Đặt lại giá trị mặc định
         });
       } else {
-        toast.error('Không thể lưu kết quả xét nghiệm');
+        console.error('Failed to create test result - API returned null');
+        toast.error('Không thể lưu kết quả xét nghiệm - API trả về null');
+        
+        // Dùng prompt để hỏi người dùng có muốn thử lại hay không
+        if (window.confirm('Lưu không thành công. Bạn có muốn thử lại không?')) {
+          return; // Giữ form mở để người dùng thử lại
+        }
       }
     } catch (error: any) {
       console.error('Error submitting test result:', error);
@@ -99,6 +111,7 @@ export default function AppointmentDetailPage() {
       }
       
       toast.error(errorMessage);
+      // Dữ liệu đã nhập vẫn được giữ nguyên để người dùng có thể thử lại
     } finally {
       setSubmittingResult(false);
     }
@@ -212,24 +225,39 @@ export default function AppointmentDetailPage() {
           apiStatus = 'Pending';
       }
       
-      // Create update payload
-      const updateData = {
-        ...appointment,
-        status: apiStatus
-      };
-      
       console.log(`Updating appointment ${id} status to ${apiStatus}`);
-      console.log('Update payload:', updateData);
       
-      // Call API to update appointment
-      const updatedAppointment = await updateAppointment(token, id as string, updateData);
+      // Sử dụng phương pháp an toàn để cập nhật trạng thái
+      // Cần token vì hàm này sẽ fetch dữ liệu hiện tại trước
+      const success = await updateAppointmentStatusSafe(token, id as string, apiStatus);
       
-      if (updatedAppointment) {
-        setAppointment(updatedAppointment);
+      if (success) {
+        console.log(`✅ Status updated successfully to: ${apiStatus}`);
+        
+        // Cập nhật trạng thái trong state
+        setAppointment(prevAppointment => {
+          if (!prevAppointment) return null;
+          return {
+            ...prevAppointment,
+            status: apiStatus
+          };
+        });
+        
         setStatus(newStatus);
         toast.success(`Trạng thái đã được cập nhật thành ${getStatusText(newStatus)}`);
+        
+        // Luôn fetch lại dữ liệu để đảm bảo mọi thứ là mới nhất
+        await refetchAppointment();
+        
+        // Nếu trạng thái được cập nhật thành "completed", tự động lấy kết quả xét nghiệm
+        if (newStatus === 'completed' && appointment.bookingId) {
+          fetchTestResults(appointment.bookingId);
+        }
       } else {
+        console.error("❌ Failed to update status");
         toast.error('Không thể cập nhật trạng thái');
+        // Nếu API không thành công, thử fetch lại dữ liệu để xem trạng thái hiện tại
+        await refetchAppointment();
       }
     } catch (error: any) {
       console.error('Error updating status:', error);
@@ -240,6 +268,8 @@ export default function AppointmentDetailPage() {
       }
       
       toast.error(errorMessage);
+      // Thử fetch lại dữ liệu
+      await refetchAppointment();
     } finally {
       setUpdating(false);
     }
@@ -266,13 +296,13 @@ export default function AppointmentDetailPage() {
   const getStatusText = (statusValue: AppointmentStatus) => {
     switch (statusValue) {
       case 'pending':
-        return 'Pending';
+        return 'Đã xác nhận';
       case 'in-progress':
-        return 'Confirmed';
+        return 'Đang thực hiện';
       case 'completed':
-        return 'Completed';
+        return 'Hoàn thành';
       case 'cancelled':
-        return 'Cancelled';
+        return 'Hủy';
       default:
         return 'Không xác định';
     }
@@ -290,6 +320,30 @@ export default function AppointmentDetailPage() {
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // Hàm để tải lại dữ liệu booking khi cần thiết
+  const refetchAppointment = async () => {
+    if (!token || !id) return;
+    
+    try {
+      console.log(`🔄 Re-fetching appointment data for ID: ${id}`);
+      const data = await getAppointmentById(token, id as string);
+      
+      if (data) {
+        console.log('✅ Refreshed appointment data:', data);
+        setAppointment(data);
+        
+        // Determine status from appointment data
+        if (data.status) {
+          setStatus(mapStatusToEnum(data.status));
+        }
+      } else {
+        console.error('❌ Failed to refresh appointment data');
+      }
+    } catch (error) {
+      console.error('Error re-fetching appointment:', error);
     }
   };
 
@@ -314,15 +368,45 @@ export default function AppointmentDetailPage() {
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Chi tiết lịch hẹn #{appointment.bookingId}</h1>
-        <button 
-          onClick={() => router.back()}
-          className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
-        >
-          Quay lại
-        </button>
+        <div className="flex space-x-2">
+          <button
+            onClick={refetchAppointment}
+            className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 flex items-center"
+            title="Làm mới dữ liệu"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Làm mới
+          </button>
+          <button 
+            onClick={() => router.back()}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+          >
+            Quay lại
+          </button>
+        </div>
       </div>
       
       <div className="bg-white shadow-md rounded-lg p-6">
+        {/* Hiển thị thông báo nếu appointment bị lỗi hoặc không có đủ dữ liệu */}
+        {(!appointment.bookingId || !appointment.customerId || !appointment.serviceId) && (
+          <div className="mb-4 p-3 bg-yellow-50 border-l-4 border-yellow-400">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-yellow-700">
+                  Dữ liệu booking không đầy đủ. Vui lòng bấm "Làm mới" để tải lại dữ liệu.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <h2 className="text-lg font-semibold mb-4">Thông tin lịch hẹn</h2>
@@ -411,8 +495,9 @@ export default function AppointmentDetailPage() {
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : 'bg-blue-500 text-white hover:bg-blue-600'
                   }`}
+                  title={status === 'pending' ? 'Chuyển sang trạng thái đang thực hiện' : ''}
                 >
-                  {updating ? 'Processing...' : 'Confirm'}
+                  {updating ? 'Đang xử lý...' : 'Đang thực hiện'}
                 </button>
                 
                 <button 
@@ -423,8 +508,9 @@ export default function AppointmentDetailPage() {
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : 'bg-green-500 text-white hover:bg-green-600'
                   }`}
+                  title={status !== 'in-progress' ? 'Hãy chuyển sang trạng thái đang thực hiện trước khi nhập kết quả' : 'Nhập kết quả xét nghiệm'}
                 >
-                  {updating ? 'Processing...' : 'Nhập kết quả'}
+                  {updating ? 'Đang xử lý...' : 'Nhập kết quả'}
                 </button>
                 
                 <button 
@@ -436,9 +522,34 @@ export default function AppointmentDetailPage() {
                       : 'bg-red-500 text-white hover:bg-red-600'
                   }`}
                 >
-                  {updating ? 'Processing...' : 'Cancel'}
+                  {updating ? 'Đang xử lý...' : 'Hủy'}
                 </button>
               </div>
+              
+              {status === 'in-progress' && !showResultForm && (
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                  <p className="text-blue-700 flex items-center font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Booking đang trong trạng thái thực hiện
+                  </p>
+                  <div className="mt-2 ml-7">
+                    <p className="text-sm text-blue-600 mb-2">
+                      Bạn có thể nhập kết quả xét nghiệm ngay bây giờ bằng cách bấm nút "Nhập kết quả" ở trên.
+                    </p>
+                    <p className="text-sm text-blue-600">
+                      <strong>Lưu ý:</strong> Nếu bạn không thấy dữ liệu đầy đủ, hãy bấm nút "Làm mới" ở góc trên cùng bên phải.
+                    </p>
+                    <button 
+                      onClick={() => setShowResultForm(true)}
+                      className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      Nhập kết quả ngay
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

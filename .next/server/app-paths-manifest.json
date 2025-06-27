@@ -2,6 +2,10 @@
   "/page": "app/page.js",
   "/auth/login/page": "app/auth/login/page.js",
   "/staff/page": "app/staff/page.js",
+  "/staff/kits/page": "app/staff/kits/page.js",
   "/staff/test-results/page": "app/staff/test-results/page.js",
-  "/staff/test-results/[id]/page": "app/staff/test-results/[id]/page.js"
+  "/staff/test-results/[id]/page": "app/staff/test-results/[id]/page.js",
+  "/staff/pending-results/page": "app/staff/pending-results/page.js",
+  "/staff/completed-results/page": "app/staff/completed-results/page.js",
+  "/_not-found/page": "app/_not-found/page.js"
 }
