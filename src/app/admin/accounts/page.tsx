@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { 
   UserIcon, 
@@ -10,110 +10,69 @@ import {
   LockOpenIcon,
   PlusIcon
 } from '@heroicons/react/24/outline';
+import { getAllUsers, AdminUser } from "@/lib/api/admin";
 
-interface User {
-  userID: string;
-  username: string;
-  password: string;
-  fullname: string;
-  gender: "Nam" | "Nữ" | "Khác";
-  roleID: string;
-  email: string;
-  phone: string;
-  birthdate: string;
-  image: string;
-  address: string;
-  status: "active" | "inactive" | "suspended";
-  createdAt: string;
-  lastLogin?: string;
-}
-
-export default function AccountsPage() {  const [users, setUsers] = useState<User[]>([
-    {
-      userID: "U001",
-      username: "nguyenvana",
-      password: "********",
-      fullname: "Nguyễn Văn A",
-      gender: "Nam",
-      roleID: "R002",
-      email: "nguyenvana@example.com",
-      phone: "0901234567",
-      birthdate: "1990-05-15",
-      image: "/images/customer-1.jpg",
-      address: "123 Đường ABC, Quận 1, TP.HCM",
-      status: "active",
-      createdAt: "2025-01-15",
-      lastLogin: "2025-06-08"
-    },
-    {
-      userID: "U002",
-      username: "tranthib",
-      password: "********",
-      fullname: "Trần Thị B",
-      gender: "Nữ",
-      roleID: "R003",
-      email: "tranthib@example.com",
-      phone: "0987654321",
-      birthdate: "1992-08-20",
-      image: "/images/customer-2.jpg",
-      address: "456 Đường XYZ, Quận 2, TP.HCM",
-      status: "active",
-      createdAt: "2025-02-20",
-      lastLogin: "2025-06-07"
-    },
-    {
-      userID: "U003",
-      username: "khanhhd",
-      password: "********",
-      fullname: "Huỳnh Đức Khanh",
-      gender: "Nam",
-      roleID: "R003",
-      email: "KhanhHDSE@fpt.edu.vn",
-      phone: "0912345678",
-      birthdate: "1995-03-10",
-      image: "/images/customer-3.jpg",
-      address: "789 Đường DEF, Quận 3, TP.HCM",
-      status: "suspended",
-      createdAt: "2025-03-10",
-      lastLogin: "2025-06-05"
-    },
-    {
-      userID: "U004",
-      username: "phamthid",
-      password: "********",
-      fullname: "Phạm Thị D",
-      gender: "Nữ",
-      roleID: "R001",
-      email: "phamthid@example.com",
-      phone: "0923456789",
-      birthdate: "1988-12-01",
-      image: "/images/customer-1.jpg",
-      address: "321 Đường GHI, Quận 4, TP.HCM",
-      status: "active",
-      createdAt: "2025-01-01",
-      lastLogin: "2025-06-08"
-    },
-    {
-      userID: "U005",
-      username: "hoangvane",
-      password: "********",
-      fullname: "Hoàng Văn E",
-      gender: "Nam",
-      roleID: "R003",
-      email: "hoangvane@example.com",
-      phone: "0934567890",
-      birthdate: "1993-07-15",
-      image: "/images/customer-2.jpg",
-      address: "654 Đường JKL, Quận 5, TP.HCM",
-      status: "inactive",
-      createdAt: "2025-04-15",
-      lastLogin: "2025-05-20"
-    }
-  ]);
-
+export default function AccountsPage() {
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+
+  // Danh sách ảnh mặc định theo vai trò
+  const defaultImages = {
+    'R01': '/images/doctor1.jpg', // Admin
+    'R02': '/images/doctor3.jpg', // Nhân viên
+    'R03': '/images/customer-1.jpg', // Khách Hàng
+    'R04': '/images/doctor2.jpg', // Quản lí
+    'default': '/images/default-avatar.jpg'
+  };
+
+  // Map roleID sang tên vai trò
+  const roleNames = {
+    'R01': 'Quản trị viên',
+    'R02': 'Nhân viên',
+    'R03': 'Khách Hàng',
+    'R04': 'Quản lí',
+    'default': 'Không xác định'
+  };
+
+  // Lấy tên vai trò từ roleID
+  const getRoleName = (roleID: string): string => {
+    return roleNames[roleID as keyof typeof roleNames] || roleNames.default;
+  };
+
+  // Lấy ảnh dựa theo roleID
+  const getUserImage = (user: AdminUser): string => {
+    if (user.image && user.image !== '') {
+      return user.image;
+    }
+    return defaultImages[user.roleID as keyof typeof defaultImages] || defaultImages.default;
+  };
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setLoading(true);
+      try {
+        const result = await getAllUsers();
+        
+        if (result.success && result.users) {
+          setUsers(result.users);
+          setError(null);
+        } else {
+          setError(result.message || 'Không thể lấy danh sách người dùng');
+        }
+      } catch (err) {
+        setError('Có lỗi xảy ra khi tải dữ liệu');
+        console.error('Error fetching users:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -129,11 +88,13 @@ export default function AccountsPage() {  const [users, setUsers] = useState<Use
       </span>
     );
   };
+  
   const getRoleBadge = (roleID: string) => {
     const roleConfig = {
-      "R001": { color: "bg-purple-100 text-purple-800", text: "Quản trị viên" },
-      "R002": { color: "bg-blue-100 text-blue-800", text: "Quản lý" },
-      "R003": { color: "bg-gray-100 text-gray-800", text: "Người dùng" }
+      "R01": { color: "bg-purple-100 text-purple-800", text: "Quản trị viên" },
+      "R02": { color: "bg-green-100 text-green-800", text: "Nhân viên" },
+      "R03": { color: "bg-gray-100 text-gray-800", text: "Khách Hàng" },
+      "R04": { color: "bg-blue-100 text-blue-800", text: "Quản lí" }
     };
     
     const config = roleConfig[roleID as keyof typeof roleConfig] || 
@@ -145,7 +106,7 @@ export default function AccountsPage() {  const [users, setUsers] = useState<Use
     );
   };
 
-  const toggleUserStatus = (user: User) => {
+  const toggleUserStatus = (user: AdminUser) => {
     setUsers(prevUsers =>
       prevUsers.map(u =>
         u.userID === user.userID
@@ -155,11 +116,11 @@ export default function AccountsPage() {  const [users, setUsers] = useState<Use
     );
   };
 
-  const viewUserDetails = (user: User) => {
+  const viewUserDetails = (user: AdminUser) => {
     alert(`Xem chi tiết người dùng: ${user.fullname}`);
   };
 
-  const editUser = (user: User) => {
+  const editUser = (user: AdminUser) => {
     alert(`Chỉnh sửa người dùng: ${user.fullname}`);
   };
 
@@ -184,13 +145,16 @@ export default function AccountsPage() {  const [users, setUsers] = useState<Use
     return userDate.getMonth() === currentDate.getMonth() && 
            userDate.getFullYear() === currentDate.getFullYear();
   }).length;
+  
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Quản lý Tài khoản</h1>
         <p className="text-gray-600 text-sm">Quản lý người dùng và phân quyền hệ thống</p>
-      </div>      {/* Statistics Cards */}
+      </div>
+      
+      {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl shadow-sm p-4 border border-blue-100/50">
           <div className="flex items-center justify-between mb-2">
@@ -231,7 +195,9 @@ export default function AccountsPage() {  const [users, setUsers] = useState<Use
           <h3 className="text-xl font-bold text-gray-900">{newUsersThisMonth}</h3>
           <p className="text-xs text-gray-500">Người dùng mới tháng này</p>
         </div>
-      </div>      {/* Filters and Search */}
+      </div>
+      
+      {/* Filters and Search */}
       <div className="bg-white/70 backdrop-blur-sm rounded-xl shadow-sm p-5 mb-6 border border-white/20">
         <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
           <div className="flex-1 min-w-0">
@@ -243,7 +209,8 @@ export default function AccountsPage() {  const [users, setUsers] = useState<Use
               className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/50 backdrop-blur-sm text-sm"
             />
           </div>
-          <div className="flex gap-3">            <select
+          <div className="flex gap-3">
+            <select
               value={filterRole}
               onChange={(e) => setFilterRole(e.target.value)}
               className="px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/50 backdrop-blur-sm text-sm"
@@ -253,6 +220,7 @@ export default function AccountsPage() {  const [users, setUsers] = useState<Use
               <option value="R002">Quản lý</option>
               <option value="R003">Người dùng</option>
             </select>
+            
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
@@ -260,152 +228,147 @@ export default function AccountsPage() {  const [users, setUsers] = useState<Use
             >
               <option value="">Tất cả trạng thái</option>
               <option value="active">Hoạt động</option>
+              <option value="inactive">Không hoạt động</option>
               <option value="suspended">Bị khóa</option>
             </select>
+            
             <Link
               href="/admin/accounts/new"
-              className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white px-4 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 text-sm shadow-sm"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium flex items-center justify-center min-w-[120px]"
             >
-              <PlusIcon className="h-4 w-4" />
-              Thêm người dùng
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Thêm mới
             </Link>
           </div>
         </div>
-      </div>      {/* Users Table */}
-      <div className="bg-white/70 backdrop-blur-sm rounded-xl shadow-sm overflow-hidden border border-white/20">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200/50">
-            <thead className="bg-gradient-to-r from-gray-50/80 to-gray-100/80 backdrop-blur-sm">
+      </div>
+      
+      {/* Loading state */}
+      {loading && (
+        <div className="flex justify-center py-10">
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500"></div>
+        </div>
+      )}
+      
+      {/* Error state */}
+      {error && !loading && (
+        <div className="rounded-lg bg-red-50 p-4 text-red-800">
+          <p>{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-2 text-red-600 hover:text-red-800 font-medium text-sm"
+          >
+            Thử lại
+          </button>
+        </div>
+      )}
+
+      {/* Users Table */}
+      {!loading && !error && (
+        <div className="bg-white/70 backdrop-blur-sm rounded-xl shadow-sm border border-white/20 overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50/50">
               <tr>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  ID
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  User ID
                 </th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Tên đăng nhập
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Username
                 </th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Họ tên
                 </th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Giới tính
                 </th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Vai trò
                 </th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Email
                 </th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Số điện thoại
                 </th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Ngày sinh
                 </th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Địa chỉ
                 </th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Trạng thái
-                </th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Thao tác
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white/30 divide-y divide-gray-200/30">
+            <tbody className="bg-white divide-y divide-gray-200">
               {filteredUsers.map((user) => (
-                <tr key={user.userID} className="hover:bg-white/50 transition-colors duration-150">
-                  <td className="px-5 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {user.userID}
+                <tr key={user.userID || `user-${Math.random()}`} className="hover:bg-gray-50/50">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {user.userID || 'N/A'}
                   </td>
-                  <td className="px-5 py-3 whitespace-nowrap">
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 h-8 w-8">                        <img 
-                          className="h-8 w-8 rounded-full object-cover" 
-                          src={user.image || "/images/customer-1.jpg"} 
-                          alt={user.fullname}
+                      <div className="h-8 w-8 rounded-full overflow-hidden flex-shrink-0">
+                        <img 
+                          src={getUserImage(user)}
+                          alt={user.fullname} 
+                          className="h-full w-full object-cover"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
-                            target.src = "/images/customer-1.jpg";
+                            target.src = "/images/default-avatar.jpg";
                           }}
                         />
                       </div>
-                      <div className="ml-3">
-                        <div className="text-sm font-medium text-gray-900">{user.username}</div>
+                      <div className="ml-3 text-sm text-gray-900">
+                        {user.username || 'N/A'}
                       </div>
                     </div>
                   </td>
-                  <td className="px-5 py-3 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{user.fullname}</div>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                    {user.fullname || 'N/A'}
                   </td>
-                  <td className="px-5 py-3 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      user.gender === "Nam" ? "bg-blue-100 text-blue-800" : 
-                      user.gender === "Nữ" ? "bg-pink-100 text-pink-800" : 
-                      "bg-gray-100 text-gray-800"
-                    }`}>
-                      {user.gender}
-                    </span>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                    {user.gender || 'N/A'}
                   </td>
-                  <td className="px-5 py-3 whitespace-nowrap">
+                  <td className="px-4 py-3 whitespace-nowrap">
                     {getRoleBadge(user.roleID)}
                   </td>
-                  <td className="px-5 py-3 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{user.email}</div>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                    {user.email || 'N/A'}
                   </td>
-                  <td className="px-5 py-3 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{user.phone}</div>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                    {user.phone || 'N/A'}
                   </td>
-                  <td className="px-5 py-3 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(user.birthdate).toLocaleDateString('vi-VN')}
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                    {user.birthdate ? new Date(user.birthdate).toLocaleDateString('vi-VN') : 'N/A'}
                   </td>
-                  <td className="px-5 py-3">
-                    <div className="text-sm text-gray-900 max-w-xs truncate" title={user.address}>
-                      {user.address}
-                    </div>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 max-w-[200px] truncate">
+                    {user.address || 'N/A'}
                   </td>
-                  <td className="px-5 py-3 whitespace-nowrap">
-                    {getStatusBadge(user.status)}
-                  </td>
-                  <td className="px-5 py-3 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center space-x-1">
+                  <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="flex justify-end gap-2">
                       <button
                         onClick={() => viewUserDetails(user)}
-                        className="text-indigo-600 hover:text-indigo-900 p-1.5 rounded-lg hover:bg-indigo-50 transition-all duration-150 group relative"
-                        title="Xem chi tiết"
+                        className="text-gray-600 hover:text-indigo-600"
                       >
-                        <EyeIcon className="h-4 w-4" />
-                        <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs rounded-md py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                          Xem chi tiết
-                        </span>
+                        <EyeIcon className="h-5 w-5" />
                       </button>
                       <button
                         onClick={() => editUser(user)}
-                        className="text-yellow-600 hover:text-yellow-900 p-1.5 rounded-lg hover:bg-yellow-50 transition-all duration-150 group relative"
-                        title="Chỉnh sửa"
+                        className="text-gray-600 hover:text-blue-600"
                       >
-                        <PencilIcon className="h-4 w-4" />
-                        <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs rounded-md py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                          Chỉnh sửa
-                        </span>
+                        <PencilIcon className="h-5 w-5" />
                       </button>
                       <button
                         onClick={() => toggleUserStatus(user)}
-                        className={`p-1.5 rounded-lg transition-all duration-150 group relative ${
-                          user.status === "active"
-                            ? "text-red-600 hover:text-red-900 hover:bg-red-50"
-                            : "text-green-600 hover:text-green-900 hover:bg-green-50"
-                        }`}
-                        title={user.status === "active" ? "Khóa tài khoản" : "Mở khóa tài khoản"}
+                        className={`${user.status === "active" ? "text-red-600 hover:text-red-800" : "text-green-600 hover:text-green-800"}`}
                       >
                         {user.status === "active" ? (
-                          <LockClosedIcon className="h-4 w-4" />
+                          <LockClosedIcon className="h-5 w-5" />
                         ) : (
-                          <LockOpenIcon className="h-4 w-4" />
+                          <LockOpenIcon className="h-5 w-5" />
                         )}
-                        <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs rounded-md py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                          {user.status === "active" ? "Khóa" : "Mở khóa"}
-                        </span>
                       </button>
                     </div>
                   </td>
@@ -413,17 +376,39 @@ export default function AccountsPage() {  const [users, setUsers] = useState<Use
               ))}
             </tbody>
           </table>
+          
+          {/* Empty state */}
+          {filteredUsers.length === 0 && !loading && (
+            <div className="px-6 py-10 text-center">
+              <p className="text-gray-500 text-sm">Không tìm thấy người dùng nào phù hợp với bộ lọc</p>
+            </div>
+          )}
         </div>
-        {filteredUsers.length === 0 && (
-          <div className="text-center py-8">
-            <UserIcon className="mx-auto h-10 w-10 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">Không tìm thấy người dùng</h3>
-            <p className="mt-1 text-xs text-gray-500">
-              Thử thay đổi bộ lọc hoặc tìm kiếm với từ khóa khác.
-            </p>
+      )}
+      
+      {/* Pagination */}
+      {!loading && filteredUsers.length > 0 && (
+        <div className="bg-white/70 backdrop-blur-sm rounded-lg shadow-sm p-4 border border-white/20 flex items-center justify-between">
+          <div className="text-sm text-gray-700">
+            Hiển thị <span className="font-medium">{filteredUsers.length}</span> trong tổng số{" "}
+            <span className="font-medium">{users.length}</span> người dùng
           </div>
-        )}
-      </div>
+          <div className="flex gap-1">
+            <button className="bg-white border border-gray-200 rounded-lg px-3 py-1 text-sm text-gray-700 hover:bg-gray-50">
+              Trước
+            </button>
+            <button className="bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-1 text-sm text-indigo-700 font-medium">
+              1
+            </button>
+            <button className="bg-white border border-gray-200 rounded-lg px-3 py-1 text-sm text-gray-700 hover:bg-gray-50">
+              2
+            </button>
+            <button className="bg-white border border-gray-200 rounded-lg px-3 py-1 text-sm text-gray-700 hover:bg-gray-50">
+              Tiếp
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

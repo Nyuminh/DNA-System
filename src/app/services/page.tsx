@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import MainLayout from '@/components/layout/MainLayout';
-import { getServices, Service } from '@/lib/api/services';
+import { getServices, getServiceById, Service } from '@/lib/api/services';
 
 export default function ServicesPage() {
   const [servicesByType, setServicesByType] = useState<Record<string, Service[]>>({});
@@ -51,26 +51,31 @@ export default function ServicesPage() {
             return;
           }
           
+          // Format all services
+          const formattedServices = servicesArray.map((service: any) => ({
+            id: service.id ?? service.serviceId, // lấy đúng id gốc từ backend
+            name: service.name,
+            description: service.description,
+            price: service.price,
+            image: service.image,
+            type: service.type,
+            // ... các trường khác nếu cần ...
+          }));
+
           // Group services by type
           const groupedByType: Record<string, Service[]> = {};
-          
-          servicesArray.forEach(service => {
+          formattedServices.forEach(service => {
             // Use a default type if none is provided
             const type = service.type || 'Khác';
-            
             if (!groupedByType[type]) {
               groupedByType[type] = [];
             }
-            
             groupedByType[type].push(service);
           });
-          
           setServicesByType(groupedByType);
-          
           // Get array of types for navigation
           const types = Object.keys(groupedByType);
           setServiceTypes(types);
-          
           // Set the first type as selected by default
           if (types.length > 0) {
             setSelectedType(types[0]);
@@ -89,6 +94,20 @@ export default function ServicesPage() {
     }
 
     fetchServices();
+  }, []);
+
+  // Ví dụ gọi khi cần lấy chi tiết service S02
+  useEffect(() => {
+    async function fetchServiceDetail() {
+      try {
+        const data = await getServiceById('S02');
+        console.log('Service S02:', data);
+        // Xử lý dữ liệu ở đây
+      } catch (error) {
+        console.error('Lỗi lấy chi tiết dịch vụ:', error);
+      }
+    }
+    fetchServiceDetail();
   }, []);
 
   return (
