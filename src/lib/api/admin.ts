@@ -22,6 +22,24 @@ export interface Report {
   generatedBy: string;
 }
 
+// Interface cho Admin User
+export interface AdminUser {
+  userID: string;
+  username: string;
+  password?: string;
+  fullname: string;
+  gender: "Nam" | "Nữ" | "Khác";
+  roleID: string;
+  email: string;
+  phone: string;
+  birthdate: string;
+  image: string;
+  address: string;
+  status: "active" | "inactive" | "suspended";
+  createdAt: string;
+  lastLogin?: string;
+}
+
 // Interface cho Admin Profile
 export interface AdminProfile {
   id: string;
@@ -116,26 +134,57 @@ export const getAdminReports = async (type?: string): Promise<{ success: boolean
   }
 };
 
-// Quản lý services (Admin)
-export const getAdminServices = async (): Promise<{ success: boolean; services?: any[]; message?: string }> => {
+// Lấy danh sách users
+export const getAllUsers = async (): Promise<{ success: boolean; users?: AdminUser[]; message?: string }> => {
   try {
-    const response = await apiClient.get('/Admin/services');
+    const response = await apiClient.get('/api/User');
     
     if (response.status >= 200 && response.status < 300) {
+      console.log('API User Response:', response.data); // Debug log
+      
+      // Transform API response to match AdminUser interface
+      const users: AdminUser[] = response.data.map((user: any) => {
+        // Debug log cho mỗi user
+        console.log('Processing user:', user);
+        
+        // Các thuộc tính user có thể được trả về từ API với nhiều tên khác nhau
+        const userId = user.userID || user.UserId || user.userId || user.userid || user.id || user.ID || `user-${Math.random().toString(36).substring(2, 9)}`;
+        const roleId = user.roleID || user.RoleId || user.roleId || user.roleid || user.role || user.Role || 'R003';
+        
+        console.log(`Extracted userID: ${userId}, roleID: ${roleId}`);
+        
+        return {
+          userID: userId,
+          username: user.username || user.userName || user.Username || user.UserName || '',
+          fullname: user.fullname || user.fullName || user.Fullname || user.FullName || user.name || user.Name || '',
+          gender: user.gender || user.Gender || 'Khác',
+          roleID: roleId,
+          email: user.email || user.Email || '',
+          phone: user.phone || user.phoneNumber || user.Phone || user.PhoneNumber || '',
+          birthdate: user.birthdate || user.dateOfBirth || user.Birthdate || user.DateOfBirth || '',
+          image: user.image || user.avatar || user.Image || user.Avatar || '',
+          address: user.address || user.Address || '',
+          status: user.status || user.Status || (user.isActive || user.IsActive ? 'active' : 'inactive'),
+          createdAt: user.createdAt || user.createDate || user.CreatedAt || user.CreateDate || new Date().toISOString(),
+          lastLogin: user.lastLogin || user.lastLoginDate || user.LastLogin || undefined
+        };
+      });
+
       return {
         success: true,
-        services: response.data
+        users: users
       };
     }
     
     return {
       success: false,
-      message: 'Không thể lấy danh sách dịch vụ admin'
+      message: 'Không thể lấy danh sách người dùng'
     };
   } catch (error) {
+    console.error('Error fetching users:', error);
     return {
       success: false,
-      message: 'Có lỗi xảy ra khi lấy danh sách dịch vụ admin'
+      message: 'Có lỗi xảy ra khi lấy danh sách người dùng'
     };
   }
 };
