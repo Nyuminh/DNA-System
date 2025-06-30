@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { DocumentTextIcon, CheckCircleIcon, ExclamationCircleIcon } from "@heroicons/react/24/outline";
+import { getServices } from "@/lib/api/services";
 
 interface ResultDetail {
   resultId: string;
@@ -21,6 +22,8 @@ export default function ResultDetailPage() {
   const [kitStatus, setKitStatus] = useState<string>("---");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [staffName, setStaffName] = useState<string>("");
+  const [serviceName, setServiceName] = useState<string>("");
 
   useEffect(() => {
     async function fetchResultAndKit() {
@@ -45,6 +48,20 @@ export default function ResultDetailPage() {
     if (bookingId) fetchResultAndKit();
   }, [bookingId]);
 
+  useEffect(() => {
+    if (result?.staffId) {
+      getStaffNameById(result.staffId).then((name) => {
+        setStaffName(name || result.staffId);
+      });
+    }
+  }, [result?.staffId]);
+
+  useEffect(() => {
+    if (result?.serviceId) {
+      getServiceNameById(result.serviceId).then((name) => setServiceName(name || result.serviceId));
+    }
+  }, [result?.serviceId]);
+
   function getKitStatusColor(status: string) {
     switch (status) {
       case "Đã nhận":
@@ -67,6 +84,40 @@ export default function ResultDetailPage() {
         return "bg-gray-50 text-gray-400";
     }
   }
+
+  async function getStaffNameById(staffId: string): Promise<string | null> {
+    try {
+      const res = await fetch("http://localhost:5198/api/User");
+      let users = await res.json();
+      if (!Array.isArray(users)) {
+        users = users?.$values || [];
+      }
+      const found = users.find(
+        (u: any) => String(u.userID || u.id || u.userId).trim() === String(staffId).trim()
+      );
+      // Trả về tên nhân viên (ưu tiên fullName, name, username)
+      return found?.fullname || found?.fullName || found?.name || found?.username || found?.userName || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+ async function getServiceNameById(serviceId: string): Promise<string | null> {
+  try {
+    const res = await fetch("http://localhost:5198/api/Services");
+    let services = await res.json();
+    if (!Array.isArray(services)) {
+      services = services?.$values || [];
+    }
+    const found = services.find(
+      (s: any) => String(s.id || s.serviceId).trim() === String(serviceId).trim()
+    );
+    // Trả về tên dịch vụ hoặc serviceId nếu không tìm thấy
+    return found?.name || found?.serviceName || serviceId;
+  } catch (e) {
+    return serviceId;
+  }
+}
 
   return (
     <div className="max-w-2xl mx-auto mt-12 bg-white rounded-xl shadow-lg p-8">
@@ -100,12 +151,12 @@ export default function ResultDetailPage() {
                 <td className="py-2">{result.bookingId}</td>
               </tr>
               <tr>
-                <td className="py-2 pr-4 font-medium text-gray-500">Mã dịch vụ</td>
-                <td className="py-2">{result.serviceId}</td>
+                <td className="py-2 pr-4 font-medium text-gray-500">Tên dịch vụ</td>
+                <td className="py-2">{serviceName}</td>
               </tr>
               <tr>
-                <td className="py-2 pr-4 font-medium text-gray-500">Mã nhân viên</td>
-                <td className="py-2">{result.staffId}</td>
+                <td className="py-2 pr-4 font-medium text-gray-500">Tên nhân viên</td>
+                <td className="py-2">{staffName}</td>
               </tr>
               <tr>
                 <td className="py-2 pr-4 font-medium text-gray-500">Ngày</td>
@@ -136,7 +187,7 @@ export default function ResultDetailPage() {
                 ![
                   "resultId",
                   "bookingId",
-                  "serviceId",
+                  "serviceId", // Đã bỏ mã dịch vụ
                   "staffId",
                   "date",
                   "status",
