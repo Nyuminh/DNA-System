@@ -1,9 +1,17 @@
 {
   "/page": "app/page.js",
-  "/auth/login/page": "app/auth/login/page.js",
-  "/auth/register/page": "app/auth/register/page.js",
-  "/my-booking/page": "app/my-booking/page.js",
-  "/my-booking/result/[bookingId]/page": "app/my-booking/result/[bookingId]/page.js",
   "/services/page": "app/services/page.js",
-  "/services/book/page": "app/services/book/page.js"
+  "/services/book/page": "app/services/book/page.js",
+  "/auth/login/page": "app/auth/login/page.js",
+  "/my-booking/page": "app/my-booking/page.js",
+  "/blog/page": "app/blog/page.js",
+  "/manager/page": "app/manager/page.js",
+  "/manager/courses/page": "app/manager/courses/page.js",
+  "/manager/courses/[id]/page": "app/manager/courses/[id]/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/manager/services/page": "app/manager/services/page.js",
+  "/manager/services/[id]/page": "app/manager/services/[id]/page.js",
+  "/about/page": "app/about/page.js",
+  "/contact/page": "app/contact/page.js",
+  "/blog/[id]/page": "app/blog/[id]/page.js"
 }

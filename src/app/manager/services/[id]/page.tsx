@@ -461,7 +461,7 @@ export default function ServiceDetailPage() {
             {service.image && (
               <div className="ml-6">
                 <img
-                  src={service.image}
+                  src={`/images/${service.image.split('/').pop()}`}
                   alt={service.name}
                   className="w-40 h-40 object-cover rounded-lg shadow"
                 />
