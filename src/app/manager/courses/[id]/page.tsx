@@ -248,7 +248,7 @@ export default function CourseDetailPage() {
                 required
               />
             </div>
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium mb-1">Ngày tạo</label>
               <input
                 type="date"
@@ -257,7 +257,7 @@ export default function CourseDetailPage() {
                 disabled
                 readOnly
               />
-            </div>
+            </div> */}
             <div>
               <label className="block text-sm font-medium mb-1">Ảnh bài viết</label>
               <div

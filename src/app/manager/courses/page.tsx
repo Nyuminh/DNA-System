@@ -294,7 +294,7 @@ export default function CoursesList() {
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
+                  {/* <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Ngày tạo</label>
                     <input
                       type="date"
@@ -303,7 +303,7 @@ export default function CoursesList() {
                       disabled
                       readOnly
                     />
-                  </div>
+                  </div> */}
                   {/* Có thể thêm các trường khác nếu cần */}
                 </div>
                 <div>
