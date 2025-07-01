@@ -237,8 +237,8 @@ export default function ServicesManagement() {
         price: Number(formData.price) || 0,
         description: formData.description,
         image: formData.image || "",
-        status: formData.status || "active",      // Thêm nếu backend yêu cầu
-        duration: formData.duration || "",        // Thêm nếu backend yêu cầu
+        status: formData.status || "active",      
+        duration: formData.duration || "",        
       };
 
       if (modalType === 'edit' && formData.id) {

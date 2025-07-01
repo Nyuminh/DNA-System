@@ -311,10 +311,10 @@ async function getStaffNameById(staffId: string): Promise<string | null> {
         return null;
       }
     }
-    // Resolve $ref nếu có
-    const idMap: Record<string, any> = {};
-    users.forEach((u: any) => { if (u.$id) idMap[u.$id] = u; });
-    users = users.map((u: any) => (u.$ref ? idMap[u.$ref] : u));
+    // // Resolve $ref nếu có
+    // const idMap: Record<string, any> = {};
+    // users.forEach((u: any) => { if (u.$id) idMap[u.$id] = u; });
+    // users = users.map((u: any) => (u.$ref ? idMap[u.$ref] : u));
 
     // Tìm user theo staffId (có thể là userID, id, userId)
     const found = users.find((u: any) =>

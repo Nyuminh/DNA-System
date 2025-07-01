@@ -87,6 +87,26 @@ function BookServiceContent() {
     }
   }, [service]);
 
+  // Chạy effect để khôi phục dữ liệu đặt lịch nếu có
+  useEffect(() => {
+    // Kiểm tra xem có dữ liệu đặt lịch đang chờ không
+    const pendingData = localStorage.getItem('pendingBookingData');
+    if (pendingData) {
+      try {
+        const { formData: savedFormData, serviceId: savedServiceId } = JSON.parse(pendingData);
+        // Chỉ khôi phục nếu đang ở đúng trang đặt lịch cho dịch vụ tương ứng
+        if (savedServiceId === serviceId) {
+          setFormData(savedFormData);
+          // Đã khôi phục xong, xóa dữ liệu đã lưu
+          localStorage.removeItem('pendingBookingData');
+        }
+      } catch (error) {
+        console.error('Error restoring form data:', error);
+        localStorage.removeItem('pendingBookingData');
+      }
+    }
+  }, [serviceId]); // Chỉ chạy khi serviceId thay đổi
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined;
@@ -141,11 +161,19 @@ function BookServiceContent() {
     // Lấy username từ localStorage (nếu đã lưu sau login)
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const username = user.username;
+    
     if (!username) {
-      alert("Bạn cần đăng nhập để đặt lịch!");
-      router.push('/auth/login');
+      // Lưu form data vào localStorage trước khi chuyển hướng
+      localStorage.setItem('pendingBookingData', JSON.stringify({
+        formData,
+        serviceId
+      }));
+      // Chuyển hướng đến trang đăng nhập với returnUrl
+      router.push(`/auth/login?returnUrl=${encodeURIComponent('/services/book?serviceId=' + serviceId)}`);
       return;
     }
+    
+    // Code xử lý đặt lịch nếu đã đăng nhập
     const customerId = await getUserIdByUsername(username);
     if (!customerId) {
       alert("Không tìm thấy tài khoản người dùng!");

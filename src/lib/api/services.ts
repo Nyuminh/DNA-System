@@ -110,3 +110,29 @@ export const createService = async (
     };
   }
 };
+
+// Lấy danh sách appointments theo serviceId
+export const getAppointmentsByServiceId = async (
+  id: string
+): Promise<{ success: boolean; appointments?: any[]; message?: string }> => {
+  try {
+    const response = await apiClient.get(`/api/Appointments/by-service/${id}`);
+
+    if (response.status >= 200 && response.status < 300) {
+      return {
+        success: true,
+        appointments: response.data,
+      };
+    }
+
+    return {
+      success: false,
+      message: 'Không thể lấy danh sách lịch hẹn theo dịch vụ',
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: 'Có lỗi xảy ra khi lấy danh sách lịch hẹn theo dịch vụ',
+    };
+  }
+};
