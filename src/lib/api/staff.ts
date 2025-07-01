@@ -1106,3 +1106,225 @@ export const updateAppointmentStatusSafe = async (token: string, id: string, sta
   }
 };
 
+// Interface cho Staff Profile
+export interface StaffProfile {
+  id: string;
+  username: string;
+  email: string;
+  fullName: string;
+  phone: string;
+  address: string;
+  department: string;
+  position: string;
+  employeeId: string;
+  joinDate: string;
+  avatar?: string;
+  status?: string;
+}
+
+// API functions for staff profile management
+export const staffProfileAPI = {
+  // Lấy thông tin profile staff hiện tại
+  getProfile: async (): Promise<{ success: boolean; profile?: StaffProfile; message?: string }> => {
+    try {
+      // Kiểm tra token trước khi gọi API
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.warn('No token available when fetching staff profile');
+        return {
+          success: false,
+          message: 'Chưa đăng nhập. Vui lòng đăng nhập để tiếp tục.'
+        };
+      }
+
+      console.log('Fetching staff profile with token:', token.substring(0, 15) + '...');
+      
+      // Thử gọi API với timeout ngắn hơn
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      
+      const response = await apiClient.get('/api/User/me', {
+        signal: controller.signal,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.status >= 200 && response.status < 300 && response.data) {
+        console.log('Staff profile API response:', response.data);
+        
+        // Transform API response to match StaffProfile interface
+        const profileData: StaffProfile = {
+          id: response.data.userID || response.data.id || '',
+          username: response.data.username || response.data.userName || '',
+          fullName: response.data.fullname || response.data.fullName || response.data.name || '',
+          email: response.data.email || '',
+          phone: response.data.phone || response.data.phoneNumber || '',
+          address: response.data.address || '',
+          department: response.data.department || 'Phòng xét nghiệm',
+          position: response.data.position || 'Kỹ thuật viên',
+          employeeId: response.data.employeeId || response.data.staffCode || '',
+          joinDate: response.data.joinDate || response.data.createdDate || new Date().toISOString(),
+          avatar: response.data.image || response.data.avatar || response.data.profileImage || '',
+          status: response.data.status || response.data.isActive ? 'active' : 'inactive'
+        };
+        
+        return {
+          success: true,
+          profile: profileData
+        };
+      }
+      
+      return {
+        success: false,
+        message: 'Không thể lấy thông tin hồ sơ'
+      };
+    } catch (error) {
+      console.error('Error fetching staff profile:', error);
+      
+      if (axios.isAxiosError(error)) {
+        // Xử lý lỗi timeout
+        if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+          return {
+            success: false,
+            message: 'Yêu cầu bị timeout. Vui lòng thử lại sau.'
+          };
+        }
+        
+        // Xử lý lỗi abort
+        if (error.message.includes('aborted')) {
+          return {
+            success: false,
+            message: 'Yêu cầu bị hủy.'
+          };
+        }
+        
+        // Xử lý lỗi 401 một cách cụ thể
+        if (error.response?.status === 401) {
+          console.warn('401 Unauthorized when fetching staff profile');
+          // Xóa token nếu không hợp lệ
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          
+          return {
+            success: false,
+            message: 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.'
+          };
+        }
+        
+        if (error.response?.status === 404) {
+          return {
+            success: false,
+            message: 'API endpoint không tồn tại. Vui lòng kiểm tra cấu hình hệ thống.'
+          };
+        }
+        
+        return {
+          success: false,
+          message: `Lỗi: ${error.response?.status} - ${error.response?.data?.message || error.message}`
+        };
+      }
+      
+      return {
+        success: false,
+        message: 'Có lỗi xảy ra khi lấy thông tin hồ sơ'
+      };
+    }
+  },
+  
+  // Cập nhật thông tin profile staff hiện tại
+  updateProfile: async (profileData: Partial<StaffProfile>): Promise<{ success: boolean; profile?: StaffProfile; message?: string }> => {
+    try {
+      const response = await apiClient.put('/api/User/me', profileData);
+      
+      if (response.status >= 200 && response.status < 300) {
+        return {
+          success: true,
+          profile: response.data as StaffProfile,
+          message: 'Cập nhật hồ sơ thành công'
+        };
+      }
+      
+      return {
+        success: false,
+        message: 'Không thể cập nhật thông tin hồ sơ'
+      };
+    } catch (error) {
+      console.error('Error updating staff profile:', error);
+      
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          return {
+            success: false,
+            message: 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.'
+          };
+        }
+        
+        return {
+          success: false,
+          message: `Lỗi: ${error.response?.status} - ${error.response?.data?.message || error.message}`
+        };
+      }
+      
+      return {
+        success: false,
+        message: 'Có lỗi xảy ra khi cập nhật thông tin hồ sơ'
+      };
+    }
+  },
+  
+  // Cập nhật mật khẩu staff
+  changePassword: async (currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      const response = await apiClient.post('/api/User/change-password', {
+        currentPassword,
+        newPassword
+      });
+      
+      if (response.status >= 200 && response.status < 300) {
+        return {
+          success: true,
+          message: 'Đổi mật khẩu thành công'
+        };
+      }
+      
+      return {
+        success: false,
+        message: response.data?.message || 'Không thể đổi mật khẩu'
+      };
+    } catch (error) {
+      console.error('Error changing password:', error);
+      
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          return {
+            success: false,
+            message: 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.'
+          };
+        }
+        
+        if (error.response?.status === 400) {
+          return {
+            success: false,
+            message: error.response.data?.message || 'Mật khẩu hiện tại không đúng'
+          };
+        }
+        
+        return {
+          success: false,
+          message: `Lỗi: ${error.response?.status} - ${error.response?.data?.message || error.message}`
+        };
+      }
+      
+      return {
+        success: false,
+        message: 'Có lỗi xảy ra khi đổi mật khẩu'
+      };
+    }
+  }
+};
+

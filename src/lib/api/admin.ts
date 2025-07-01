@@ -85,6 +85,19 @@ export interface ActivityLog {
   ipAddress: string;
 }
 
+// Interface cho Update User Request
+export interface UpdateUserRequest {
+  fullname: string;
+  gender: "Nam" | "Nữ" | "Khác";
+  roleID: string;
+  email: string;
+  phone: string;
+  birthdate: string;
+  image?: string;
+  address: string;
+  status: "active" | "inactive" | "suspended";
+}
+
 // Lấy dashboard statistics
 export const getAdminDashboardStats = async (): Promise<{ success: boolean; stats?: AdminStats; message?: string }> => {
   try {
@@ -185,6 +198,120 @@ export const getAllUsers = async (): Promise<{ success: boolean; users?: AdminUs
     return {
       success: false,
       message: 'Có lỗi xảy ra khi lấy danh sách người dùng'
+    };
+  }
+};
+
+// Lấy thông tin user theo ID
+export const getUserById = async (id: string): Promise<{ success: boolean; user?: AdminUser; message?: string; rawData?: any }> => {
+  try {
+    const response = await apiClient.get(`/api/User/${id}/edit`);
+    
+    if (response.status >= 200 && response.status < 300) {
+      console.log('API User By ID Response:', response.data); // Debug log
+      
+      // Lưu lại dữ liệu gốc từ API
+      const rawData = response.data;
+      
+      // Transform API response to match AdminUser interface
+      const userData = response.data;
+      const user: AdminUser = {
+        userID: userData.userID || userData.UserId || userData.userId || userData.userid || userData.id || userData.ID || id,
+        username: userData.username || userData.userName || userData.Username || userData.UserName || '',
+        fullname: userData.fullname || userData.fullName || userData.Fullname || userData.FullName || userData.name || userData.Name || '',
+        gender: userData.gender || userData.Gender || '',
+        roleID: userData.roleID || userData.RoleId || userData.roleId || userData.roleid || userData.role || userData.Role || '',
+        email: userData.email || userData.Email || '',
+        phone: userData.phone || userData.phoneNumber || userData.Phone || userData.PhoneNumber || '',
+        birthdate: userData.birthdate || userData.dateOfBirth || userData.Birthdate || userData.DateOfBirth || '',
+        image: userData.image || userData.avatar || userData.Image || userData.Avatar || '',
+        address: userData.address || userData.Address || '',
+        status: userData.status || userData.Status || (userData.isActive || userData.IsActive ? 'active' : 'inactive'),
+        createdAt: userData.createdAt || userData.createDate || userData.CreatedAt || userData.CreateDate || new Date().toISOString(),
+        lastLogin: userData.lastLogin || userData.lastLoginDate || userData.LastLogin || undefined
+      };
+
+      return {
+        success: true,
+        user: user,
+        rawData: rawData
+      };
+    }
+    
+    return {
+      success: false,
+      message: 'Không thể lấy thông tin người dùng'
+    };
+  } catch (error) {
+    console.error('Error fetching user by ID:', error);
+    return {
+      success: false,
+      message: 'Có lỗi xảy ra khi lấy thông tin người dùng'
+    };
+  }
+};
+
+// Cập nhật thông tin user theo ID
+export const updateUser = async (id: string, data: UpdateUserRequest): Promise<{ success: boolean; user?: AdminUser; message?: string }> => {
+  try {
+    console.log('Dữ liệu gửi đi cập nhật:', data);
+    
+    // Điều chỉnh dữ liệu theo đúng định dạng API yêu cầu
+    const apiData = {
+      user: {
+        userId: id,
+        fullname: data.fullname,
+        gender: data.gender,
+        roleId: data.roleID,
+        email: data.email,
+        phone: data.phone,
+        birthdate: data.birthdate,
+        image: data.image,
+        address: data.address,
+        status: data.status
+      }
+    };
+    
+    console.log('Dữ liệu đã điều chỉnh:', apiData);
+    const response = await apiClient.put(`/api/User/${id}`, apiData);
+    
+    if (response.status >= 200 && response.status < 300) {
+      console.log('API Update User Response:', response.data); // Debug log
+      
+      // Transform API response to match AdminUser interface
+      const userData = response.data;
+      const user: AdminUser = {
+        userID: userData.userID || userData.UserId || userData.userId || userData.userid || userData.id || userData.ID || id,
+        username: userData.username || userData.userName || userData.Username || userData.UserName || '',
+        fullname: userData.fullname || userData.fullName || userData.Fullname || userData.FullName || userData.name || userData.Name || '',
+        gender: userData.gender || userData.Gender || 'Khác',
+        roleID: userData.roleID || userData.RoleId || userData.roleId || userData.roleid || userData.role || userData.Role || 'R003',
+        email: userData.email || userData.Email || '',
+        phone: userData.phone || userData.phoneNumber || userData.Phone || userData.PhoneNumber || '',
+        birthdate: userData.birthdate || userData.dateOfBirth || userData.Birthdate || userData.DateOfBirth || '',
+        image: userData.image || userData.avatar || userData.Image || userData.Avatar || '',
+        address: userData.address || userData.Address || '',
+        status: userData.status || userData.Status || (userData.isActive || userData.IsActive ? 'active' : 'inactive'),
+        createdAt: userData.createdAt || userData.createDate || userData.CreatedAt || userData.CreateDate || new Date().toISOString(),
+        lastLogin: userData.lastLogin || userData.lastLoginDate || userData.LastLogin || undefined
+      };
+
+      return {
+        success: true,
+        user: user,
+        message: 'Cập nhật thông tin người dùng thành công'
+      };
+    }
+    
+    return {
+      success: false,
+      message: 'Không thể cập nhật thông tin người dùng'
+    };
+  } catch (error: any) {
+    console.error('Error updating user:', error);
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thông tin người dùng'
     };
   }
 };

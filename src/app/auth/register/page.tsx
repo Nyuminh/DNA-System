@@ -17,7 +17,6 @@ type RegisterFormInputs = {
   phone: string;
   birthdate: string;
   address: string;
-  image?: FileList;
   agreeTerms: boolean;
 };
 
@@ -48,15 +47,10 @@ export default function RegisterPage() {
         email: data.email,
         phone: data.phone,
         birthdate: data.birthdate,
-        address: data.address,
-        // Chỉ thêm image nếu user đã chọn file
-        ...(data.image && data.image.length > 0 && { image: data.image[0] })
+        address: data.address
       };
 
-      console.log('Submitting register data:', {
-        ...registerData,
-        image: registerData.image ? 'File selected' : 'No file'
-      });
+      console.log('Submitting register data:', registerData);
 
       const result = await registerUser(registerData);
       
@@ -412,37 +406,7 @@ export default function RegisterPage() {
                 )}
               </div>
 
-              {/* Profile Image Field */}
-              <div>
-                <label htmlFor="image" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Ảnh đại diện (Tùy chọn)
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <input
-                    id="image"
-                    type="file"
-                    accept="image/*"
-                    className={`block w-full pl-10 pr-3 py-3 border-0 rounded-xl bg-gray-50 text-gray-900 file:mr-3 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 sm:text-sm transition-all duration-200 ${
-                      errors.image ? 'ring-2 ring-red-400 bg-red-50' : ''
-                    }`}
-                    {...register('image')}
-                  />
-                </div>
-                {errors.image && (
-                  <p className="mt-2 text-sm text-red-600 flex items-center">
-                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                    {errors.image.message}
-                  </p>
-                )}
-              </div>              {/* Password Fields (Row) */}
+              {/* Password Fields (Row) */}
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 {/* Password Field */}
                 <div>

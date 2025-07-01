@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import Link from "next/link";
 import { 
   UserIcon, 
@@ -8,9 +8,11 @@ import {
   PencilIcon, 
   LockClosedIcon, 
   LockOpenIcon,
-  PlusIcon
+  PlusIcon,
+  XMarkIcon,
+  CheckIcon
 } from '@heroicons/react/24/outline';
-import { getAllUsers, AdminUser } from "@/lib/api/admin";
+import { getAllUsers, getUserById, updateUser, AdminUser, UpdateUserRequest } from "@/lib/api/admin";
 
 export default function AccountsPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -19,6 +21,14 @@ export default function AccountsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalLoading, setModalLoading] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [formData, setFormData] = useState<UpdateUserRequest | null>(null);
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const [updateMessage, setUpdateMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null);
+  const [rawUserData, setRawUserData] = useState<any>(null);
 
   // Danh sách ảnh mặc định theo vai trò
   const defaultImages = {
@@ -120,8 +130,207 @@ export default function AccountsPage() {
     alert(`Xem chi tiết người dùng: ${user.fullname}`);
   };
 
-  const editUser = (user: AdminUser) => {
-    alert(`Chỉnh sửa người dùng: ${user.fullname}`);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    if (!formData) return;
+    
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedUser || !formData) return;
+    
+    setUpdateLoading(true);
+    setUpdateMessage(null);
+    
+    try {
+      // Ensure we're sending all required fields and preserving existing data
+      const updateData: UpdateUserRequest = {
+        fullname: formData.fullname.trim() || selectedUser.fullname,
+        gender: formData.gender || selectedUser.gender || 'Khác',
+        roleID: formData.roleID || selectedUser.roleID,
+        email: formData.email.trim() || selectedUser.email,
+        phone: formData.phone.trim() || selectedUser.phone,
+        birthdate: formData.birthdate || selectedUser.birthdate,
+        image: formData.image?.trim() || selectedUser.image,
+        address: formData.address?.trim() || selectedUser.address,
+        status: formData.status || selectedUser.status || 'active'
+      };
+      
+      console.log('Dữ liệu form trước khi gửi:', updateData);
+      const result = await updateUser(selectedUser.userID, updateData);
+      
+      if (result.success && result.user) {
+        // Update user in the list
+        setUsers(prev => 
+          prev.map(user => 
+            user.userID === selectedUser.userID ? result.user! : user
+          )
+        );
+        
+        // Update selected user
+        setSelectedUser(result.user);
+        
+        // Update form data with the latest values
+        setFormData({
+          fullname: result.user.fullname || '',
+          gender: result.user.gender || 'Khác',
+          roleID: result.user.roleID || 'R03',
+          email: result.user.email || '',
+          phone: result.user.phone || '',
+          birthdate: result.user.birthdate || '',
+          image: result.user.image || '',
+          address: result.user.address || '',
+          status: result.user.status || 'active'
+        });
+        
+        // Show success message
+        setUpdateMessage({
+          text: result.message || 'Cập nhật thành công',
+          type: 'success'
+        });
+        
+        // Exit edit mode after success
+        setIsEditMode(false);
+      } else {
+        // Show error message
+        setUpdateMessage({
+          text: result.message || 'Cập nhật thất bại',
+          type: 'error'
+        });
+      }
+    } catch (error: any) {
+      console.error('Error updating user:', error);
+      setUpdateMessage({
+        text: error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật',
+        type: 'error'
+      });
+    } finally {
+      setUpdateLoading(false);
+    }
+  };
+
+  const editUser = async (user: AdminUser) => {
+    try {
+      setModalLoading(true);
+      setIsModalOpen(true);
+      setIsEditMode(false);
+      setUpdateMessage(null);
+      
+      // Gọi API để lấy thông tin chi tiết của user
+      const result = await getUserById(user.userID);
+      
+      if (result.success && result.user) {
+        // Lưu dữ liệu gốc từ API
+        setRawUserData(result.rawData);
+        
+        // Đảm bảo hiển thị đầy đủ thông tin của account
+        const completeUser = {
+          ...user,
+          ...result.user,
+          // Đảm bảo các trường quan trọng luôn có giá trị
+          userID: result.user.userID || user.userID,
+          username: result.user.username || user.username,
+          fullname: result.user.fullname || user.fullname,
+          gender: result.user.gender || user.gender,
+          roleID: result.user.roleID || user.roleID,
+          email: result.user.email || user.email,
+          phone: result.user.phone || user.phone,
+          birthdate: result.user.birthdate || user.birthdate,
+          image: result.user.image || user.image,
+          address: result.user.address || user.address,
+          status: result.user.status || user.status,
+          createdAt: result.user.createdAt || user.createdAt,
+          lastLogin: result.user.lastLogin || user.lastLogin
+        };
+        
+        setSelectedUser(completeUser);
+        
+        // Initialize form data with all fields from the API response
+        setFormData({
+          fullname: completeUser.fullname || '',
+          gender: completeUser.gender || 'Khác',
+          roleID: completeUser.roleID || 'R03',
+          email: completeUser.email || '',
+          phone: completeUser.phone || '',
+          birthdate: completeUser.birthdate || '',
+          image: completeUser.image || '',
+          address: completeUser.address || '',
+          status: completeUser.status || 'active'
+        });
+      } else {
+        // Nếu không lấy được từ API, hiển thị thông tin hiện có
+        setRawUserData(null);
+        setSelectedUser(user);
+        
+        // Initialize form data with current user data
+        setFormData({
+          fullname: user.fullname || '',
+          gender: user.gender || 'Khác',
+          roleID: user.roleID || 'R03',
+          email: user.email || '',
+          phone: user.phone || '',
+          birthdate: user.birthdate || '',
+          image: user.image || '',
+          address: user.address || '',
+          status: user.status || 'active'
+        });
+        
+        console.error('Không thể lấy thông tin chi tiết:', result.message);
+      }
+    } catch (error) {
+      console.error('Lỗi khi lấy thông tin người dùng:', error);
+      // Nếu có lỗi, hiển thị thông tin hiện có
+      setRawUserData(null);
+      setSelectedUser(user);
+      
+      // Initialize form data with current user data
+      setFormData({
+        fullname: user.fullname || '',
+        gender: user.gender || 'Khác',
+        roleID: user.roleID || 'R03',
+        email: user.email || '',
+        phone: user.phone || '',
+        birthdate: user.birthdate || '',
+        image: user.image || '',
+        address: user.address || '',
+        status: user.status || 'active'
+      });
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedUser(null);
+    setFormData(null);
+    setIsEditMode(false);
+    setUpdateMessage(null);
+    setRawUserData(null);
+  };
+
+  const resetForm = () => {
+    if (!selectedUser) return;
+    
+    // Reset form data to original user values
+    setFormData({
+      fullname: selectedUser.fullname || '',
+      gender: selectedUser.gender || 'Khác',
+      roleID: selectedUser.roleID || 'R03',
+      email: selectedUser.email || '',
+      phone: selectedUser.phone || '',
+      birthdate: selectedUser.birthdate || '',
+      image: selectedUser.image || '',
+      address: selectedUser.address || '',
+      status: selectedUser.status || 'active'
+    });
+    
+    setUpdateMessage(null);
   };
 
   // Filter users based on search and filters
@@ -216,9 +425,10 @@ export default function AccountsPage() {
               className="px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/50 backdrop-blur-sm text-sm"
             >
               <option value="">Tất cả vai trò</option>
-              <option value="R001">Quản trị viên</option>
-              <option value="R002">Quản lý</option>
-              <option value="R003">Người dùng</option>
+              <option value="R01">Quản trị viên</option>
+              <option value="R02">Nhân viên</option>
+              <option value="R03">Khách Hàng</option>
+              <option value="R04">Quản lí</option>
             </select>
             
             <select
@@ -406,6 +616,336 @@ export default function AccountsPage() {
             <button className="bg-white border border-gray-200 rounded-lg px-3 py-1 text-sm text-gray-700 hover:bg-gray-50">
               Tiếp
             </button>
+          </div>
+        </div>
+      )}
+      
+      {/* User Detail Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h3 className="text-lg font-medium text-gray-900">
+                {isEditMode ? 'Chỉnh sửa thông tin người dùng' : 'Thông tin chi tiết người dùng'}
+              </h3>
+              <button 
+                onClick={closeModal}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              {modalLoading ? (
+                <div className="flex justify-center py-10">
+                  <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500"></div>
+                </div>
+              ) : selectedUser && formData ? (
+                <>
+                  {updateMessage && (
+                    <div className={`mb-4 p-3 rounded-lg ${updateMessage.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+                      <p className="text-sm">{updateMessage.text}</p>
+                    </div>
+                  )}
+                  
+                  {isEditMode ? (
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                      <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
+                        <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100">
+                          <img 
+                            src={getUserImage(selectedUser)}
+                            alt={selectedUser.fullname} 
+                            className="h-full w-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = "/images/default-avatar.jpg";
+                            }}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <div className="mb-3">
+                            <label htmlFor="fullname" className="block text-sm font-medium text-gray-700 mb-1">Họ và tên <span className="text-red-500">*</span></label>
+                            <input
+                              type="text"
+                              id="fullname"
+                              name="fullname"
+                              value={formData.fullname}
+                              onChange={handleChange}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">
+                              <span className="font-medium">User ID:</span> {selectedUser.userID} (không thể chỉnh sửa)
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              <span className="font-medium">Username:</span> {selectedUser.username} (không thể chỉnh sửa)
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email <span className="text-red-500">*</span></label>
+                          <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại <span className="text-red-500">*</span></label>
+                          <input
+                            type="text"
+                            id="phone"
+                            name="phone"
+                            value={formData.phone}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-1">Giới tính <span className="text-red-500">*</span></label>
+                          <select
+                            id="gender"
+                            name="gender"
+                            value={formData.gender}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                            required
+                          >
+                            <option value="Nam">Nam</option>
+                            <option value="Nữ">Nữ</option>
+                            <option value="Khác">Khác</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label htmlFor="birthdate" className="block text-sm font-medium text-gray-700 mb-1">Ngày sinh</label>
+                          <input
+                            type="date"
+                            id="birthdate"
+                            name="birthdate"
+                            value={formData.birthdate ? formData.birthdate.split('T')[0] : ''}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="roleID" className="block text-sm font-medium text-gray-700 mb-1">Vai trò <span className="text-red-500">*</span></label>
+                          <select
+                            id="roleID"
+                            name="roleID"
+                            value={formData.roleID}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                            required
+                          >
+                            <option value="R01">Quản trị viên</option>
+                            <option value="R02">Nhân viên</option>
+                            <option value="R03">Khách Hàng</option>
+                            <option value="R04">Quản lí</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">Trạng thái <span className="text-red-500">*</span></label>
+                          <select
+                            id="status"
+                            name="status"
+                            value={formData.status}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                            required
+                          >
+                            <option value="active">Hoạt động</option>
+                            <option value="inactive">Không hoạt động</option>
+                            <option value="suspended">Bị khóa</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-1">URL hình ảnh</label>
+                          <input
+                            type="text"
+                            id="image"
+                            name="image"
+                            value={formData.image || ''}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="https://example.com/image.jpg"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Để trống để sử dụng ảnh mặc định theo vai trò</p>
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">Địa chỉ</label>
+                          <textarea
+                            id="address"
+                            name="address"
+                            value={formData.address || ''}
+                            onChange={handleChange}
+                            rows={3}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                          ></textarea>
+                        </div>
+                      </div>
+                      
+                      <div className="pt-4 border-t border-gray-200">
+                        <p className="text-xs text-gray-500 mb-4">
+                          <span className="text-red-500">*</span> Trường bắt buộc
+                        </p>
+                        <div className="flex justify-end gap-3">
+                          <button
+                            type="button"
+                            onClick={resetForm}
+                            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium flex items-center gap-1"
+                            disabled={updateLoading}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                            </svg>
+                            <span>Khôi phục</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setIsEditMode(false)}
+                            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium"
+                            disabled={updateLoading}
+                          >
+                            Hủy
+                          </button>
+                          <button
+                            type="submit"
+                            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium flex items-center gap-1"
+                            disabled={updateLoading}
+                          >
+                            {updateLoading ? (
+                              <>
+                                <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                                <span>Đang lưu...</span>
+                              </>
+                            ) : (
+                              <>
+                                <CheckIcon className="h-4 w-4" />
+                                <span>Lưu thay đổi</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="space-y-6">
+                      <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
+                        <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100">
+                          <img 
+                            src={getUserImage(selectedUser)}
+                            alt={selectedUser.fullname} 
+                            className="h-full w-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = "/images/default-avatar.jpg";
+                            }}
+                          />
+                        </div>
+                        <div className="text-center sm:text-left">
+                          <h4 className="text-xl font-bold text-gray-900">{selectedUser.fullname}</h4>
+                          <p className="text-gray-500">{selectedUser.username}</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {getRoleBadge(selectedUser.roleID)}
+                            {getStatusBadge(selectedUser.status)}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <h5 className="text-sm font-medium text-gray-500 mb-1">User ID</h5>
+                          <p className="text-gray-900">{selectedUser.userID}</p>
+                        </div>
+                        <div>
+                          <h5 className="text-sm font-medium text-gray-500 mb-1">Username</h5>
+                          <p className="text-gray-900">{selectedUser.username}</p>
+                        </div>
+                        <div>
+                          <h5 className="text-sm font-medium text-gray-500 mb-1">Email</h5>
+                          <p className="text-gray-900">{selectedUser.email}</p>
+                        </div>
+                        <div>
+                          <h5 className="text-sm font-medium text-gray-500 mb-1">Số điện thoại</h5>
+                          <p className="text-gray-900">{selectedUser.phone}</p>
+                        </div>
+                        <div>
+                          <h5 className="text-sm font-medium text-gray-500 mb-1">Giới tính</h5>
+                          <p className="text-gray-900">{selectedUser.gender}</p>
+                        </div>
+                        <div>
+                          <h5 className="text-sm font-medium text-gray-500 mb-1">Ngày sinh</h5>
+                          <p className="text-gray-900">
+                            {selectedUser.birthdate ? new Date(selectedUser.birthdate).toLocaleDateString('vi-VN') : '-'}
+                          </p>
+                        </div>
+                        <div>
+                          <h5 className="text-sm font-medium text-gray-500 mb-1">Vai trò</h5>
+                          <p className="text-gray-900">{getRoleName(selectedUser.roleID)}</p>
+                        </div>
+                        <div>
+                          <h5 className="text-sm font-medium text-gray-500 mb-1">Trạng thái tài khoản</h5>
+                          <div>{getStatusBadge(selectedUser.status)}</div>
+                        </div>
+                        <div className="sm:col-span-2">
+                          <h5 className="text-sm font-medium text-gray-500 mb-1">Địa chỉ</h5>
+                          <p className="text-gray-900">{selectedUser.address || '-'}</p>
+                        </div>
+                        <div>
+                          <h5 className="text-sm font-medium text-gray-500 mb-1">Ngày tạo tài khoản</h5>
+                          <p className="text-gray-900">
+                            {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString('vi-VN') : '-'}
+                          </p>
+                        </div>
+                        <div>
+                          <h5 className="text-sm font-medium text-gray-500 mb-1">Đăng nhập gần nhất</h5>
+                          <p className="text-gray-900">
+                            {selectedUser.lastLogin ? new Date(selectedUser.lastLogin).toLocaleDateString('vi-VN') : '-'}
+                          </p>
+                        </div>
+                        <div>
+                          <h5 className="text-sm font-medium text-gray-500 mb-1">URL Hình ảnh</h5>
+                          <p className="text-gray-900 break-all">
+                            {selectedUser.image || '-'}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                        <button
+                          onClick={closeModal}
+                          className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium"
+                        >
+                          Đóng
+                        </button>
+                        <button
+                          onClick={() => setIsEditMode(true)}
+                          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium flex items-center gap-1"
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                          <span>Chỉnh sửa</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-10 text-gray-500">
+                  Không thể tải thông tin người dùng
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
