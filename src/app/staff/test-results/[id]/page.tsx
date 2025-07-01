@@ -460,7 +460,7 @@ export default function AppointmentDetailPage() {
                   </svg>
                 </div>
                 <div className="ml-3">
-                  <p className="font-medium">Pending</p>
+                  <p className="font-medium">Đã xác nhận</p>
                   <p className="text-sm text-gray-500">{formatDate(appointment.date)}</p>
                 </div>
               </div>
@@ -472,7 +472,7 @@ export default function AppointmentDetailPage() {
                   </svg>
                 </div>
                 <div className="ml-3">
-                  <p className="font-medium">Confirmed</p>
+                  <p className="font-medium">Đang thực hiện</p>
                   <p className="text-sm text-gray-500">{status === 'in-progress' || status === 'completed' ? 'Confirmed' : 'Not confirmed'}</p>
                 </div>
               </div>
@@ -484,7 +484,7 @@ export default function AppointmentDetailPage() {
                   </svg>
                 </div>
                 <div className="ml-3">
-                  <p className="font-medium">Completed</p>
+                  <p className="font-medium">Hoàn thành</p>
                   <p className="text-sm text-gray-500">{status === 'completed' ? 'Completed' : 'Not completed'}</p>
                 </div>
               </div>

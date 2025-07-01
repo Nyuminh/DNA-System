@@ -388,10 +388,10 @@ export default function KitManagement() {
                   Kit ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Customer ID
+                  Customer
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Staff ID
+                  Staff
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Booking ID
@@ -420,10 +420,13 @@ export default function KitManagement() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                    {kit.customerID || '-'}
+                    <div>{kit.customerName || kit.customerID || '-'}</div>
+                    {kit.customerName && kit.customerID && kit.customerName !== kit.customerID && (
+                      <div className="text-xs text-slate-500 mt-1">{kit.customerID}</div>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                    {kit.staffID || '-'}
+                    {kit.staffName || kit.staffID || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
                     {kit.bookingId || '-'}

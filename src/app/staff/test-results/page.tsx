@@ -353,7 +353,7 @@ export default function OrderManagement() {
   const getNextStatusText = (currentStatus: Order['status']): string => {
     switch (currentStatus) {
       case 'pending':
-        return 'Xác nhận';
+        return 'Đang thực hiện';
       case 'in-progress':
         return 'Hoàn thành';
       case 'completed':
@@ -361,7 +361,7 @@ export default function OrderManagement() {
       case 'cancelled':
         return 'Đã hủy';
       default:
-        return 'Xác nhận';
+        return 'Đã xác nhận';
     }
   };
 
@@ -518,7 +518,12 @@ export default function OrderManagement() {
                   <div className="text-sm font-medium text-gray-900">#{order.bookingId}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{order.customerId}</div>
+                  <div className="text-sm font-medium text-gray-900">
+                    {order.customerName || order.customerId}
+                  </div>
+                  {order.customerName && order.customerId && order.customerName !== order.customerId && (
+                    <div className="text-xs text-gray-500">ID: {order.customerId}</div>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">{formatDate(order.date)}</div>

@@ -17,7 +17,7 @@ const navigation = [
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);  const [showUserMenu, setShowUserMenu] = useState(false);
-  const { user, isLoggedIn, logout, isAdmin, isManager } = useAuth();
+  const { user, isLoggedIn, logout, isAdmin, isManager, isStaff } = useAuth();
   const router = useRouter();
 
   const handleLogout = () => {
@@ -32,6 +32,8 @@ export default function Header() {
       router.push('/admin');
     } else if (isManager()) {
       router.push('/manager');
+    } else if (isStaff()) {
+      router.push('/staff');
     } else {
       router.push('/dashboard');
     }
@@ -106,12 +108,11 @@ export default function Header() {
                       onClick={handleUserMenuClick}
                       className="w-full text-left px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-100 transition-colors duration-200"
                     >
-                      {isAdmin() ? 'Admin Dashboard' : isManager() ? 'Manager Dashboard' : 'Xem hồ sơ'}
+                      {isAdmin() ? 'Admin Dashboard' : isManager() ? 'Manager Dashboard' : isStaff() ? 'Staff Dashboard' : 'Xem hồ sơ'}
                     </button>
                       {/* Menu cho Customer */}
-                    {!isAdmin() && !isManager() && (
+                    {!isAdmin() && !isManager() && !isStaff() && (
                       <>
-                        
                         <Link
                           href="/my-booking"
                           className="block px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-100 transition-colors duration-200"
@@ -141,6 +142,33 @@ export default function Header() {
                         </Link>
                         <Link
                           href="/manager/profile"
+                          className="block px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-100 transition-colors duration-200"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          Hồ sơ cá nhân
+                        </Link>
+                      </>
+                    )}
+                    
+                    {/* Menu cho Staff */}
+                    {isStaff() && (
+                      <>
+                        <Link
+                          href="/staff/kits"
+                          className="block px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-100 transition-colors duration-200"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          Quản lý kits
+                        </Link>
+                        <Link
+                          href="/staff/test-results"
+                          className="block px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-100 transition-colors duration-200"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          Quản lý kết quả
+                        </Link>
+                        <Link
+                          href="/staff/profile"
                           className="block px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-100 transition-colors duration-200"
                           onClick={() => setShowUserMenu(false)}
                         >
@@ -236,7 +264,7 @@ export default function Header() {
                   <div className="border-t border-secondary-200 px-6 py-6 space-y-3">
                   {isLoggedIn ? (
                     <>                      {/* Menu cho Customer */}
-                      {!isAdmin() && !isManager() && (
+                      {!isAdmin() && !isManager() && !isStaff() && (
                         <>
                           <Link
                             href="/my-tests"
@@ -268,8 +296,35 @@ export default function Header() {
                         }}
                         className="w-full text-left rounded-lg px-4 py-3 text-base font-medium text-secondary-700 hover:bg-secondary-100 hover:text-primary-600 transition-colors duration-200"
                       >
-                        {isAdmin() ? 'Admin Dashboard' : isManager() ? 'Manager Dashboard' : 'Xem hồ sơ'}
+                        {isAdmin() ? 'Admin Dashboard' : isManager() ? 'Manager Dashboard' : isStaff() ? 'Staff Dashboard' : 'Xem hồ sơ'}
                       </button>
+                      
+                      {/* Menu cho Staff (Mobile) */}
+                      {isStaff() && (
+                        <>
+                          <Link
+                            href="/staff/kits"
+                            className="block rounded-lg px-4 py-3 text-base font-medium text-secondary-700 hover:bg-secondary-100 hover:text-primary-600 transition-colors duration-200"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            Quản lý kits
+                          </Link>
+                          <Link
+                            href="/staff/test-results"
+                            className="block rounded-lg px-4 py-3 text-base font-medium text-secondary-700 hover:bg-secondary-100 hover:text-primary-600 transition-colors duration-200"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            Quản lý kết quả
+                          </Link>
+                          <Link
+                            href="/staff/profile"
+                            className="block rounded-lg px-4 py-3 text-base font-medium text-secondary-700 hover:bg-secondary-100 hover:text-primary-600 transition-colors duration-200"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            Hồ sơ cá nhân
+                          </Link>
+                        </>
+                      )}
                       
                       {/* Menu cho Manager */}
                       {isManager() && (
