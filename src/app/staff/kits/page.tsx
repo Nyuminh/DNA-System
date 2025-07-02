@@ -12,6 +12,7 @@ import {
   PencilIcon
 } from '@heroicons/react/24/outline';
 import { kitApi, Kit } from '@/lib/api/staff';
+import { useSearchParams } from 'next/navigation';
 
 interface NewKitForm {
   customerID: string;
@@ -23,6 +24,7 @@ interface NewKitForm {
 }
 
 export default function KitManagement() {
+  const searchParams = useSearchParams();
   const [kits, setKits] = useState<Kit[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +44,29 @@ export default function KitManagement() {
 
   useEffect(() => {
     fetchKits();
-  }, []);  const fetchKits = async () => {
+    
+    // Check for URL parameters to pre-fill the form
+    const bookingId = searchParams.get('bookingId');
+    const customerId = searchParams.get('customerId');
+    const staffId = searchParams.get('staffId');
+    const description = searchParams.get('description');
+    
+    // If at least bookingId is present, pre-fill the form with available data
+    if (bookingId) {
+      setFormData(prev => ({
+        ...prev,
+        bookingId: bookingId || '',
+        customerID: customerId || '',
+        staffID: staffId || '',
+        description: description || '',
+        status: 'available',
+        receivedate: new Date().toISOString().split('T')[0]
+      }));
+      setShowAddForm(true);
+    }
+  }, [searchParams]);
+
+  const fetchKits = async () => {
     console.log('🔄 Starting to fetch kits...');
     setLoading(true);
     setError(null);
@@ -123,7 +147,10 @@ export default function KitManagement() {
         // Backend will auto-generate kitID
       };
       
-      await kitApi.createKit(kitDataToCreate);
+      console.log('📤 Sending kit data to API:', JSON.stringify(kitDataToCreate));
+      
+      const newKit = await kitApi.createKit(kitDataToCreate);
+      console.log('✅ Kit created successfully:', newKit);
       
       // Reset form and refresh list
       setFormData({
@@ -137,7 +164,7 @@ export default function KitManagement() {
       setShowAddForm(false);
       await fetchKits(); // Refresh the list
       
-      console.log('✅ Kit created successfully');
+      console.log('✅ Kit creation process completed');
     } catch (error) {
       console.error('❌ Error creating kit:', error);
       setError('Không thể tạo kit mới. Vui lòng thử lại.');
@@ -169,8 +196,10 @@ export default function KitManagement() {
       
       // Create updated kit object
       const updatedKit = { ...kitToUpdate, status: newStatus };
+      console.log('📤 Sending updated kit to API:', JSON.stringify(updatedKit));
       
-      await kitApi.updateKitStatus(updatedKit);
+      // Use updateKitStatusMultiFormat for better UTF-8 handling
+      await kitApi.updateKitStatusMultiFormat(updatedKit);
       
       // Update local state
       setKits(prev => prev.map(kit => 
@@ -179,6 +208,11 @@ export default function KitManagement() {
       
       setEditingStatus(null);
       console.log('✅ Kit status updated successfully');
+      
+      // Refresh kit list to ensure we have the latest data from the server
+      setTimeout(() => {
+        fetchKits();
+      }, 1000);
     } catch (error) {
       console.error('❌ Error updating kit status:', error);
       setError('Không thể cập nhật trạng thái kit. Vui lòng thử lại.');

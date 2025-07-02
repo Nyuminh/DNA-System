@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getAppointmentById, updateAppointment, updateAppointmentStatus, updateAppointmentStatusSafe, Appointment, TestResult, createTestResultV2, getTestResultsByBookingId } from '@/lib/api/staff';
+import { getAppointmentById, updateAppointment, updateAppointmentStatus, updateAppointmentStatusSafe, Appointment, TestResult, createTestResultV2, getTestResultsByBookingId, kitApi, Kit } from '@/lib/api/staff';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 
@@ -18,6 +18,9 @@ export default function AppointmentDetailPage() {
   const [submittingResult, setSubmittingResult] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<AppointmentStatus>('pending');
+  const [kitExists, setKitExists] = useState(false);
+  const [kitInfo, setKitInfo] = useState<Kit | null>(null);
+  const [checkingKit, setCheckingKit] = useState(false);
   
   // State cho form kết quả xét nghiệm
   const [testResult, setTestResult] = useState<Partial<TestResult>>({
@@ -146,6 +149,11 @@ export default function AppointmentDetailPage() {
           // Lấy kết quả xét nghiệm nếu booking đã hoàn thành
           if (data.status === 'Completed' || mapStatusToEnum(data.status) === 'completed') {
             fetchTestResults(data.bookingId);
+          }
+          
+          // Check if kit exists for this booking
+          if (data.bookingId) {
+            checkKitForBooking(data.bookingId);
           }
         }
       } catch (err) {
@@ -345,11 +353,78 @@ export default function AppointmentDetailPage() {
         if (data.status) {
           setStatus(mapStatusToEnum(data.status));
         }
+        
+        // Re-check kit status
+        if (data.bookingId) {
+          checkKitForBooking(data.bookingId);
+        }
       } else {
         console.error('❌ Failed to refresh appointment data');
       }
     } catch (error) {
       console.error('Error re-fetching appointment:', error);
+    }
+  };
+
+  // Function to check if a kit exists for the current booking
+  const checkKitForBooking = async (bookingId: string) => {
+    try {
+      setCheckingKit(true);
+      console.log(`🔍 Checking if kit exists for booking ID: ${bookingId}`);
+      
+      // Get all kits and filter by bookingId
+      const allKits = await kitApi.getAllKits();
+      console.log(`🔄 Fetched ${allKits.length} kits from API`);
+      
+      const matchingKits = allKits.filter(kit => kit.bookingId === bookingId);
+      console.log(`🔍 Filter results: Found ${matchingKits.length} kit(s) matching bookingId ${bookingId}`);
+      
+      if (matchingKits.length > 0) {
+        const kit = matchingKits[0]; // Get the first matching kit
+        console.log(`✅ Found kit: ${kit.kitID}, Status: ${kit.status}`, kit);
+        setKitExists(true);
+        setKitInfo(kit);
+        
+        console.log(`📊 Status mapped from backend: ${kit.status}`);
+        console.log(`📝 Status text for display: ${getKitStatusText(kit.status)}`);
+      } else {
+        console.log('❌ No kits found for this booking');
+        setKitExists(false);
+        setKitInfo(null);
+      }
+    } catch (error) {
+      console.error('Error checking kit for booking:', error);
+    } finally {
+      setCheckingKit(false);
+    }
+  };
+
+  // Helper function to get status text for kit (similar to the one in kits page)
+  const getKitStatusText = (status: string) => {
+    switch (status) {
+      case 'available':
+        return 'Đã vận chuyển';
+      case 'in-use':
+        return 'Đang vận chuyển';
+      case 'completed':
+        return 'Đã lấy mẫu';
+      case 'expired':
+        return 'Đã tới kho';
+      default:
+        return 'Không xác định';
+    }
+  };
+
+  // Function to manually refresh kit status
+  const refreshKitStatus = async () => {
+    if (!appointment || !appointment.bookingId) return;
+    
+    try {
+      await checkKitForBooking(appointment.bookingId);
+      toast.success('Đã làm mới trạng thái kit');
+    } catch (error) {
+      console.error('Error refreshing kit status:', error);
+      toast.error('Không thể làm mới trạng thái kit');
     }
   };
 
@@ -530,6 +605,72 @@ export default function AppointmentDetailPage() {
                 >
                   {updating ? 'Đang xử lý...' : 'Hủy'}
                 </button>
+
+                {checkingKit ? (
+                  <button className="px-4 py-2 rounded bg-gray-400 text-white cursor-wait flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Đang kiểm tra kit...
+                  </button>
+                ) : kitExists ? (
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => router.push(`/staff/kits`)}
+                      className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 flex items-center"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                      Xem Kit: {kitInfo?.kitID}
+                    </button>
+                    <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Kit: {kitInfo && getKitStatusText(kitInfo.status)}
+                    </div>
+                    <button
+                      onClick={refreshKitStatus}
+                      className="p-1.5 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200"
+                      title="Làm mới trạng thái kit"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => router.push(`/staff/kits?bookingId=${appointment.bookingId}&customerId=${appointment.customerId}&staffId=${appointment.staffId || user?.userID || ''}&description=Kit cho lịch hẹn #${appointment.bookingId}`)}
+                      className="px-4 py-2 rounded bg-purple-500 text-white hover:bg-purple-600 flex items-center"
+                      title="Tạo kit cho booking này"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Tạo Kit
+                    </button>
+                    <div className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      Chưa có kit
+                    </div>
+                    <button
+                      onClick={refreshKitStatus}
+                      className="p-1.5 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200"
+                      title="Làm mới trạng thái kit"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
               </div>
               
               {status === 'in-progress' && !showResultForm && (

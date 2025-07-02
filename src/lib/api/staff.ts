@@ -56,10 +56,18 @@ const mapStatusFromBackend = (backendStatus: string): Kit['status'] => {
   
   // Mapping based on actual database values
   if (normalizedStatus === 'đã vận chuyển' || normalizedStatus === 'da van chuyen') return 'available';
-  if (normalizedStatus === 'đã lấy mẫu' || normalizedStatus === 'da lay mau') return 'available';
-  if (normalizedStatus === 'đã tới kho' || normalizedStatus === 'da toi kho') return 'available';
+  if (normalizedStatus === 'đã lấy mẫu' || normalizedStatus === 'da lay mau') return 'completed';
+  if (normalizedStatus === 'đã tới kho' || normalizedStatus === 'da toi kho') return 'expired';
   if (normalizedStatus === 'đang vận chuyển' || normalizedStatus === 'dang van chuyen') return 'in-use';
   if (normalizedStatus === 'đang vận chuyển mẫu' || normalizedStatus === 'dang van chuyen mau') return 'in-use';
+  
+  // Hỗ trợ các trạng thái có thể bị lỗi encoding
+  if (normalizedStatus.includes('lấy mẫu') || normalizedStatus.includes('lay mau')) return 'completed';
+  if (normalizedStatus.includes('tới kho') || normalizedStatus.includes('toi kho')) return 'expired';
+  if (normalizedStatus.includes('vận chuyển') || normalizedStatus.includes('van chuyen')) {
+    if (normalizedStatus.includes('đã') || normalizedStatus.includes('da')) return 'available';
+    return 'in-use';
+  }
   
   // Legacy mappings for backward compatibility
   if (normalizedStatus === 'received') return 'available';
@@ -368,17 +376,20 @@ export const kitApi = {  /**
       const backendStatus = mapStatusToBackend(kitData.status);
       console.log(`🔄 Mapped status: ${kitData.status} -> ${backendStatus}`);
       
-      // Based on your successful curl: -d '"Processing"'
-      // The backend expects the status as a raw JSON string
-      const statusPayload = `"${backendStatus}"`;
+      // Ensure proper UTF-8 encoding
+      const encodedStatus = encodeURIComponent(backendStatus);
+      console.log('🔤 Encoded status:', encodedStatus);
+      
+      // Prepare proper JSON string with quotes
+      const statusPayload = JSON.stringify(backendStatus);
       
       console.log('📤 Sending status payload:', statusPayload);
       console.log('🔗 PUT URL:', `/api/Kit/${kitData.kitID}`);
       
       const response = await apiClient.put<ApiKitResponse>(`/api/Kit/${kitData.kitID}`, statusPayload, {
         headers: {
-          'Content-Type': 'application/json',
-          'accept': '*/*'
+          'Content-Type': 'application/json; charset=utf-8',
+          'Accept': '*/*'
         }
       });
       
@@ -419,14 +430,16 @@ export const kitApi = {  /**
     try {
       const backendStatus = mapStatusToBackend(kitData.status);
       console.log(`🚀 Updating kit ${kitData.kitID} status to: ${kitData.status} -> ${backendStatus}`);
-      console.log(`📤 Sending raw JSON string: "${backendStatus}"`);
+      
+      // Ensure proper UTF-8 encoding and JSON formatting
+      const statusPayload = JSON.stringify(backendStatus);
+      console.log(`📤 Sending JSON status payload: ${statusPayload}`);
       console.log(`🔗 PUT URL: /api/Kit/${kitData.kitID}`);
       
-      // Send the status as a raw JSON string, matching the working curl example:
-      // curl -X 'PUT' 'http://localhost:5198/api/Kit/K04' -H 'Content-Type: application/json' -d '"Processing"'
-      const response = await apiClient.put(`/api/Kit/${kitData.kitID}`, `"${backendStatus}"`, {
+      // Send the status as a properly formatted JSON string
+      const response = await apiClient.put(`/api/Kit/${kitData.kitID}`, statusPayload, {
         headers: { 
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json; charset=utf-8',
           'Accept': '*/*'
         }
       });
