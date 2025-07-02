@@ -9,10 +9,12 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
   XMarkIcon,
-  PencilIcon
+  PencilIcon,
+  EyeIcon
 } from '@heroicons/react/24/outline';
 import { kitApi, Kit } from '@/lib/api/staff';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 
 interface NewKitForm {
   customerID: string;
@@ -25,6 +27,7 @@ interface NewKitForm {
 
 export default function KitManagement() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [kits, setKits] = useState<Kit[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +44,9 @@ export default function KitManagement() {
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [editingStatus, setEditingStatus] = useState<{kitID: string, currentStatus: Kit['status']} | null>(null);
+  const [selectedKit, setSelectedKit] = useState<Kit | null>(null);
+  const [showKitModal, setShowKitModal] = useState(false);
+  const [kitDetailLoading, setKitDetailLoading] = useState(false);
 
   useEffect(() => {
     fetchKits();
@@ -151,8 +157,9 @@ export default function KitManagement() {
       
       const newKit = await kitApi.createKit(kitDataToCreate);
       console.log('✅ Kit created successfully:', newKit);
+      toast.success(`Kit ${newKit.kitID} đã được tạo thành công`);
       
-      // Reset form and refresh list
+      // Reset form
       setFormData({
         customerID: '',
         staffID: '',
@@ -161,8 +168,16 @@ export default function KitManagement() {
         status: 'available',
         receivedate: new Date().toISOString().split('T')[0]
       });
-      setShowAddForm(false);
-      await fetchKits(); // Refresh the list
+      
+      // Kiểm tra xem có returnUrl trong searchParams không
+      const returnUrl = searchParams.get('returnUrl');
+      if (returnUrl) {
+        console.log('🔄 Redirecting to:', returnUrl);
+        router.push(returnUrl);
+      } else {
+        setShowAddForm(false);
+        await fetchKits(); // Chỉ refresh danh sách kits nếu không có returnUrl
+      }
       
       console.log('✅ Kit creation process completed');
     } catch (error) {
@@ -198,8 +213,25 @@ export default function KitManagement() {
       const updatedKit = { ...kitToUpdate, status: newStatus };
       console.log('📤 Sending updated kit to API:', JSON.stringify(updatedKit));
       
-      // Use updateKitStatusMultiFormat for better UTF-8 handling
-      await kitApi.updateKitStatusMultiFormat(updatedKit);
+      try {
+        // Sử dụng hàm fixKitStatus mới
+        console.log('🔧 Using fixKitStatus to ensure proper status update...');
+        await kitApi.fixKitStatus(kitID, newStatus);
+        console.log('✅ Kit status fixed successfully');
+      } catch (error) {
+        console.error('❌ Fix kit status failed:', error);
+        
+        // Phương pháp dự phòng
+        console.log('🔄 Trying fallback methods...');
+        try {
+          await kitApi.updateKitStatusVietnamese(updatedKit);
+          console.log('✅ Vietnamese method succeeded');
+        } catch (fallbackError) {
+          console.error('❌ Vietnamese method failed:', fallbackError);
+          await kitApi.updateKitStatusMultiFormat(updatedKit);
+          console.log('✅ Multi-format method succeeded');
+        }
+      }
       
       // Update local state
       setKits(prev => prev.map(kit => 
@@ -208,14 +240,30 @@ export default function KitManagement() {
       
       setEditingStatus(null);
       console.log('✅ Kit status updated successfully');
+      toast.success('Cập nhật trạng thái kit thành công');
       
-      // Refresh kit list to ensure we have the latest data from the server
+      // Refresh kit data from server to ensure we have the latest data
+      try {
+        console.log('🔄 Refreshing kit data from server...');
+        const refreshedKit = await kitApi.refreshKitData(kitID);
+        console.log('✅ Kit data refreshed:', refreshedKit);
+        
+        // Update the local state with the refreshed data
+        setKits(prev => prev.map(kit => 
+          kit.kitID === kitID ? refreshedKit : kit
+        ));
+      } catch (refreshError) {
+        console.error('❌ Error refreshing kit data:', refreshError);
+      }
+      
+      // Refresh the entire kit list after a delay
       setTimeout(() => {
         fetchKits();
       }, 1000);
     } catch (error) {
       console.error('❌ Error updating kit status:', error);
       setError('Không thể cập nhật trạng thái kit. Vui lòng thử lại.');
+      toast.error('Không thể cập nhật trạng thái kit: ' + (error instanceof Error ? error.message : 'Lỗi không xác định'));
     }
   };
   const getStatusIcon = (status: Kit['status']) => {
@@ -282,6 +330,180 @@ export default function KitManagement() {
     completed: kits.filter(k => k.status === 'completed').length,
     expired: kits.filter(k => k.status === 'expired').length
   };
+
+  // Hàm để hiển thị modal chi tiết kit
+  const handleViewKit = async (kitID: string) => {
+    try {
+      setKitDetailLoading(true);
+      setShowKitModal(true);
+      
+      // Tìm kit trong state hiện tại
+      const kitFromState = kits.find(kit => kit.kitID === kitID);
+      
+      if (kitFromState) {
+        // Tạm thời hiển thị thông tin từ state
+        setSelectedKit(kitFromState);
+        
+        // Sau đó lấy thông tin chi tiết từ API
+        try {
+          const kitDetail = await kitApi.refreshKitData(kitID);
+          setSelectedKit(kitDetail);
+        } catch (error) {
+          console.error('Error fetching kit details:', error);
+          // Vẫn giữ thông tin từ state nếu API bị lỗi
+        }
+      } else {
+        toast.error('Không tìm thấy thông tin kit');
+      }
+    } catch (error) {
+      console.error('Error viewing kit details:', error);
+      toast.error('Không thể tải thông tin chi tiết kit');
+    } finally {
+      setKitDetailLoading(false);
+    }
+  };
+
+  // Component modal hiển thị chi tiết kit
+  const KitDetailModal = () => {
+    if (!showKitModal || !selectedKit) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+            <h3 className="text-lg font-medium text-gray-900">Chi tiết Kit {selectedKit.kitID}</h3>
+            <button 
+              onClick={() => setShowKitModal(false)}
+              className="text-gray-400 hover:text-gray-500"
+            >
+              <XMarkIcon className="h-6 w-6" />
+            </button>
+          </div>
+          
+          <div className="px-6 py-4">
+            {kitDetailLoading ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="border-b pb-2">
+                    <span className="font-medium text-gray-500">Mã Kit:</span>
+                    <p className="mt-1">{selectedKit.kitID}</p>
+                  </div>
+                  
+                  <div className="border-b pb-2">
+                    <span className="font-medium text-gray-500">Trạng thái:</span>
+                    <div className="mt-1">
+                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedKit.status)}`}>
+                        {getStatusText(selectedKit.status)}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="border-b pb-2">
+                    <span className="font-medium text-gray-500">ID Khách hàng:</span>
+                    <p className="mt-1">{selectedKit.customerID || 'N/A'}</p>
+                  </div>
+                  
+                  <div className="border-b pb-2">
+                    <span className="font-medium text-gray-500">Tên khách hàng:</span>
+                    <p className="mt-1">{selectedKit.customerName || 'N/A'}</p>
+                  </div>
+                  
+                  <div className="border-b pb-2">
+                    <span className="font-medium text-gray-500">ID Nhân viên:</span>
+                    <p className="mt-1">{selectedKit.staffID || 'N/A'}</p>
+                  </div>
+                  
+                  <div className="border-b pb-2">
+                    <span className="font-medium text-gray-500">Tên nhân viên:</span>
+                    <p className="mt-1">{selectedKit.staffName || 'N/A'}</p>
+                  </div>
+                  
+                  <div className="border-b pb-2">
+                    <span className="font-medium text-gray-500">ID Lịch hẹn:</span>
+                    <p className="mt-1">{selectedKit.bookingId || 'N/A'}</p>
+                  </div>
+                  
+                  <div className="border-b pb-2">
+                    <span className="font-medium text-gray-500">Ngày nhận:</span>
+                    <p className="mt-1">{selectedKit.receivedate ? new Date(selectedKit.receivedate).toLocaleDateString('vi-VN', {
+                      year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                    }) : 'N/A'}</p>
+                  </div>
+                </div>
+                
+                <div className="border-b pb-2">
+                  <span className="font-medium text-gray-500">Mô tả:</span>
+                  <p className="mt-1 whitespace-pre-line">{selectedKit.description || 'Không có mô tả'}</p>
+                </div>
+                
+                <div className="border-t pt-4">
+                  <div className="flex justify-end gap-2">
+                    {editingStatus?.kitID === selectedKit.kitID ? (
+                      <div className="flex items-center space-x-2">
+                        <select
+                          value={editingStatus.currentStatus}
+                          onChange={(e) => setEditingStatus({
+                            kitID: selectedKit.kitID,
+                            currentStatus: e.target.value as Kit['status']
+                          })}
+                          className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="available">Đã vận chuyển</option>
+                          <option value="in-use">Đang vận chuyển</option>
+                          <option value="completed">Đã lấy mẫu</option>
+                          <option value="expired">Đã tới kho</option>
+                        </select>
+                        <button
+                          onClick={() => {
+                            handleUpdateStatus(selectedKit.kitID, editingStatus.currentStatus);
+                            setShowKitModal(false);
+                          }}
+                          className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                        >
+                          Lưu
+                        </button>
+                        <button
+                          onClick={() => setEditingStatus(null)}
+                          className="px-3 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                        >
+                          Hủy
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setEditingStatus({
+                          kitID: selectedKit.kitID,
+                          currentStatus: selectedKit.status
+                        })}
+                        className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 flex items-center"
+                      >
+                        <PencilIcon className="h-4 w-4 mr-1" />
+                        Thay đổi trạng thái
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="border-t border-gray-200 px-6 py-4 flex justify-end">
+            <button
+              onClick={() => setShowKitModal(false)}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+            >
+              Đóng
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -500,13 +722,23 @@ export default function KitManagement() {
                     {kit.receivedate ? new Date(kit.receivedate).toLocaleDateString('vi-VN') : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button 
-                      onClick={() => setEditingStatus({kitID: kit.kitID, currentStatus: kit.status})}
-                      className="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-50 transition-colors"
-                      title="Chỉnh sửa trạng thái"
-                    >
-                      <PencilIcon className="h-4 w-4" />
-                    </button>
+                    <div className="flex space-x-1">
+                      <button 
+                        onClick={() => handleViewKit(kit.kitID)}
+                        className="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-50 transition-colors"
+                        title="Xem chi tiết kit"
+                      >
+                        <EyeIcon className="h-4 w-4" />
+                      </button>
+                      
+                      <button 
+                        onClick={() => setEditingStatus({kitID: kit.kitID, currentStatus: kit.status})}
+                        className="text-green-600 hover:text-green-900 p-1 rounded-full hover:bg-green-50 transition-colors"
+                        title="Chỉnh sửa trạng thái"
+                      >
+                        <PencilIcon className="h-4 w-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -679,6 +911,8 @@ export default function KitManagement() {
           </div>
         </div>
       )}
+
+      <KitDetailModal />
     </div>
   );
 }

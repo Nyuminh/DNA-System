@@ -21,6 +21,8 @@ export default function AppointmentDetailPage() {
   const [kitExists, setKitExists] = useState(false);
   const [kitInfo, setKitInfo] = useState<Kit | null>(null);
   const [checkingKit, setCheckingKit] = useState(false);
+  const [showKitModal, setShowKitModal] = useState(false);
+  const [kitDetailLoading, setKitDetailLoading] = useState(false);
   
   // State cho form kết quả xét nghiệm
   const [testResult, setTestResult] = useState<Partial<TestResult>>({
@@ -40,84 +42,129 @@ export default function AppointmentDetailPage() {
   // State hiển thị form kết quả
   const [showResultForm, setShowResultForm] = useState(false);
   
-  // Xử lý thay đổi input form kết quả
-  const handleResultInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setTestResult(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-  
-  // Xử lý submit form kết quả
-  const handleSubmitResult = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!token || !appointment) return;
+  // Hàm lấy chi tiết kit và hiển thị modal
+  const handleViewKit = async () => {
+    if (!kitInfo?.kitID) return;
     
     try {
-      setSubmittingResult(true);
+      setKitDetailLoading(true);
+      setShowKitModal(true);
       
-      // Chuẩn bị dữ liệu kết quả cho API mới /api/Results
-      const resultData: Partial<TestResult> = {
-        customerId: appointment.customerId,
-        staffId: appointment.staffId || user?.userID || '',
-        serviceId: appointment.serviceId,
-        bookingId: appointment.bookingId,
-        date: new Date(testResult.date || '').toISOString(),
-        description: testResult.description,
-        status: testResult.status // Trùng nhau hoặc Không trùng nhau
-      };
+      // Lấy dữ liệu chi tiết từ API
+      const kitDetail = await kitApi.refreshKitData(kitInfo.kitID);
       
-      console.log('Submitting test result to /api/Results:', resultData);
-      
-      // Gọi API tạo kết quả xét nghiệm với endpoint mới /api/Results
-      const result = await createTestResultV2(token, resultData);
-      
-      if (result) {
-        toast.success('Đã lưu kết quả xét nghiệm thành công');
-        
-        // Thêm kết quả mới vào danh sách kết quả hiện có
-        setExistingResults(prev => [result, ...prev]);
-        
-        // Cập nhật trạng thái booking thành Completed
-        await handleUpdateStatus('completed');
-        
-        // Ẩn form sau khi lưu thành công
-        setShowResultForm(false);
-        
-        // Reset form
-        setTestResult({
-          customerId: '',
-          staffId: '',
-          serviceId: '',
-          bookingId: id as string,
-          date: new Date().toISOString().slice(0, 16),
-          description: '',
-          status: 'Trùng nhau' // Đặt lại giá trị mặc định
-        });
-      } else {
-        console.error('Failed to create test result - API returned null');
-        toast.error('Không thể lưu kết quả xét nghiệm - API trả về null');
-        
-        // Dùng prompt để hỏi người dùng có muốn thử lại hay không
-        if (window.confirm('Lưu không thành công. Bạn có muốn thử lại không?')) {
-          return; // Giữ form mở để người dùng thử lại
-        }
-      }
-    } catch (error: any) {
-      console.error('Error submitting test result:', error);
-      let errorMessage = 'Đã xảy ra lỗi khi lưu kết quả xét nghiệm';
-      
-      if (error.response && error.response.data) {
-        errorMessage += `: ${error.response.data.message || JSON.stringify(error.response.data)}`;
-      }
-      
-      toast.error(errorMessage);
-      // Dữ liệu đã nhập vẫn được giữ nguyên để người dùng có thể thử lại
+      // Cập nhật kitInfo với dữ liệu chi tiết
+      setKitInfo(kitDetail);
+    } catch (error) {
+      console.error('Error fetching kit details:', error);
+      toast.error('Không thể tải thông tin chi tiết kit');
     } finally {
-      setSubmittingResult(false);
+      setKitDetailLoading(false);
     }
+  };
+  
+  // Component modal hiển thị chi tiết kit
+  const KitDetailModal = () => {
+    if (!showKitModal) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+            <h3 className="text-lg font-medium text-gray-900">Chi tiết Kit {kitInfo?.kitID}</h3>
+            <button 
+              onClick={() => setShowKitModal(false)}
+              className="text-gray-400 hover:text-gray-500"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          
+          <div className="px-6 py-4">
+            {kitDetailLoading ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+              </div>
+            ) : kitInfo ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="border-b pb-2">
+                    <span className="font-medium text-gray-500">Mã Kit:</span>
+                    <p className="mt-1">{kitInfo.kitID}</p>
+                  </div>
+                  
+                  <div className="border-b pb-2">
+                    <span className="font-medium text-gray-500">Trạng thái:</span>
+                    <div className="mt-1">
+                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
+                        kitInfo.status === 'available' ? 'bg-green-100 text-green-800' : 
+                        kitInfo.status === 'in-use' ? 'bg-blue-100 text-blue-800' :
+                        kitInfo.status === 'completed' ? 'bg-purple-100 text-purple-800' :
+                        'bg-orange-100 text-orange-800'
+                      }`}>
+                        {getKitStatusText(kitInfo.status)}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="border-b pb-2">
+                    <span className="font-medium text-gray-500">ID Khách hàng:</span>
+                    <p className="mt-1">{kitInfo.customerID || 'N/A'}</p>
+                  </div>
+                  
+                  <div className="border-b pb-2">
+                    <span className="font-medium text-gray-500">Tên khách hàng:</span>
+                    <p className="mt-1">{kitInfo.customerName || 'N/A'}</p>
+                  </div>
+                  
+                  <div className="border-b pb-2">
+                    <span className="font-medium text-gray-500">ID Nhân viên:</span>
+                    <p className="mt-1">{kitInfo.staffID || 'N/A'}</p>
+                  </div>
+                  
+                  <div className="border-b pb-2">
+                    <span className="font-medium text-gray-500">Tên nhân viên:</span>
+                    <p className="mt-1">{kitInfo.staffName || 'N/A'}</p>
+                  </div>
+                  
+                  <div className="border-b pb-2">
+                    <span className="font-medium text-gray-500">ID Lịch hẹn:</span>
+                    <p className="mt-1">{kitInfo.bookingId || 'N/A'}</p>
+                  </div>
+                  
+                  <div className="border-b pb-2">
+                    <span className="font-medium text-gray-500">Ngày nhận:</span>
+                    <p className="mt-1">{kitInfo.receivedate ? new Date(kitInfo.receivedate).toLocaleDateString('vi-VN', {
+                      year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                    }) : 'N/A'}</p>
+                  </div>
+                </div>
+                
+                <div className="border-b pb-2">
+                  <span className="font-medium text-gray-500">Mô tả:</span>
+                  <p className="mt-1 whitespace-pre-line">{kitInfo.description || 'Không có mô tả'}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="py-8 text-center text-red-500">
+                Không thể tải thông tin kit.
+              </div>
+            )}
+          </div>
+          
+          <div className="border-t border-gray-200 px-6 py-4 flex justify-end">
+            <button
+              onClick={() => setShowKitModal(false)}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+            >
+              Đóng
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   useEffect(() => {
@@ -428,6 +475,86 @@ export default function AppointmentDetailPage() {
     }
   };
 
+  // Xử lý thay đổi input form kết quả
+  const handleResultInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setTestResult(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  
+  // Xử lý submit form kết quả
+  const handleSubmitResult = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!token || !appointment) return;
+    
+    try {
+      setSubmittingResult(true);
+      
+      // Chuẩn bị dữ liệu kết quả cho API mới /api/Results
+      const resultData: Partial<TestResult> = {
+        customerId: appointment.customerId,
+        staffId: appointment.staffId || user?.userID || '',
+        serviceId: appointment.serviceId,
+        bookingId: appointment.bookingId,
+        date: new Date(testResult.date || '').toISOString(),
+        description: testResult.description,
+        status: testResult.status // Trùng nhau hoặc Không trùng nhau
+      };
+      
+      console.log('Submitting test result to /api/Results:', resultData);
+      
+      // Gọi API tạo kết quả xét nghiệm với endpoint mới /api/Results
+      const result = await createTestResultV2(token, resultData);
+      
+      if (result) {
+        toast.success('Đã lưu kết quả xét nghiệm thành công');
+        
+        // Thêm kết quả mới vào danh sách kết quả hiện có
+        setExistingResults(prev => [result, ...prev]);
+        
+        // Cập nhật trạng thái booking thành Completed
+        await handleUpdateStatus('completed');
+        
+        // Ẩn form sau khi lưu thành công
+        setShowResultForm(false);
+        
+        // Reset form
+        setTestResult({
+          customerId: '',
+          staffId: '',
+          serviceId: '',
+          bookingId: id as string,
+          date: new Date().toISOString().slice(0, 16),
+          description: '',
+          status: 'Trùng nhau' // Đặt lại giá trị mặc định
+        });
+      } else {
+        console.error('Failed to create test result - API returned null');
+        toast.error('Không thể lưu kết quả xét nghiệm - API trả về null');
+        
+        // Dùng prompt để hỏi người dùng có muốn thử lại hay không
+        if (window.confirm('Lưu không thành công. Bạn có muốn thử lại không?')) {
+          return; // Giữ form mở để người dùng thử lại
+        }
+      }
+    } catch (error: any) {
+      console.error('Error submitting test result:', error);
+      let errorMessage = 'Đã xảy ra lỗi khi lưu kết quả xét nghiệm';
+      
+      if (error.response && error.response.data) {
+        errorMessage += `: ${error.response.data.message || JSON.stringify(error.response.data)}`;
+      }
+      
+      toast.error(errorMessage);
+      // Dữ liệu đã nhập vẫn được giữ nguyên để người dùng có thể thử lại
+    } finally {
+      setSubmittingResult(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-96">
@@ -617,7 +744,7 @@ export default function AppointmentDetailPage() {
                 ) : kitExists ? (
                   <div className="flex items-center gap-2">
                     <button 
-                      onClick={() => router.push(`/staff/kits`)}
+                      onClick={handleViewKit}
                       className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 flex items-center"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -645,7 +772,7 @@ export default function AppointmentDetailPage() {
                 ) : (
                   <div className="flex items-center gap-2">
                     <button 
-                      onClick={() => router.push(`/staff/kits?bookingId=${appointment.bookingId}&customerId=${appointment.customerId}&staffId=${appointment.staffId || user?.userID || ''}&description=Kit cho lịch hẹn #${appointment.bookingId}`)}
+                      onClick={() => router.push(`/staff/kits?bookingId=${appointment.bookingId}&customerId=${appointment.customerId}&staffId=${appointment.staffId || user?.userID || ''}&description=Kit cho lịch hẹn #${appointment.bookingId}&returnUrl=${encodeURIComponent(`/staff/test-results/${id}`)}`)}
                       className="px-4 py-2 rounded bg-purple-500 text-white hover:bg-purple-600 flex items-center"
                       title="Tạo kit cho booking này"
                     >
@@ -839,6 +966,7 @@ export default function AppointmentDetailPage() {
           </div>
         )}
       </div>
+      <KitDetailModal />
     </div>
   );
 } 
