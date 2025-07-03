@@ -8,6 +8,8 @@ import { getServiceById } from '@/lib/api/services';
 import axios from 'axios';
 import { useSession, signIn } from "next-auth/react";
 import { useRouter } from 'next/navigation';
+import { getFeedbacksByServiceId } from '@/lib/api/feedback';
+import { getUsers } from '@/lib/api/users';
 
 interface Participant {
   name: string;
@@ -87,6 +89,26 @@ function BookServiceContent() {
     }
   }, [service]);
 
+  // Chạy effect để khôi phục dữ liệu đặt lịch nếu có
+  useEffect(() => {
+    // Kiểm tra xem có dữ liệu đặt lịch đang chờ không
+    const pendingData = localStorage.getItem('pendingBookingData');
+    if (pendingData) {
+      try {
+        const { formData: savedFormData, serviceId: savedServiceId } = JSON.parse(pendingData);
+        // Chỉ khôi phục nếu đang ở đúng trang đặt lịch cho dịch vụ tương ứng
+        if (savedServiceId === serviceId) {
+          setFormData(savedFormData);
+          // Đã khôi phục xong, xóa dữ liệu đã lưu
+          localStorage.removeItem('pendingBookingData');
+        }
+      } catch (error) {
+        console.error('Error restoring form data:', error);
+        localStorage.removeItem('pendingBookingData');
+      }
+    }
+  }, [serviceId]); // Chỉ chạy khi serviceId thay đổi
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined;
@@ -141,11 +163,19 @@ function BookServiceContent() {
     // Lấy username từ localStorage (nếu đã lưu sau login)
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const username = user.username;
+    
     if (!username) {
-      alert("Bạn cần đăng nhập để đặt lịch!");
-      router.push('/auth/login');
+      // Lưu form data vào localStorage trước khi chuyển hướng
+      localStorage.setItem('pendingBookingData', JSON.stringify({
+        formData,
+        serviceId
+      }));
+      // Chuyển hướng đến trang đăng nhập với returnUrl
+      router.push(`/auth/login?returnUrl=${encodeURIComponent('/services/book?serviceId=' + serviceId)}`);
       return;
     }
+    
+    // Code xử lý đặt lịch nếu đã đăng nhập
     const customerId = await getUserIdByUsername(username);
     if (!customerId) {
       alert("Không tìm thấy tài khoản người dùng!");
@@ -220,6 +250,56 @@ function BookServiceContent() {
     }
   };
 
+  // Thêm state để lưu trữ các tùy chọn thời gian có sẵn
+  const [availableTimes, setAvailableTimes] = useState<string[]>([]);
+
+  // Thêm một mảng cố định chứa tất cả các tùy chọn thời gian
+  const ALL_TIME_SLOTS = [
+
+    "08:00", "09:00", "10:00", "11:00", 
+    "13:30", "14:30", "15:30", "16:30"
+  ];
+
+  // Thêm useEffect để cập nhật tùy chọn thời gian khi ngày thay đổi
+  useEffect(() => {
+    if (!formData.appointmentDate) {
+      setAvailableTimes(ALL_TIME_SLOTS);
+      return;
+    }
+
+    const selectedDate = new Date(formData.appointmentDate);
+    const today = new Date();
+    
+    // Nếu đây không phải là ngày hiện tại, hiển thị tất cả các tùy chọn
+    if (selectedDate.toDateString() !== today.toDateString()) {
+      setAvailableTimes(ALL_TIME_SLOTS);
+      return;
+    }
+    
+    // Nếu là ngày hiện tại, chỉ hiển thị các tùy chọn thời gian trong tương lai
+    const currentHour = today.getHours();
+    const currentMinute = today.getMinutes();
+    
+    const availableSlots = ALL_TIME_SLOTS.filter(timeSlot => {
+      const [hours, minutes] = timeSlot.split(':').map(Number);
+      
+      // So sánh thời gian
+      if (hours > currentHour) return true;
+      if (hours === currentHour && minutes > currentMinute) return true;
+      return false;
+    });
+    
+    setAvailableTimes(availableSlots);
+    
+    // Nếu thời gian đã chọn không còn trong danh sách có sẵn, đặt lại về rỗng
+    if (formData.appointmentTime && !availableSlots.includes(formData.appointmentTime)) {
+      setFormData({
+        ...formData,
+        appointmentTime: ''
+      });
+    }
+  }, [formData.appointmentDate]);
+
   return (
     <MainLayout>
       <div className="bg-white">
@@ -240,6 +320,21 @@ function BookServiceContent() {
                 </p>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Thêm nút đặt dịch vụ khác */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+          <div className="flex justify-between items-center">
+            <Link
+              href="/services"
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+              </svg>
+              Đặt dịch vụ khác
+            </Link>
           </div>
         </div>
 
@@ -390,6 +485,7 @@ function BookServiceContent() {
                             className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
                             value={formData.appointmentDate}
                             onChange={handleInputChange}
+                            min={new Date().toISOString().split('T')[0]} // Thêm dòng này để giới hạn ngày
                             required
                           />
                         </div>
@@ -408,14 +504,9 @@ function BookServiceContent() {
                             required
                           >
                             <option value="">Chọn thời gian</option>
-                            <option value="08:00">08:00</option>
-                            <option value="09:00">09:00</option>
-                            <option value="10:00">10:00</option>
-                            <option value="11:00">11:00</option>
-                            <option value="13:30">13:30</option>
-                            <option value="14:30">14:30</option>
-                            <option value="15:30">15:30</option>
-                            <option value="16:30">16:30</option>
+                            {availableTimes.map((time) => (
+                              <option key={time} value={time}>{time}</option>
+                            ))}
                           </select>
                         </div>
                       </div>
@@ -472,14 +563,9 @@ function BookServiceContent() {
                             required={formData.collectionMethod === 'self'}
                           >
                             <option value="">Chọn thời gian</option>
-                            <option value="08:00">08:00</option>
-                            <option value="09:00">09:00</option>
-                            <option value="10:00">10:00</option>
-                            <option value="11:00">11:00</option>
-                            <option value="13:30">13:30</option>
-                            <option value="14:30">14:30</option>
-                            <option value="15:30">15:30</option>
-                            <option value="16:30">16:30</option>
+                            {availableTimes.map((time) => (
+                              <option key={time} value={time}>{time}</option>
+                            ))}
                           </select>
                         </div>
                       </div>
@@ -625,6 +711,9 @@ function BookServiceContent() {
             </div>
           </div>
         </div>
+
+        {/* Thêm component đánh giá dịch vụ */}
+        {serviceId && <ServiceReviews serviceId={serviceId} />}
       </div>
     </MainLayout>
   );
@@ -759,6 +848,148 @@ async function getLeastLoadedStaffId(): Promise<string | null> {
   } catch (e) {
     return null;
   }
+}
+
+// Thêm component này vào file page.tsx
+function ServiceReviews({ serviceId }: { serviceId: string }) {
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchReviews() {
+      try {
+        setLoading(true);
+        
+        // Lấy dữ liệu đánh giá
+        const feedbacks = await getFeedbacksByServiceId(serviceId);
+        
+        // Lấy danh sách users
+        const userRes = await axios.get('http://localhost:5198/api/User');
+        const users = Array.isArray(userRes.data) 
+          ? userRes.data 
+          : (userRes.data?.$values || []);
+        
+        // Map lại feedbacks để lấy tên khách hàng từ customerId
+        const feedbacksWithNames = Array.isArray(feedbacks)
+          ? feedbacks.map((fb: any, idx: number) => {
+              const customerId = String(fb.customerId || fb.customerID || '').trim();
+              const customer = users.find((u: any) =>
+                String(u.userID || u.id || u.userId).trim() === customerId
+              );
+              
+              return {
+                feedbackId: String(fb.feedbackId || fb.id || idx),
+                customerName: customer?.fullname || customer?.fullName || customer?.name || 
+                              customer?.username || customer?.userName || "Khách hàng ẩn danh",
+                rating: fb.rating || 0,
+                comment: fb.comment || "",
+                date: fb.date || new Date().toISOString(),
+              };
+            })
+          : [];
+          
+        setReviews(feedbacksWithNames);
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching reviews:', err);
+        setError('Không thể tải đánh giá dịch vụ');
+        setLoading(false);
+      }
+    }
+
+    if (serviceId) {
+      fetchReviews();
+    }
+  }, [serviceId]);
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto py-4 px-4">
+        <div className="text-center py-4">
+          <span className="text-blue-600">Đang tải đánh giá...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-7xl mx-auto py-4 px-4">
+        <div className="text-center py-4 text-red-500">
+          <span>{error}</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:py-12 lg:px-8">
+      <div className="bg-white shadow-md rounded-xl p-8 border border-gray-200">
+        <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+          Đánh giá từ khách hàng ({reviews.length})
+        </h3>
+
+        {reviews.length > 0 ? (
+          <div className="space-y-4">
+            {reviews.map((review, index) => (
+              <div 
+                key={review.id || index} 
+                className="border border-gray-100 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow duration-200 bg-gradient-to-br from-white to-gray-50"
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold">
+                      {(review.customerName || 'K').charAt(0).toUpperCase()}
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-gray-900">
+                        {review.customerName}
+                      </p>
+                      <div className="flex items-center mt-1">
+                        <div className="flex">
+                          {[0, 1, 2, 3, 4].map((rating) => (
+                            <svg 
+                              key={rating}
+                              xmlns="http://www.w3.org/2000/svg" 
+                              className={`h-4 w-4 ${rating < review.rating ? 'text-yellow-400' : 'text-gray-200'}`}
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                            >
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          ))}
+                        </div>
+                        <span className="text-xs text-gray-400 ml-2">
+                          {new Date(review.date).toLocaleDateString('vi-VN')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 text-sm text-gray-700 bg-white p-4 rounded-lg border border-gray-100">
+                  <p className="italic">
+                    {review.comment || 'Khách hàng không để lại bình luận.'}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-gray-50 rounded-lg p-8 text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            <p className="text-gray-500 mt-3 text-lg">Chưa có đánh giá nào cho dịch vụ này.</p>
+            <p className="text-gray-400 mt-1">Hãy là người đầu tiên đánh giá sau khi sử dụng dịch vụ.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export interface BookingRequest {

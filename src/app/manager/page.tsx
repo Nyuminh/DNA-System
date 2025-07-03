@@ -201,7 +201,7 @@ export default function ManagerDashboard() {
               <div className="space-y-1">
                 <Link href="/manager/courses" className="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900">
                   <AcademicCapIcon className="mr-3 h-5 w-5" />
-                  Quản lý khóa học
+                  Quản lý bài viết
                 </Link>
                 
               </div>

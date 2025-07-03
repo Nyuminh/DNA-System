@@ -253,7 +253,7 @@ export default function ServicesPage() {
                         {service.image && (
                           <div className="h-48 w-full bg-gray-200">
                             <img 
-                              src={service.image} 
+                              src={`/images/${service.image.split('/').pop()}`}
                               alt={service.name} 
                               className="w-full h-full object-cover"
                             />
