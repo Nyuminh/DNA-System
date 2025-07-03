@@ -420,8 +420,8 @@ export const kitApi = {  /**
       const backendStatus = mapStatusToBackend(kitData.status);
       console.log(`🔄 Mapped status: ${kitData.status} -> ${backendStatus}`);
       
-      // Stringify the Vietnamese status properly for nvarchar
-      const statusPayload = JSON.stringify(backendStatus);
+      // Create a proper JSON object with the status field
+      const statusPayload = { status: backendStatus };
       
       console.log('📤 Sending status payload:', statusPayload);
       console.log('📤 Raw status value:', backendStatus);
@@ -472,13 +472,13 @@ export const kitApi = {  /**
       const backendStatus = mapStatusToBackend(kitData.status);
       console.log(`🚀 Updating kit ${kitData.kitID} status to: ${kitData.status} -> ${backendStatus}`);
       
-      // Ensure proper JSON formatting for Vietnamese text
-      const statusPayload = JSON.stringify(backendStatus);
-      console.log(`📤 Sending JSON status payload: ${statusPayload}`);
+      // Create a proper JSON object with the status field
+      const statusPayload = { status: backendStatus };
+      console.log(`📤 Sending JSON status payload:`, statusPayload);
       console.log(`📤 Raw status value (Vietnamese): "${backendStatus}"`);
       console.log(`🔗 PUT URL: /api/Kit/${kitData.kitID}`);
       
-      // Send the status as a properly formatted JSON string
+      // Send the status as a properly formatted JSON object
       const response = await apiClient.put(`/api/Kit/${kitData.kitID}`, statusPayload, {
         headers: { 
           'Content-Type': 'application/json; charset=utf-8',
@@ -628,11 +628,10 @@ export const kitApi = {  /**
       console.log(`🇻🇳 Updating kit ${kitData.kitID} status with Vietnamese handling`);
       console.log(`🔄 Status mapping: ${kitData.status} -> "${backendStatus}"`);
 
-      // API chỉ chấp nhận giá trị trạng thái là một chuỗi có dấu ngoặc kép
-      // Không gửi toàn bộ đối tượng kit
-      const statusPayload = JSON.stringify(backendStatus);
+      // Create a proper JSON object with the status field
+      const statusPayload = { status: backendStatus };
       
-      console.log(`📤 Sending status payload (raw value): ${statusPayload}`);
+      console.log(`📤 Sending status payload:`, statusPayload);
 
       // Gửi với cấu hình tối ưu cho tiếng Việt
       const response = await apiClient.put(`/api/Kit/${kitData.kitID}`, statusPayload, {
@@ -662,8 +661,8 @@ export const kitApi = {  /**
           // Lấy lại giá trị trạng thái để sử dụng trong phương pháp thay thế
           const alternativeBackendStatus = mapStatusToBackend(kitData.status);
           
-          // Phương pháp 2: Gửi trạng thái dưới dạng chuỗi không có dấu ngoặc kép bên ngoài
-          const response = await apiClient.put(`/api/Kit/${kitData.kitID}`, `"${alternativeBackendStatus}"`, {
+          // Phương pháp 2: Gửi trạng thái dưới dạng đối tượng JSON
+          const response = await apiClient.put(`/api/Kit/${kitData.kitID}`, { status: alternativeBackendStatus }, {
             headers: {
               'Content-Type': 'application/json; charset=utf-8',
               'Accept': '*/*'
@@ -724,11 +723,11 @@ export const kitApi = {  /**
           console.error(`❌ MultiFormat method failed:`, innerError);
           
           console.log(`🔄 Attempting direct PUT method as last resort`);
-          // Final attempt with direct PUT and raw string
+          // Final attempt with direct PUT and JSON object
           const backendStatus = mapStatusToBackend(desiredStatus);
-          const response = await apiClient.put(`/api/Kit/${kitId}`, `"${backendStatus}"`, {
+          const response = await apiClient.put(`/api/Kit/${kitId}`, { status: backendStatus }, {
             headers: {
-              'Content-Type': 'text/plain; charset=utf-8',
+              'Content-Type': 'application/json; charset=utf-8',
               'Accept': '*/*'
             }
           });

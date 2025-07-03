@@ -110,18 +110,8 @@ export default function AppointmentDetailPage() {
                   </div>
                   
                   <div className="border-b pb-2">
-                    <span className="font-medium text-gray-500">ID Khách hàng:</span>
-                    <p className="mt-1">{kitInfo.customerID || 'N/A'}</p>
-                  </div>
-                  
-                  <div className="border-b pb-2">
                     <span className="font-medium text-gray-500">Tên khách hàng:</span>
                     <p className="mt-1">{kitInfo.customerName || 'N/A'}</p>
-                  </div>
-                  
-                  <div className="border-b pb-2">
-                    <span className="font-medium text-gray-500">ID Nhân viên:</span>
-                    <p className="mt-1">{kitInfo.staffID || 'N/A'}</p>
                   </div>
                   
                   <div className="border-b pb-2">
@@ -662,7 +652,7 @@ export default function AppointmentDetailPage() {
                   </svg>
                 </div>
                 <div className="ml-3">
-                  <p className="font-medium">Đã xác nhận</p>
+                  <p className="font-medium">Đang chờ mẫu</p>
                   <p className="text-sm text-gray-500">{formatDate(appointment.date)}</p>
                 </div>
               </div>

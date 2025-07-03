@@ -403,18 +403,8 @@ export default function KitManagement() {
                   </div>
                   
                   <div className="border-b pb-2">
-                    <span className="font-medium text-gray-500">ID Khách hàng:</span>
-                    <p className="mt-1">{selectedKit.customerID || 'N/A'}</p>
-                  </div>
-                  
-                  <div className="border-b pb-2">
                     <span className="font-medium text-gray-500">Tên khách hàng:</span>
                     <p className="mt-1">{selectedKit.customerName || 'N/A'}</p>
-                  </div>
-                  
-                  <div className="border-b pb-2">
-                    <span className="font-medium text-gray-500">ID Nhân viên:</span>
-                    <p className="mt-1">{selectedKit.staffID || 'N/A'}</p>
                   </div>
                   
                   <div className="border-b pb-2">
