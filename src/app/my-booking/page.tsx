@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { jwtDecode } from "jwt-decode";
+import { deleteBooking } from "@/lib/api/bookings";
 
 interface Booking {
   id: string;
@@ -179,6 +180,34 @@ export default function MyBookingPage() {
     if (bookings.length > 0) fetchKitStatuses();
   }, [bookings]);
 
+  // Add this function inside the MyBookingPage component
+  async function handleCancelBooking(bookingId: string) {
+    if (!confirm('Bạn có chắc chắn muốn hủy đặt lịch này không?')) {
+      return;
+    }
+    
+    try {
+      const result = await deleteBooking(bookingId);
+      
+      if (result.success) {
+        // Update local state to reflect cancellation
+        setBookings(prevBookings => 
+          prevBookings.map(booking => 
+            booking.bookingId === bookingId 
+              ? { ...booking, status: 'Hủy' } 
+              : booking
+          )
+        );
+        alert('Đã hủy đặt lịch thành công.');
+      } else {
+        alert(result.message || 'Không thể hủy đặt lịch. Vui lòng thử lại sau.');
+      }
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      alert('Có lỗi xảy ra khi hủy đặt lịch. Vui lòng thử lại sau.');
+    }
+  }
+
   return (
     <MainLayout>
       <div className="bg-gray-50 min-h-screen py-10">
@@ -204,7 +233,7 @@ export default function MyBookingPage() {
                 <div className="col-span-1">PHƯƠNG THỨC</div>
                 <div className="col-span-1 text-center">TRẠNG THÁI</div>
                 <div className="col-span-1 text-center">TRẠNG THÁI KIT</div>
-                <div className="col-span-1 text-center">KẾT QUẢ</div>
+                <div className="col-span-1 text-center">THAO TÁC</div>
               </div>
               {/* Body */}
               {bookings.map((booking, idx) => (
@@ -247,37 +276,39 @@ export default function MyBookingPage() {
                   <div className="col-span-1 text-center">
                     <span
                       className={`inline-block px-2 py-[2px] rounded-full font-bold uppercase text-center w-full text-[11px] ${
-                        kitStatuses[booking.bookingId] === 'Đã nhận'
-                          ? 'bg-emerald-100 text-emerald-700'
-                          : kitStatuses[booking.bookingId] === 'Đang giao'
-                          ? 'bg-yellow-200 text-yellow-900'
-                          : kitStatuses[booking.bookingId] === 'Chưa nhận'
-                          ? 'bg-gray-200 text-gray-700'
-                          : kitStatuses[booking.bookingId] === 'Đang vận chuyển'
-                          ? 'bg-blue-200 text-blue-900'
-                          : kitStatuses[booking.bookingId] === 'Đã vận chuyển'
-                          ? 'bg-indigo-200 text-indigo-900'
-                          : kitStatuses[booking.bookingId] === 'Đang vận chuyển mẫu'
-                          ? 'bg-orange-200 text-orange-900'
-                          : kitStatuses[booking.bookingId] === 'Đã lấy mẫu'
-                          ? 'bg-teal-200 text-teal-900'
-                          : kitStatuses[booking.bookingId] === 'Đã tới kho'
-                          ? 'bg-purple-200 text-purple-900'
-                          : 'bg-gray-50 text-gray-400'
+                        // XANH - Các trạng thái hoàn thành
+                        ['Đã nhận', 'Đã vận chuyển', 'Đã lấy mẫu', 'Đã tới kho'].includes(kitStatuses[booking.bookingId])
+                          ? 'bg-green-100 text-green-800'
+                        // VÀNG - Các trạng thái đang tiến hành
+                        : ['Đang giao', 'Đang vận chuyển', 'Đang vận chuyển mẫu', 'Đang xử lý', 'Đang lấy mẫu'].includes(kitStatuses[booking.bookingId])
+                          ? 'bg-yellow-100 text-yellow-800'
+                        // ĐỎ - Các trạng thái có vấn đề
+                        : ['Chưa nhận', 'Bị từ chối', 'Lỗi mẫu', 'Thất lạc'].includes(kitStatuses[booking.bookingId])
+                          ? 'bg-red-100 text-red-800'
+                        // XÁM - Mặc định cho các trạng thái khác
+                          : 'bg-gray-100 text-gray-800'
                       }`}
                       style={{ letterSpacing: 1 }}
                     >
                       {kitStatuses[booking.bookingId] || <span className="italic text-gray-400">---</span>}
                     </span>
                   </div>
-                  <div className="col-span-1 text-center">
+                  <div className="col-span-1 flex flex-col space-y-2 justify-center items-center">
                     {booking.status === 'Hoàn thành' ? (
                       <Link
                         href={`/my-booking/result/${booking.bookingId}`}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs inline-block text-center"
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs inline-block text-center w-full"
                       >
                         Xem kết quả
                       </Link>
+                    ) : booking.status !== 'Hủy' ? (
+                      <button
+                        onClick={() => handleCancelBooking(booking.bookingId)}
+                        className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs inline-block text-center w-full"
+                        disabled={booking.status === 'Hoàn thành'}
+                      >
+                        Hủy đặt lịch
+                      </button>
                     ) : (
                       <span className="text-gray-400 italic">---</span>
                     )}

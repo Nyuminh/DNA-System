@@ -62,3 +62,21 @@ export async function getBookings(): Promise<BookingResponse[]> {
     return [];
   }
 }
+
+// Delete/cancel booking
+export async function deleteBooking(bookingId: string): Promise<BookingResponse> {
+  try {
+    const response = await apiClient.delete(`/api/Appointments/${bookingId}`);
+    return {
+      success: true,
+      message: 'Đã hủy đặt lịch thành công',
+      booking: response.data,
+    };
+  } catch (error: any) {
+    console.error('Error cancelling booking:', error);
+    return {
+      success: false,
+      message: error?.response?.data?.message || 'Không thể hủy đặt lịch, vui lòng thử lại sau',
+    };
+  }
+}
