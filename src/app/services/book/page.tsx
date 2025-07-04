@@ -6,22 +6,25 @@ import Link from 'next/link';
 import MainLayout from '@/components/layout/MainLayout';
 import { getServiceById } from '@/lib/api/services';
 import axios from 'axios';
-import { useSession, signIn } from "next-auth/react";
 import { useRouter } from 'next/navigation';
 import { getFeedbacksByServiceId } from '@/lib/api/feedback';
 import { getUsers } from '@/lib/api/users';
+import { getUserProfile } from '@/lib/api/auth';
 
 interface Participant {
   name: string;
   phone: string;
   dob: string;
   gender: string;
+  role: string;
 }
 
 interface ContactInfo {
   name: string;
   phone: string;
   email: string;
+  gender:string;
+  dob: string;
 }
 
 interface FormData {
@@ -48,12 +51,60 @@ function BookServiceContent() {
   
   // Kiểm tra đăng nhập từ localStorage
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   // Kiểm tra đăng nhập khi component mount
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    setIsLoggedIn(!!user.username);
+    const isLoggedInUser = !!user.username;
+    setIsLoggedIn(isLoggedInUser);
+    
+    // Nếu đã đăng nhập, gọi API lấy thông tin profile
+    if (isLoggedInUser) {
+      getUserProfile(user.username)
+        .then(profileData => {
+          setUserProfile(profileData);
+          
+          // Cập nhật form với thông tin profile
+          setFormData(prev => ({
+            ...prev,
+            contactInfo: {
+              name:  profileData?.fullname || '',
+              phone: profileData?.phone  || '',
+              email: profileData?.email || '',
+              dob: formatDateForInput(profileData?.birthdate || ''),
+              gender: mapGenderValue(profileData?.gender || '')
+            }
+          }));
+        })
+        .catch(error => {
+          console.error('Lỗi khi lấy thông tin profile:', error);
+        });
+    }
   }, []);
+  
+  // Hàm hỗ trợ format ngày tháng cho input date
+  const formatDateForInput = (dateString: string): string => {
+    if (!dateString) return '';
+    try {
+      // Xử lý các format ngày tháng phổ biến
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '';
+      
+      // Format sang yyyy-MM-dd cho input type="date"
+      return date.toISOString().split('T')[0];
+    } catch (error) {
+      return '';
+    }
+  };
+  
+  // Hàm chuyển đổi giới tính từ API sang giá trị form
+  const mapGenderValue = (gender: string): string => {
+    gender = gender.toLowerCase();
+    if (gender === 'nam' || gender === 'male' || gender === 'm') return 'male';
+    if (gender === 'nữ' || gender === 'nu' || gender === 'female' || gender === 'f') return 'female';
+    return '';
+  };
 
   useEffect(() => {
     if (!serviceId) return;
@@ -78,12 +129,14 @@ function BookServiceContent() {
     address: '',
     cityProvince: '',
     participants: [
-      { name: '', phone: '', dob: '', gender: '' }
+      { name: '', phone: '', dob: '', gender: '', role: '' }
     ],
     contactInfo: {
       name: '',
       phone: '',
       email: '',
+      gender: '',
+      dob: '',
     },
     termsAccepted: false,
   });
@@ -158,7 +211,7 @@ function BookServiceContent() {
       ...formData,
       participants: [
         ...formData.participants,
-        { name: '', phone: '', dob: '', gender: '' }
+        { name: '', phone: '', dob: '', gender: '', role: '' }
       ]
     });
   };
@@ -428,7 +481,8 @@ function BookServiceContent() {
               <form onSubmit={handleSubmit} className="space-y-8">
                {/* Collection method */}
                 <div className="bg-white shadow-sm rounded-lg p-6 border border-gray-200">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Phương thức thu mẫu</h3>                  <div className="grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Phương thức thu mẫu</h3>
+                  <div className="grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
                     <div className="relative flex border rounded-lg overflow-hidden">
                       <input
                         type="radio"
@@ -494,48 +548,170 @@ function BookServiceContent() {
                     </div>
                   </div>
 
-                  {/* Conditional fields based on collection method */}
-                  {formData.collectionMethod === 'facility' && (
-                    <div className="mt-6 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
+                  {/* Thông tin liên hệ người đặt mẫu */}
+                  <div className="mt-8 border-t border-gray-200 pt-6">
+                    <h4 className="text-md font-medium text-gray-900 mb-4">Thông tin người đặt dịch vụ</h4>
+                    <div className="grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
                       <div>
-                        <label htmlFor="appointmentDate" className="block text-sm font-medium text-gray-700">
-                          Ngày lấy mẫu
+                        <label htmlFor="contact-name" className="block text-sm font-medium text-gray-700">
+                          Họ và tên
                         </label>
                         <div className="mt-1">
                           <input
-                            type="date"
-                            name="appointmentDate"
-                            id="appointmentDate"
+                            type="text"
+                            name="contactInfo.name"
+                            id="contact-name"
                             className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
-                            value={formData.appointmentDate}
+                            placeholder="Nhập họ và tên"
+                            value={formData.contactInfo.name}
                             onChange={handleInputChange}
-                            min={new Date().toISOString().split('T')[0]} // Thêm dòng này để giới hạn ngày
                             required
                           />
                         </div>
                       </div>
+                      
                       <div>
-                        <label htmlFor="appointmentTime" className="block text-sm font-medium text-gray-700">
-                          Thời gian lấy mẫu
+                        <label htmlFor="contact-phone" className="block text-sm font-medium text-gray-700">
+                          Số điện thoại
+                        </label>
+                        <div className="mt-1">
+                          <input
+                            type="tel"
+                            name="contactInfo.phone"
+                            id="contact-phone"
+                            className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
+                            placeholder="Nhập số điện thoại"
+                            value={formData.contactInfo.phone}
+                            onChange={handleInputChange}
+                            required
+                          />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="contact-dob" className="block text-sm font-medium text-gray-700">
+                          Ngày sinh
+                        </label>
+                        <div className="mt-1">
+                          <input
+                            type="date"
+                            name="contactInfo.dob"
+                            id="contact-dob"
+                            className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
+                            value={formData.contactInfo.dob || ''}
+                            onChange={handleInputChange}
+                            required
+                          />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="contact-gender" className="block text-sm font-medium text-gray-700">
+                          Giới tính
                         </label>
                         <div className="mt-1">
                           <select
-                            id="appointmentTime"
-                            name="appointmentTime"
+                            name="contactInfo.gender"
+                            id="contact-gender"
                             className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
-                            value={formData.appointmentTime}
+                            value={formData.contactInfo.gender || ''}
                             onChange={handleInputChange}
                             required
                           >
-                            <option value="">Chọn thời gian</option>
-                            {availableTimes.map((time) => (
-                              <option key={time} value={time}>{time}</option>
-                            ))}
+                            <option value="">Chọn giới tính</option>
+                            <option value="male">Nam</option>
+                            <option value="female">Nữ</option>
                           </select>
                         </div>
                       </div>
+
+                      <div className="sm:col-span-2">
+                        <label htmlFor="contact-email" className="block text-sm font-medium text-gray-700">
+                          Email
+                        </label>
+                        <div className="mt-1">
+                          <input
+                            type="email"
+                            name="contactInfo.email"
+                            id="contact-email"
+                            className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
+                            placeholder="Nhập địa chỉ email"
+                            value={formData.contactInfo.email}
+                            onChange={handleInputChange}
+                            required
+                          />
+                        </div>
+                      </div>
                     </div>
-                  )}                  {(formData.collectionMethod === 'self') && (
+                  </div>
+
+                  {/* Conditional fields based on collection method */}
+                  {formData.collectionMethod === 'facility' && (
+                    <div className="mt-6">
+                      <div className="grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4 mb-4">
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Địa chỉ cơ sở y tế
+                          </label>
+                          <div className="mt-1 flex items-center">
+                            <div className="py-3 px-4 block w-full bg-gray-100 border border-gray-300 rounded-md text-gray-700">
+                              123 Đường Cầu Giấy, Quận Cầu Giấy, Hà Nội
+                            </div>
+                            <span className="ml-2">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                              </svg>
+                            </span>
+                          </div>
+                          <p className="mt-2 text-sm text-gray-500">
+                            Vui lòng đến đúng địa chỉ trên vào ngày và giờ đã đặt lịch
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
+                        <div>
+                          <label htmlFor="appointmentDate" className="block text-sm font-medium text-gray-700">
+                            Ngày lấy mẫu
+                          </label>
+                          <div className="mt-1">
+                            <input
+                              type="date"
+                              name="appointmentDate"
+                              id="appointmentDate"
+                              className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
+                              value={formData.appointmentDate}
+                              onChange={handleInputChange}
+                              min={new Date().toISOString().split('T')[0]}
+                              required
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label htmlFor="appointmentTime" className="block text-sm font-medium text-gray-700">
+                            Thời gian lấy mẫu
+                          </label>
+                          <div className="mt-1">
+                            <select
+                              id="appointmentTime"
+                              name="appointmentTime"
+                              className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
+                              value={formData.appointmentTime}
+                              onChange={handleInputChange}
+                              required
+                            >
+                              <option value="">Chọn thời gian</option>
+                              {availableTimes.map((time) => (
+                                <option key={time} value={time}>{time}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {(formData.collectionMethod === 'self') && (
                     <div className="mt-6 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
                       <div className="sm:col-span-2">
                         <label htmlFor="address" className="block text-sm font-medium text-gray-700">
@@ -555,56 +731,55 @@ function BookServiceContent() {
                         </div>
                       </div>
                       
-                      
-                        <div>
-                        <label htmlFor="appointmentDate" className="block text-sm font-medium text-gray-700">
-                          Ngày nhận kit
-                        </label>
-                        <div className="mt-1">
-                          <input
-                            type="date"
-                            name="appointmentDate"
-                            id="appointmentDate"
-                            className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
-                            value={formData.appointmentDate}
-                            onChange={handleInputChange}
-                            min={new Date().toISOString().split('T')[0]}
-                            required={formData.collectionMethod === 'self'}
-                          />
-                        </div>
-                      </div>
                       <div>
-                        <label htmlFor="appointmentTime" className="block text-sm font-medium text-gray-700">
-                          Thời gian nhận kit
-                        </label>
-                        <div className="mt-1">
-                          <select
-                            id="appointmentTime"
-                            name="appointmentTime"
-                            className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
-                            value={formData.appointmentTime}
-                            onChange={handleInputChange}
-                            required={formData.collectionMethod === 'self'}
-                          >
-                            <option value="">Chọn thời gian</option>
-                            {availableTimes.map((time) => (
-                              <option key={time} value={time}>{time}</option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+      <label htmlFor="appointmentDate" className="block text-sm font-medium text-gray-700">
+        Ngày nhận kit
+      </label>
+      <div className="mt-1">
+        <input
+          type="date"
+          name="appointmentDate"
+          id="appointmentDate"
+          className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
+          value={formData.appointmentDate}
+          onChange={handleInputChange}
+          min={new Date().toISOString().split('T')[0]}
+          required={formData.collectionMethod === 'self'}
+        />
+      </div>
+    </div>
+    <div>
+      <label htmlFor="appointmentTime" className="block text-sm font-medium text-gray-700">
+        Thời gian nhận kit
+      </label>
+      <div className="mt-1">
+        <select
+          id="appointmentTime"
+          name="appointmentTime"
+          className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
+          value={formData.appointmentTime}
+          onChange={handleInputChange}
+          required={formData.collectionMethod === 'self'}
+        >
+          <option value="">Chọn thời gian</option>
+          {availableTimes.map((time) => (
+            <option key={time} value={time}>{time}</option>
+          ))}
+        </select>
+      </div>
+    </div>
+  </div>
+  )}
                 </div>
 
                 {/* Participants information */}
                 <div className="bg-white shadow-sm rounded-lg p-6 border border-gray-200">
-                  
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Thông tin người tham gia xét nghiệm</h3>
                   
                   {formData.participants.map((participant, index) => (
                     <div key={index} className="mb-8 pb-8 border-b border-gray-200 last:mb-0 last:pb-0 last:border-0">
                       <div className="flex justify-between items-center mb-4">
-                        <h4 className="text-md font-medium text-gray-900">Người tham gia </h4>
+                        <h4 className="text-md font-medium text-gray-900">Người tham gia {index + 1}</h4>
                         {index > 0 && (
                           <button
                             type="button"
@@ -685,9 +860,46 @@ function BookServiceContent() {
                           </div>
                         </div>
                         
+                        {/* Thêm trường vai trò */}
+                        <div>
+                          <label htmlFor={`role-${index}`} className="block text-sm font-medium text-gray-700">
+                            Vai trò
+                          </label>
+                          <div className="mt-1">
+                            <select
+                              id={`role-${index}`}
+                              value={participant.role || ''}
+                              onChange={(e) => handleParticipantChange(index, 'role', e.target.value)}
+                              className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
+                              required
+                            >
+                              <option value="">Chọn vai trò</option>
+                              <option value="father">Cha (giả định)</option>
+                              <option value="mother">Mẹ</option>
+                              <option value="child">Con</option>
+                              <option value="sibling">Anh/Chị/Em</option>
+                              <option value="grandparent">Ông/Bà</option>
+                              <option value="other">Khác</option>
+                            </select>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))}
+                  
+                  {/* Thêm nút thêm người tham gia */}
+                  <div className="mt-4 flex justify-center">
+                    <button
+                      type="button"
+                      onClick={addParticipant}
+                      className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                      </svg>
+                      Thêm người tham gia
+                    </button>
+                  </div>
                 </div>
 
                 {/* Terms and conditions */}
