@@ -45,6 +45,15 @@ function BookServiceContent() {
   const [service, setService] = useState<any>(null);
   const [loadingService, setLoadingService] = useState(true);
   const [errorService, setErrorService] = useState<string | null>(null);
+  
+  // Kiểm tra đăng nhập từ localStorage
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Kiểm tra đăng nhập khi component mount
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    setIsLoggedIn(!!user.username);
+  }, []);
 
   useEffect(() => {
     if (!serviceId) return;
@@ -300,6 +309,19 @@ function BookServiceContent() {
     }
   }, [formData.appointmentDate]);
 
+  // Thêm hàm để lưu thông tin form và chuyển hướng đến trang đăng nhập
+  const saveDataAndRedirect = (e: React.MouseEvent) => {
+    e.preventDefault();
+    // Lưu form data vào localStorage trước khi chuyển hướng
+    localStorage.setItem('pendingBookingData', JSON.stringify({
+      formData,
+      serviceId
+    }));
+    
+    // Chuyển hướng đến trang đăng nhập với returnUrl
+    router.push(`/auth/login?returnUrl=${encodeURIComponent('/services/book?serviceId=' + serviceId)}`);
+  };
+
   return (
     <MainLayout>
       <div className="bg-white">
@@ -337,6 +359,8 @@ function BookServiceContent() {
             </Link>
           </div>
         </div>
+
+        
 
         {/* Main content */}
         <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8">
@@ -696,16 +720,43 @@ function BookServiceContent() {
                 </div>
 
                 {/* Submit button */}
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={!formData.termsAccepted}
-                    className={`inline-flex justify-center py-3 px-6 border border-transparent shadow-sm text-base font-medium rounded-md text-white 
-                      ${formData.termsAccepted ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'}
-                      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
-                  >
-                    Xác nhận đặt dịch vụ
-                  </button>
+                <div className="flex flex-col space-y-4">
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={!formData.termsAccepted}
+                      className={`inline-flex justify-center py-3 px-6 border border-transparent shadow-sm text-base font-medium rounded-md text-white 
+                        ${formData.termsAccepted ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'}
+                        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
+                    >
+                      Xác nhận đặt dịch vụ
+                    </button>
+                  </div>
+                  
+                  {/* Thông báo đăng nhập dưới nút xác nhận */}
+                  {!isLoggedIn && (
+                    <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mt-4">
+                      <div className="flex">
+                        <div className="flex-shrink-0">
+                          <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <p className="text-sm text-blue-700">
+                            <strong>Lưu ý:</strong> Bạn cần đăng nhập để hoàn tất đặt dịch vụ. Hệ thống sẽ tự động lưu thông tin bạn đã nhập và chuyển đến trang đăng nhập khi bạn nhấn nút xác nhận.{' '}
+                            <a 
+                              href="#" 
+                              onClick={saveDataAndRedirect}
+                              className="font-medium underline text-blue-700 hover:text-blue-500"
+                            >
+                              Đăng nhập ngay
+                            </a>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </form>
             </div>
