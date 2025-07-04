@@ -3,6 +3,235 @@ import axios from 'axios';
 // Base API URL
 const API_BASE_URL = 'http://localhost:5198';
 
+// User interface
+export interface User {
+  id: string;
+  username: string;
+  fullname: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  role?: string;
+  status?: string;
+}
+
+// Function to get user by ID
+export const getUserById = async (userId: string): Promise<User | null> => {
+  try {
+    console.log(`🔍 Fetching user with ID: ${userId}`);
+    
+    // Lấy token từ localStorage
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No token available for getUserById');
+      return null;
+    }
+    
+    // Thử nhiều phương pháp khác nhau
+    let user: User | null = null;
+    
+    // Phương pháp 1: GET trực tiếp
+    try {
+      console.log(`🔍 Method 1: Direct GET to /api/User/${userId}`);
+      const response = await axios.get(`${API_BASE_URL}/api/User/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': '*/*'
+        }
+      });
+      
+      if (response.data) {
+        console.log(`✅ Method 1 success:`, response.data);
+        return {
+          id: response.data.id || response.data.userID || userId,
+          username: response.data.username || userId,
+          fullname: response.data.fullname || response.data.username || userId,
+          email: response.data.email || '',
+          phone: response.data.phone || '',
+          address: response.data.address || '',
+          role: response.data.role || response.data.roleID || '',
+          status: response.data.status || ''
+        };
+      }
+    } catch (error1: any) {
+      console.log(`❌ Method 1 failed:`, error1.message || error1);
+    }
+    
+    // Phương pháp 2: GET với query params
+    try {
+      console.log(`🔍 Method 2: GET with query params to /api/User?id=${userId}`);
+      const response = await axios.get(`${API_BASE_URL}/api/User`, {
+        params: { id: userId },
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': '*/*'
+        }
+      });
+      
+      if (response.data) {
+        if (Array.isArray(response.data) && response.data.length > 0) {
+          console.log(`✅ Method 2 success (array):`, response.data[0]);
+          const userData = response.data[0];
+          return {
+            id: userData.id || userData.userID || userId,
+            username: userData.username || userId,
+            fullname: userData.fullname || userData.username || userId,
+            email: userData.email || '',
+            phone: userData.phone || '',
+            address: userData.address || '',
+            role: userData.role || userData.roleID || '',
+            status: userData.status || ''
+          };
+        } else if (response.data.id || response.data.userID) {
+          console.log(`✅ Method 2 success (object):`, response.data);
+          const userData = response.data;
+          return {
+            id: userData.id || userData.userID || userId,
+            username: userData.username || userId,
+            fullname: userData.fullname || userData.username || userId,
+            email: userData.email || '',
+            phone: userData.phone || '',
+            address: userData.address || '',
+            role: userData.role || userData.roleID || '',
+            status: userData.status || ''
+          };
+        }
+      }
+    } catch (error2: any) {
+      console.log(`❌ Method 2 failed:`, error2.message || error2);
+    }
+    
+    // Phương pháp 3: Lấy tất cả users và lọc
+    try {
+      console.log(`🔍 Method 3: Fetching all users and filtering`);
+      const allUsers = await getAllUsers();
+      console.log(`Got ${allUsers.length} users, searching for ID: ${userId}`);
+      
+      user = allUsers.find(u => 
+        u.id === userId || 
+        u.id?.toLowerCase() === userId.toLowerCase() ||
+        u.username === userId
+      ) || null;
+      
+      if (user) {
+        console.log(`✅ Method 3 success:`, user);
+        return user;
+      }
+    } catch (error3: any) {
+      console.log(`❌ Method 3 failed:`, error3.message || error3);
+    }
+    
+    console.error(`❌ All methods failed for user ID ${userId}`);
+    return {
+      id: userId,
+      username: userId,
+      fullname: userId,
+      email: '',
+      phone: '',
+      address: '',
+      role: '',
+      status: ''
+    };
+  } catch (error: any) {
+    console.error(`❌ Error fetching user with ID ${userId}:`, error.message || error);
+    return {
+      id: userId,
+      username: userId,
+      fullname: userId,
+      email: '',
+      phone: '',
+      address: '',
+      role: '',
+      status: ''
+    };
+  }
+};
+
+// Function to get all users
+export const getAllUsers = async (): Promise<User[]> => {
+  try {
+    console.log('🔍 Fetching all users');
+    
+    // Lấy token từ localStorage
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No token available for getAllUsers');
+      return [];
+    }
+    
+    // Thử nhiều phương pháp khác nhau
+    let users: User[] = [];
+    
+    // Phương pháp 1: GET trực tiếp
+    try {
+      console.log('🔍 Method 1: Direct GET to /api/User');
+      const response = await axios.get(`${API_BASE_URL}/api/User`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': '*/*'
+        }
+      });
+      
+      if (response.data) {
+        // Handle different response formats
+        if ('$values' in response.data && Array.isArray(response.data.$values)) {
+          console.log('Found $values array in user data');
+          users = response.data.$values;
+        } else if (Array.isArray(response.data)) {
+          console.log('Found direct array in user data');
+          users = response.data;
+        } else {
+          console.log('Found single object or unexpected format in user data');
+          users = Array.isArray(response.data) ? response.data : [response.data];
+        }
+        
+        console.log(`✅ Method 1 success: Fetched ${users.length} users`);
+        return users;
+      }
+    } catch (error1) {
+      console.log('❌ Method 1 failed:', error1);
+    }
+    
+    // Phương pháp 2: GET với endpoint khác
+    try {
+      console.log('🔍 Method 2: GET to /api/User/all');
+      const response = await axios.get(`${API_BASE_URL}/api/User/all`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': '*/*'
+        }
+      });
+      
+      if (response.data) {
+        // Handle different response formats
+        if ('$values' in response.data && Array.isArray(response.data.$values)) {
+          users = response.data.$values;
+        } else if (Array.isArray(response.data)) {
+          users = response.data;
+        } else {
+          users = Array.isArray(response.data) ? response.data : [response.data];
+        }
+        
+        console.log(`✅ Method 2 success: Fetched ${users.length} users`);
+        return users;
+      }
+    } catch (error2) {
+      console.log('❌ Method 2 failed:', error2);
+    }
+    
+    // Phương pháp 3: Sử dụng mock data cho trường hợp khẩn cấp
+    console.log('⚠️ All methods failed, returning empty array');
+    return [];
+  } catch (error) {
+    console.error('❌ Error fetching all users:', error);
+    return [];
+  }
+};
+
 // Additional Kit interface from kit.ts for compatibility
 export interface SimpleKit {
   id?: string;
@@ -995,6 +1224,24 @@ export interface Appointment {
   status: string;
   customerName?: string;
   serviceName?: string;
+  staffName?: string;
+  customer?: {
+    userId?: string;
+    username?: string;
+    fullname?: string;
+    gender?: string;
+    roleId?: string;
+    email?: string;
+    phone?: string;
+    birthdate?: string;
+    image?: string;
+    address?: string;
+    bookingCustomers?: string[];
+  };
+  service?: {
+    name?: string;
+    description?: string;
+  };
 }
 
 export const appointmentsApi = {

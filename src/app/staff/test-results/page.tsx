@@ -15,7 +15,7 @@ import {
   PencilSquareIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
-import { Appointment, getAppointments, updateAppointment } from '@/lib/api/staff';
+import { Appointment, getAppointments, updateAppointment, getUserById, getAllUsers, User } from '@/lib/api/staff';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import toast from 'react-hot-toast';
@@ -62,24 +62,31 @@ export default function OrderManagement() {
       console.log('Appointments received:', apiAppointments);
       
       // Map API appointments to the Order structure expected by the UI
-      const mappedOrders: Order[] = apiAppointments.map(appointment => ({
-        id: appointment.id || appointment.bookingId, // Fallback to bookingId if id is undefined
-        bookingId: appointment.bookingId,
-        customerId: appointment.customerId,
-        date: appointment.date,
-        staffId: appointment.staffId,
-        serviceId: appointment.serviceId,
-        address: appointment.address,
-        // Map method string to expected enum values
-        method: mapMethodToEnum(appointment.method),
-        // Map status string to expected enum values
-        status: mapStatusToEnum(appointment.status || 'pending'),
-        // Set a default priority based on status
-        priority: getPriorityFromStatus(appointment.status || 'pending'),
-        customerName: appointment.customerName,
-        serviceName: appointment.serviceName,
-        staffName: '' // API doesn't seem to provide staff name
-      }));
+      const mappedOrders: Order[] = apiAppointments.map((appointment) => {
+        // Extract customer name from nested customer object if it exists
+        const customerName = appointment.customer?.fullname || appointment.customerName || appointment.customerId;
+        const staffName = appointment.staffName || appointment.staffId;
+        const serviceName = appointment.service?.name || appointment.serviceName || appointment.serviceId;
+        
+        return {
+          id: appointment.id || appointment.bookingId, // Fallback to bookingId if id is undefined
+          bookingId: appointment.bookingId,
+          customerId: appointment.customerId,
+          date: appointment.date,
+          staffId: appointment.staffId,
+          serviceId: appointment.serviceId,
+          address: appointment.address,
+          // Map method string to expected enum values
+          method: mapMethodToEnum(appointment.method),
+          // Map status string to expected enum values
+          status: mapStatusToEnum(appointment.status || 'pending'),
+          // Set a default priority based on status
+          priority: getPriorityFromStatus(appointment.status || 'pending'),
+          customerName: customerName,
+          serviceName: serviceName,
+          staffName: staffName
+        };
+      });
       
       console.log('Mapped orders:', mappedOrders);
       setOrders(mappedOrders);
@@ -228,6 +235,7 @@ export default function OrderManagement() {
   const filteredOrders = orders.filter(order => {
     const matchesSearch = 
       order.bookingId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.customerName && order.customerName.toLowerCase().includes(searchTerm.toLowerCase())) ||
       order.customerId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.staffId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.serviceId.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -459,7 +467,7 @@ export default function OrderManagement() {
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
             <input
               type="text"
-              placeholder="Tìm kiếm booking ID, customer ID..."
+              placeholder="Tìm kiếm booking ID, tên khách hàng..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-2 w-full border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -547,23 +555,9 @@ export default function OrderManagement() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex items-center space-x-2">
-                    <Link href={`/staff/test-results/${order.bookingId}`} className="text-blue-600 hover:text-blue-900 mr-4">
+                    <Link href={`/staff/test-results/${order.bookingId}`} className="text-blue-600 hover:text-blue-900">
                       <EyeIcon className="h-4 w-4" />
                     </Link>
-                    <button
-                      onClick={() => handleEditOrder(order)}
-                      className="text-yellow-600 hover:text-yellow-900"
-                      title="Chỉnh sửa"
-                    >
-                      <PencilSquareIcon className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => handleStatusChange(order.id, getNextStatus(order.status))}
-                      className="text-green-600 hover:text-green-900"
-                      title={getNextStatusText(order.status)}
-                    >
-                      <ArrowPathIcon className="h-4 w-4" />
-                    </button>
                   </div>
                 </td>
               </tr>
@@ -607,7 +601,12 @@ export default function OrderManagement() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700">Customer ID</label>
-                    <p className="text-slate-900">{selectedOrder.customerId}</p>
+                    <p className="text-slate-900">
+                      {selectedOrder.customerName || selectedOrder.customerId}
+                      {selectedOrder.customerName && selectedOrder.customerId && selectedOrder.customerName !== selectedOrder.customerId && (
+                        <span className="text-xs text-gray-500 ml-2">ID: {selectedOrder.customerId}</span>
+                      )}
+                    </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700">Ngày đặt</label>
@@ -643,12 +642,6 @@ export default function OrderManagement() {
                     className="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50"
                   >
                     Đóng
-                  </button>
-                  <button
-                    onClick={() => handleEditOrder(selectedOrder)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
-                    Chỉnh sửa
                   </button>
                 </div>
               </div>
