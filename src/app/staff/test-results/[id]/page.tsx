@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getAppointmentById, updateAppointment, updateAppointmentStatus, updateAppointmentStatusSafe, Appointment, TestResult, createTestResultV2, getTestResultsByBookingId, kitApi, Kit } from '@/lib/api/staff';
+import { getAppointmentById, updateAppointment, updateAppointmentStatus, updateAppointmentStatusSafe, Appointment, TestResult, createTestResultV2, getTestResultsByBookingId, kitApi, Kit, getUserById, User } from '@/lib/api/staff';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 
@@ -12,19 +12,24 @@ export default function AppointmentDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const { user, token } = useAuth();
-  const [appointment, setAppointment] = useState<Appointment | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
-  const [submittingResult, setSubmittingResult] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [status, setStatus] = useState<AppointmentStatus>('pending');
-  const [kitExists, setKitExists] = useState(false);
-  const [kitInfo, setKitInfo] = useState<Kit | null>(null);
-  const [checkingKit, setCheckingKit] = useState(false);
-  const [showKitModal, setShowKitModal] = useState(false);
-  const [kitDetailLoading, setKitDetailLoading] = useState(false);
   
-  // State cho form kết quả xét nghiệm
+  // State tracking
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [appointment, setAppointment] = useState<Appointment | null>(null);
+  const [showKitModal, setShowKitModal] = useState<boolean>(false);
+  const [showResultForm, setShowResultForm] = useState<boolean>(false);
+  const [status, setStatus] = useState<AppointmentStatus>('pending');
+  const [updating, setUpdating] = useState<boolean>(false);
+  const [customerInfo, setCustomerInfo] = useState<User | null>(null);
+  
+  // Kit related state
+  const [kitExists, setKitExists] = useState<boolean>(false);
+  const [kitInfo, setKitInfo] = useState<Kit | null>(null);
+  const [checkingKit, setCheckingKit] = useState<boolean>(true);  // Bắt đầu với true để hiện loading
+  const [kitDetailLoading, setKitDetailLoading] = useState<boolean>(false);
+  
+  // Kết quả xét nghiệm
   const [testResult, setTestResult] = useState<Partial<TestResult>>({
     customerId: '',
     staffId: '',
@@ -34,13 +39,11 @@ export default function AppointmentDetailPage() {
     description: '',
     status: 'Trùng nhau'
   });
-
-  // State để lưu kết quả xét nghiệm đã có
+  const [submittingResult, setSubmittingResult] = useState<boolean>(false);
+  const [loadingResults, setLoadingResults] = useState<boolean>(false);
   const [existingResults, setExistingResults] = useState<TestResult[]>([]);
-  const [loadingResults, setLoadingResults] = useState(false);
   
   // State hiển thị form kết quả
-  const [showResultForm, setShowResultForm] = useState(false);
   
   // Hàm lấy chi tiết kit và hiển thị modal
   const handleViewKit = async () => {
@@ -157,52 +160,101 @@ export default function AppointmentDetailPage() {
     );
   };
 
-  useEffect(() => {
-    const fetchAppointmentData = async () => {
-      if (!user || !token) return;
+  // Function to fetch appointment data
+  const fetchAppointmentData = async () => {
+    if (!token || !id) {
+      setError('Token or appointment ID missing');
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      console.log(`🔄 Fetching appointment data for ID: ${id}`);
+      setLoading(true);
+      setError(null);
       
-      try {
-        setLoading(true);
-        const data = await getAppointmentById(token, id as string);
+      const data = await getAppointmentById(token, id as string);
+      
+      if (data) {
+        console.log('✅ Fetched appointment data:', data);
+        setAppointment(data);
         
-        if (data) {
-          setAppointment(data);
-          
-          // Determine status from appointment data
-          if (data.status) {
-            setStatus(mapStatusToEnum(data.status));
-          }
-          
-          // Khởi tạo giá trị cho form kết quả
-          setTestResult(prev => ({
-            ...prev,
-            customerId: data.customerId,
-            staffId: data.staffId || '',
-            serviceId: data.serviceId,
-            bookingId: data.bookingId,
-            status: 'Trùng nhau' // Đặt giá trị mặc định cho kết quả xét nghiệm
-          }));
-          
-          // Lấy kết quả xét nghiệm nếu booking đã hoàn thành
-          if (data.status === 'Completed' || mapStatusToEnum(data.status) === 'completed') {
-            fetchTestResults(data.bookingId);
-          }
-          
-          // Check if kit exists for this booking
-          if (data.bookingId) {
-            checkKitForBooking(data.bookingId);
+        // Xác định trạng thái từ dữ liệu booking
+        if (data.status) {
+          setStatus(mapStatusToEnum(data.status));
+        }
+        
+        // Fetch customer info if we have customerId
+        if (data.customerId) {
+          try {
+            const customerData = await getUserById(data.customerId);
+            if (customerData) {
+              console.log("✅ Successfully fetched customer info:", customerData);
+              setCustomerInfo(customerData);
+            } else {
+              console.log("⚠️ Could not fetch customer info, using fallback");
+              // Tạo một đối tượng khách hàng giả để hiển thị ID
+              setCustomerInfo({
+                id: data.customerId,
+                username: data.customerId,
+                fullname: data.customerName || `Khách hàng ${data.customerId}`,
+                email: ''
+              });
+            }
+          } catch (error) {
+            console.error("Error fetching customer info:", error);
+            // Tạo một đối tượng khách hàng giả để hiển thị ID trong trường hợp lỗi
+            setCustomerInfo({
+              id: data.customerId,
+              username: data.customerId,
+              fullname: data.customerName || `Khách hàng ${data.customerId}`,
+              email: ''
+            });
           }
         }
-      } catch (err) {
-        setError('Failed to load appointment details');
-        console.error(err);
-      } finally {
-        setLoading(false);
+        
+        // Kiểm tra xem có kit cho booking này không
+        if (data.bookingId) {
+          await checkKitForBooking(data.bookingId);
+        } else {
+          setCheckingKit(false);
+        }
+        
+        // Kiểm tra xem đã có kết quả xét nghiệm cho booking này chưa
+        if (data.bookingId && (data.status === 'Hoàn thành' || mapStatusToEnum(data.status) === 'completed')) {
+          fetchTestResults(data.bookingId);
+        }
+        
+        // Điền thông tin vào form kết quả
+        setTestResult(prev => ({
+          ...prev,
+          customerId: data.customerId || '',
+          staffId: data.staffId || user?.userID || '',
+          serviceId: data.serviceId || '',
+          bookingId: data.bookingId || ''
+        }));
+      } else {
+        console.error('❌ Failed to fetch appointment data');
+        setError('Không thể tải dữ liệu lịch hẹn');
       }
-    };
-
+    } catch (error: any) {
+      console.error('Error fetching appointment data:', error);
+      let errorMessage = 'Đã xảy ra lỗi khi tải dữ liệu';
+      
+      if (error.response && error.response.data) {
+        errorMessage += `: ${error.response.data.message || JSON.stringify(error.response.data)}`;
+      }
+      
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Load data when component mounts
+  useEffect(() => {
     fetchAppointmentData();
-  }, [id, user, token]);
+  }, [id, token]);
   
   // Hàm lấy kết quả xét nghiệm theo booking ID
   const fetchTestResults = async (bookingId: string) => {
@@ -256,6 +308,23 @@ export default function AppointmentDetailPage() {
     
     try {
       setUpdating(true);
+      
+      // Nếu muốn chuyển sang "Đang thực hiện", kiểm tra điều kiện kit
+      if (newStatus === 'in-progress') {
+        // Kiểm tra xem kit đã tồn tại chưa
+        if (!kitExists || !kitInfo) {
+          toast.error('Không thể chuyển trạng thái: Booking này chưa có kit!');
+          setUpdating(false);
+          return;
+        }
+        
+        // Kiểm tra xem kit đã ở trạng thái "Đã tới kho" chưa
+        if (kitInfo.status !== 'expired') {
+          toast.error(`Không thể chuyển trạng thái: Kit phải ở trạng thái "Đã tới kho" (hiện tại: ${getKitStatusText(kitInfo.status)})`);
+          setUpdating(false);
+          return;
+        }
+      }
       
       // Chuyển đổi trạng thái thành giá trị thích hợp cho API
       let apiStatus = '';
@@ -615,7 +684,7 @@ export default function AppointmentDetailPage() {
               </div>
               <div className="flex justify-between border-b pb-2">
                 <span className="font-medium">Khách hàng:</span>
-                <span>{appointment.customerId}</span>
+                <span>{customerInfo?.fullname || appointment.customerName || `Khách hàng ${appointment.customerId}`}</span>
               </div>
               <div className="flex justify-between border-b pb-2">
                 <span className="font-medium">Ngày hẹn:</span>
@@ -693,7 +762,15 @@ export default function AppointmentDetailPage() {
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : 'bg-blue-500 text-white hover:bg-blue-600'
                   }`}
-                  title={status === 'pending' ? 'Chuyển sang trạng thái đang thực hiện' : ''}
+                  title={
+                    status === 'pending' 
+                      ? kitExists 
+                        ? kitInfo?.status === 'expired' 
+                          ? 'Chuyển sang trạng thái đang thực hiện' 
+                          : `Kit phải ở trạng thái "Đã tới kho" trước khi chuyển sang thực hiện (hiện tại: ${kitInfo ? getKitStatusText(kitInfo.status) : 'N/A'})`
+                        : 'Booking này chưa có kit. Vui lòng tạo kit trước.'
+                      : ''
+                  }
                 >
                   {updating ? 'Đang xử lý...' : 'Đang thực hiện'}
                 </button>
@@ -811,6 +888,50 @@ export default function AppointmentDetailPage() {
                     >
                       Nhập kết quả ngay
                     </button>
+                  </div>
+                </div>
+              )}
+              
+              {status === 'pending' && (
+                <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-100">
+                  <p className="text-yellow-700 flex items-center font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Thông tin về việc chuyển trạng thái
+                  </p>
+                  <div className="mt-2 ml-7">
+                    <p className="text-sm text-yellow-700 mb-2">
+                      <strong>Điều kiện để chuyển sang trạng thái "Đang thực hiện":</strong>
+                    </p>
+                    <ul className="list-disc ml-5 text-sm text-yellow-700 space-y-1">
+                      <li>Booking phải có kit đã được tạo</li>
+                      <li>Kit phải ở trạng thái "Đã tới kho"</li>
+                    </ul>
+                    {checkingKit ? (
+                      <div className="flex items-center space-x-2 mt-2 text-sm text-blue-600">
+                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Đang kiểm tra trạng thái kit...</span>
+                      </div>
+                    ) : kitExists ? (
+                      kitInfo?.status === 'expired' ? (
+                        <p className="mt-2 text-sm text-green-600">
+                          ✅ Tất cả điều kiện đã thỏa mãn. Bạn có thể chuyển sang trạng thái "Đang thực hiện".
+                        </p>
+                      ) : (
+                        <p className="mt-2 text-sm text-yellow-700">
+                          ⚠️ Trạng thái kit hiện tại: <strong>{kitInfo ? getKitStatusText(kitInfo.status) : 'N/A'}</strong>. 
+                          Cần đổi sang <strong>Đã tới kho</strong> trước khi có thể chuyển trạng thái booking.
+                        </p>
+                      )
+                    ) : (
+                      <p className="mt-2 text-sm text-yellow-700">
+                        ⚠️ Booking này chưa có kit. Vui lòng tạo kit trước khi chuyển trạng thái.
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
@@ -932,7 +1053,7 @@ export default function AppointmentDetailPage() {
               <div className="flex justify-between items-center pt-4">
                 <div className="text-sm text-gray-500">
                   <span className="font-medium">Booking ID:</span> {appointment.bookingId}<br />
-                  <span className="font-medium">Khách hàng:</span> {appointment.customerId}<br />
+                  <span className="font-medium">Khách hàng:</span> {customerInfo?.fullname || appointment.customerName || `Khách hàng ${appointment.customerId}`}<br />
                   <span className="font-medium">Dịch vụ:</span> {appointment.serviceId}
                 </div>
                 <div className="flex space-x-3">
