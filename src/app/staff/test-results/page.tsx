@@ -62,11 +62,12 @@ export default function OrderManagement() {
       console.log('Appointments received:', apiAppointments);
       
       // Map API appointments to the Order structure expected by the UI
-      const mappedOrders: Order[] = await Promise.all(apiAppointments.map(async (appointment) => {
-        const customer = await getUserById(appointment.customerId);
-        const staff = await getUserById(appointment.staffId);
-        const service = await getUserById(appointment.serviceId);
-
+      const mappedOrders: Order[] = apiAppointments.map((appointment) => {
+        // Extract customer name from nested customer object if it exists
+        const customerName = appointment.customer?.fullname || appointment.customerName || appointment.customerId;
+        const staffName = appointment.staffName || appointment.staffId;
+        const serviceName = appointment.service?.name || appointment.serviceName || appointment.serviceId;
+        
         return {
           id: appointment.id || appointment.bookingId, // Fallback to bookingId if id is undefined
           bookingId: appointment.bookingId,
@@ -81,11 +82,11 @@ export default function OrderManagement() {
           status: mapStatusToEnum(appointment.status || 'pending'),
           // Set a default priority based on status
           priority: getPriorityFromStatus(appointment.status || 'pending'),
-          customerName: customer?.fullname || appointment.customerName || appointment.customerId,
-          serviceName: appointment.serviceName || appointment.serviceId,
-          staffName: staff?.fullname || appointment.staffId
+          customerName: customerName,
+          serviceName: serviceName,
+          staffName: staffName
         };
-      }));
+      });
       
       console.log('Mapped orders:', mappedOrders);
       setOrders(mappedOrders);
@@ -554,23 +555,9 @@ export default function OrderManagement() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex items-center space-x-2">
-                    <Link href={`/staff/test-results/${order.bookingId}`} className="text-blue-600 hover:text-blue-900 mr-4">
+                    <Link href={`/staff/test-results/${order.bookingId}`} className="text-blue-600 hover:text-blue-900">
                       <EyeIcon className="h-4 w-4" />
                     </Link>
-                    <button
-                      onClick={() => handleEditOrder(order)}
-                      className="text-yellow-600 hover:text-yellow-900"
-                      title="Chỉnh sửa"
-                    >
-                      <PencilSquareIcon className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => handleStatusChange(order.id, getNextStatus(order.status))}
-                      className="text-green-600 hover:text-green-900"
-                      title={getNextStatusText(order.status)}
-                    >
-                      <ArrowPathIcon className="h-4 w-4" />
-                    </button>
                   </div>
                 </td>
               </tr>
@@ -655,12 +642,6 @@ export default function OrderManagement() {
                     className="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50"
                   >
                     Đóng
-                  </button>
-                  <button
-                    onClick={() => handleEditOrder(selectedOrder)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
-                    Chỉnh sửa
                   </button>
                 </div>
               </div>

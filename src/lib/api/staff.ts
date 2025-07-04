@@ -43,10 +43,19 @@ export const getUserById = async (userId: string): Promise<User | null> => {
       
       if (response.data) {
         console.log(`✅ Method 1 success:`, response.data);
-        return response.data;
+        return {
+          id: response.data.id || response.data.userID || userId,
+          username: response.data.username || userId,
+          fullname: response.data.fullname || response.data.username || userId,
+          email: response.data.email || '',
+          phone: response.data.phone || '',
+          address: response.data.address || '',
+          role: response.data.role || response.data.roleID || '',
+          status: response.data.status || ''
+        };
       }
-    } catch (error1) {
-      console.log(`❌ Method 1 failed:`, error1);
+    } catch (error1: any) {
+      console.log(`❌ Method 1 failed:`, error1.message || error1);
     }
     
     // Phương pháp 2: GET với query params
@@ -64,35 +73,79 @@ export const getUserById = async (userId: string): Promise<User | null> => {
       if (response.data) {
         if (Array.isArray(response.data) && response.data.length > 0) {
           console.log(`✅ Method 2 success (array):`, response.data[0]);
-          return response.data[0];
+          const userData = response.data[0];
+          return {
+            id: userData.id || userData.userID || userId,
+            username: userData.username || userId,
+            fullname: userData.fullname || userData.username || userId,
+            email: userData.email || '',
+            phone: userData.phone || '',
+            address: userData.address || '',
+            role: userData.role || userData.roleID || '',
+            status: userData.status || ''
+          };
         } else if (response.data.id || response.data.userID) {
           console.log(`✅ Method 2 success (object):`, response.data);
-          return response.data;
+          const userData = response.data;
+          return {
+            id: userData.id || userData.userID || userId,
+            username: userData.username || userId,
+            fullname: userData.fullname || userData.username || userId,
+            email: userData.email || '',
+            phone: userData.phone || '',
+            address: userData.address || '',
+            role: userData.role || userData.roleID || '',
+            status: userData.status || ''
+          };
         }
       }
-    } catch (error2) {
-      console.log(`❌ Method 2 failed:`, error2);
+    } catch (error2: any) {
+      console.log(`❌ Method 2 failed:`, error2.message || error2);
     }
     
     // Phương pháp 3: Lấy tất cả users và lọc
-    console.log(`🔍 Method 3: Fetching all users and filtering`);
-    const allUsers = await getAllUsers();
-    user = allUsers.find(u => 
-      u.id === userId || 
-      u.id?.toLowerCase() === userId.toLowerCase() ||
-      u.username === userId
-    ) || null;
-    
-    if (user) {
-      console.log(`✅ Method 3 success:`, user);
-      return user;
+    try {
+      console.log(`🔍 Method 3: Fetching all users and filtering`);
+      const allUsers = await getAllUsers();
+      console.log(`Got ${allUsers.length} users, searching for ID: ${userId}`);
+      
+      user = allUsers.find(u => 
+        u.id === userId || 
+        u.id?.toLowerCase() === userId.toLowerCase() ||
+        u.username === userId
+      ) || null;
+      
+      if (user) {
+        console.log(`✅ Method 3 success:`, user);
+        return user;
+      }
+    } catch (error3: any) {
+      console.log(`❌ Method 3 failed:`, error3.message || error3);
     }
     
     console.error(`❌ All methods failed for user ID ${userId}`);
-    return null;
-  } catch (error) {
-    console.error(`❌ Error fetching user with ID ${userId}:`, error);
-    return null;
+    return {
+      id: userId,
+      username: userId,
+      fullname: userId,
+      email: '',
+      phone: '',
+      address: '',
+      role: '',
+      status: ''
+    };
+  } catch (error: any) {
+    console.error(`❌ Error fetching user with ID ${userId}:`, error.message || error);
+    return {
+      id: userId,
+      username: userId,
+      fullname: userId,
+      email: '',
+      phone: '',
+      address: '',
+      role: '',
+      status: ''
+    };
   }
 };
 
@@ -1171,6 +1224,24 @@ export interface Appointment {
   status: string;
   customerName?: string;
   serviceName?: string;
+  staffName?: string;
+  customer?: {
+    userId?: string;
+    username?: string;
+    fullname?: string;
+    gender?: string;
+    roleId?: string;
+    email?: string;
+    phone?: string;
+    birthdate?: string;
+    image?: string;
+    address?: string;
+    bookingCustomers?: string[];
+  };
+  service?: {
+    name?: string;
+    description?: string;
+  };
 }
 
 export const appointmentsApi = {

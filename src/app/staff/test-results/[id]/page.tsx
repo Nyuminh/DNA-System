@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getAppointmentById, updateAppointment, updateAppointmentStatus, updateAppointmentStatusSafe, Appointment, TestResult, createTestResultV2, getTestResultsByBookingId, kitApi, Kit, getUserById, User } from '@/lib/api/staff';
+import { getAppointmentById, updateAppointment, updateAppointmentStatus, updateAppointmentStatusSafe, Appointment, TestResult, createTestResultV2, getTestResultsByBookingId, kitApi, Kit, getUserById, User, getAllUsers } from '@/lib/api/staff';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 
@@ -114,7 +114,7 @@ export default function AppointmentDetailPage() {
                   
                   <div className="border-b pb-2">
                     <span className="font-medium text-gray-500">Tên khách hàng:</span>
-                    <p className="mt-1">{kitInfo.customerName || 'N/A'}</p>
+                    <p className="mt-1">{kitInfo.customerID || 'N/A'}</p>
                   </div>
                   
                   <div className="border-b pb-2">
@@ -187,27 +187,43 @@ export default function AppointmentDetailPage() {
         // Fetch customer info if we have customerId
         if (data.customerId) {
           try {
-            const customerData = await getUserById(data.customerId);
-            if (customerData) {
-              console.log("✅ Successfully fetched customer info:", customerData);
-              setCustomerInfo(customerData);
+            console.log(`⬇️ Fetching customer info for ID: ${data.customerId}`);
+            
+            // First try to get all users to have a local cache
+            const allUsers = await getAllUsers();
+            console.log(`📊 Got ${allUsers.length} users, searching for ID: ${data.customerId}`);
+            
+            // Find customer in the list by exact ID match
+            const matchingCustomer = allUsers.find(u => u.id === data.customerId);
+            
+            if (matchingCustomer) {
+              console.log("✅ Found exact customer match:", matchingCustomer);
+              setCustomerInfo(matchingCustomer);
             } else {
-              console.log("⚠️ Could not fetch customer info, using fallback");
-              // Tạo một đối tượng khách hàng giả để hiển thị ID
-              setCustomerInfo({
-                id: data.customerId,
-                username: data.customerId,
-                fullname: data.customerName || `Khách hàng ${data.customerId}`,
-                email: ''
-              });
+              console.log("⚠️ No exact ID match, trying with getUserById");
+              // Try direct fetch as fallback
+              const customerData = await getUserById(data.customerId);
+              if (customerData) {
+                console.log("✅ Got customer via getUserById:", customerData);
+                setCustomerInfo(customerData);
+              } else {
+                console.log("⚠️ Could not fetch customer info, using fallback");
+                // Create a fallback customer object to show ID
+                setCustomerInfo({
+                  id: data.customerId,
+                  username: data.customerId,
+                  fullname: data.customerId,
+                  email: ''
+                });
+              }
             }
           } catch (error) {
-            console.error("Error fetching customer info:", error);
-            // Tạo một đối tượng khách hàng giả để hiển thị ID trong trường hợp lỗi
+            console.error("❌ Error fetching customer info:", error);
+            // Create a fallback customer object for error case
             setCustomerInfo({
               id: data.customerId,
               username: data.customerId,
-              fullname: data.customerName || `Khách hàng ${data.customerId}`,
+              fullname: data.customerId,
               email: ''
             });
           }
@@ -488,6 +504,8 @@ export default function AppointmentDetailPage() {
       if (matchingKits.length > 0) {
         const kit = matchingKits[0]; // Get the first matching kit
         console.log(`✅ Found kit: ${kit.kitID}, Status: ${kit.status}`, kit);
+        
+        // Store kit data without additional name lookup
         setKitExists(true);
         setKitInfo(kit);
         
@@ -684,7 +702,7 @@ export default function AppointmentDetailPage() {
               </div>
               <div className="flex justify-between border-b pb-2">
                 <span className="font-medium">Khách hàng:</span>
-                <span>{customerInfo?.fullname || appointment.customerName || `Khách hàng ${appointment.customerId}`}</span>
+                <span>{appointment.customerId}</span>
               </div>
               <div className="flex justify-between border-b pb-2">
                 <span className="font-medium">Ngày hẹn:</span>
@@ -1053,7 +1071,7 @@ export default function AppointmentDetailPage() {
               <div className="flex justify-between items-center pt-4">
                 <div className="text-sm text-gray-500">
                   <span className="font-medium">Booking ID:</span> {appointment.bookingId}<br />
-                  <span className="font-medium">Khách hàng:</span> {customerInfo?.fullname || appointment.customerName || `Khách hàng ${appointment.customerId}`}<br />
+                  <span className="font-medium">Khách hàng:</span> {appointment.customerId}<br />
                   <span className="font-medium">Dịch vụ:</span> {appointment.serviceId}
                 </div>
                 <div className="flex space-x-3">
