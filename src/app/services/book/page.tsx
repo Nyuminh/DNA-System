@@ -816,13 +816,16 @@ function BookServiceContent() {
                                     />
                                     <label
                                       htmlFor={`time-slot-${timeSlot}`}
-                                      className={`flex p-3 border border-gray-300 rounded-lg cursor-pointer focus:outline-none peer-checked:border-blue-500 peer-checked:bg-blue-50 hover:bg-gray-50 
-                                      ${isUnavailable ? 'cursor-not-allowed bg-gray-100 text-gray-400' : ''}`}
+                                      className={`flex p-3 border ${isUnavailable ? 'border-gray-200' : 'border-gray-300'} rounded-lg cursor-pointer focus:outline-none peer-checked:border-blue-500 peer-checked:bg-blue-50 hover:bg-gray-50 
+                                      ${isUnavailable ? 'cursor-not-allowed bg-gray-100 opacity-75' : ''}`}
                                     >
                                       <div className="w-full">
                                         <div className="flex items-center justify-center">
                                           {isUnavailable ? (
-                                            <div className="text-sm font-medium text-red-500">Hết chỗ</div>
+                                            <div className="flex flex-col items-center">
+                                              <div className="text-sm font-medium text-gray-400">{timeSlot}</div>
+                                              <div className="text-xs text-red-400">(Hết chỗ)</div>
+                                            </div>
                                           ) : (
                                             <div className="text-sm font-medium text-gray-900">{timeSlot}</div>
                                           )}
