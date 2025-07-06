@@ -3,6 +3,235 @@ import axios from 'axios';
 // Base API URL
 const API_BASE_URL = 'http://localhost:5198';
 
+// User interface
+export interface User {
+  id: string;
+  username: string;
+  fullname: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  role?: string;
+  status?: string;
+}
+
+// Function to get user by ID
+export const getUserById = async (userId: string): Promise<User | null> => {
+  try {
+    console.log(`🔍 Fetching user with ID: ${userId}`);
+    
+    // Lấy token từ localStorage
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No token available for getUserById');
+      return null;
+    }
+    
+    // Thử nhiều phương pháp khác nhau
+    let user: User | null = null;
+    
+    // Phương pháp 1: GET trực tiếp
+    try {
+      console.log(`🔍 Method 1: Direct GET to /api/User/${userId}`);
+      const response = await axios.get(`${API_BASE_URL}/api/User/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': '*/*'
+        }
+      });
+      
+      if (response.data) {
+        console.log(`✅ Method 1 success:`, response.data);
+        return {
+          id: response.data.id || response.data.userID || userId,
+          username: response.data.username || userId,
+          fullname: response.data.fullname || response.data.username || userId,
+          email: response.data.email || '',
+          phone: response.data.phone || '',
+          address: response.data.address || '',
+          role: response.data.role || response.data.roleID || '',
+          status: response.data.status || ''
+        };
+      }
+    } catch (error1: any) {
+      console.log(`❌ Method 1 failed:`, error1.message || error1);
+    }
+    
+    // Phương pháp 2: GET với query params
+    try {
+      console.log(`🔍 Method 2: GET with query params to /api/User?id=${userId}`);
+      const response = await axios.get(`${API_BASE_URL}/api/User`, {
+        params: { id: userId },
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': '*/*'
+        }
+      });
+      
+      if (response.data) {
+        if (Array.isArray(response.data) && response.data.length > 0) {
+          console.log(`✅ Method 2 success (array):`, response.data[0]);
+          const userData = response.data[0];
+          return {
+            id: userData.id || userData.userID || userId,
+            username: userData.username || userId,
+            fullname: userData.fullname || userData.username || userId,
+            email: userData.email || '',
+            phone: userData.phone || '',
+            address: userData.address || '',
+            role: userData.role || userData.roleID || '',
+            status: userData.status || ''
+          };
+        } else if (response.data.id || response.data.userID) {
+          console.log(`✅ Method 2 success (object):`, response.data);
+          const userData = response.data;
+          return {
+            id: userData.id || userData.userID || userId,
+            username: userData.username || userId,
+            fullname: userData.fullname || userData.username || userId,
+            email: userData.email || '',
+            phone: userData.phone || '',
+            address: userData.address || '',
+            role: userData.role || userData.roleID || '',
+            status: userData.status || ''
+          };
+        }
+      }
+    } catch (error2: any) {
+      console.log(`❌ Method 2 failed:`, error2.message || error2);
+    }
+    
+    // Phương pháp 3: Lấy tất cả users và lọc
+    try {
+      console.log(`🔍 Method 3: Fetching all users and filtering`);
+      const allUsers = await getAllUsers();
+      console.log(`Got ${allUsers.length} users, searching for ID: ${userId}`);
+      
+      user = allUsers.find(u => 
+        u.id === userId || 
+        u.id?.toLowerCase() === userId.toLowerCase() ||
+        u.username === userId
+      ) || null;
+      
+      if (user) {
+        console.log(`✅ Method 3 success:`, user);
+        return user;
+      }
+    } catch (error3: any) {
+      console.log(`❌ Method 3 failed:`, error3.message || error3);
+    }
+    
+    console.error(`❌ All methods failed for user ID ${userId}`);
+    return {
+      id: userId,
+      username: userId,
+      fullname: userId,
+      email: '',
+      phone: '',
+      address: '',
+      role: '',
+      status: ''
+    };
+  } catch (error: any) {
+    console.error(`❌ Error fetching user with ID ${userId}:`, error.message || error);
+    return {
+      id: userId,
+      username: userId,
+      fullname: userId,
+      email: '',
+      phone: '',
+      address: '',
+      role: '',
+      status: ''
+    };
+  }
+};
+
+// Function to get all users
+export const getAllUsers = async (): Promise<User[]> => {
+  try {
+    console.log('🔍 Fetching all users');
+    
+    // Lấy token từ localStorage
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No token available for getAllUsers');
+      return [];
+    }
+    
+    // Thử nhiều phương pháp khác nhau
+    let users: User[] = [];
+    
+    // Phương pháp 1: GET trực tiếp
+    try {
+      console.log('🔍 Method 1: Direct GET to /api/User');
+      const response = await axios.get(`${API_BASE_URL}/api/User`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': '*/*'
+        }
+      });
+      
+      if (response.data) {
+        // Handle different response formats
+        if ('$values' in response.data && Array.isArray(response.data.$values)) {
+          console.log('Found $values array in user data');
+          users = response.data.$values;
+        } else if (Array.isArray(response.data)) {
+          console.log('Found direct array in user data');
+          users = response.data;
+        } else {
+          console.log('Found single object or unexpected format in user data');
+          users = Array.isArray(response.data) ? response.data : [response.data];
+        }
+        
+        console.log(`✅ Method 1 success: Fetched ${users.length} users`);
+        return users;
+      }
+    } catch (error1) {
+      console.log('❌ Method 1 failed:', error1);
+    }
+    
+    // Phương pháp 2: GET với endpoint khác
+    try {
+      console.log('🔍 Method 2: GET to /api/User/all');
+      const response = await axios.get(`${API_BASE_URL}/api/User/all`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': '*/*'
+        }
+      });
+      
+      if (response.data) {
+        // Handle different response formats
+        if ('$values' in response.data && Array.isArray(response.data.$values)) {
+          users = response.data.$values;
+        } else if (Array.isArray(response.data)) {
+          users = response.data;
+        } else {
+          users = Array.isArray(response.data) ? response.data : [response.data];
+        }
+        
+        console.log(`✅ Method 2 success: Fetched ${users.length} users`);
+        return users;
+      }
+    } catch (error2) {
+      console.log('❌ Method 2 failed:', error2);
+    }
+    
+    // Phương pháp 3: Sử dụng mock data cho trường hợp khẩn cấp
+    console.log('⚠️ All methods failed, returning empty array');
+    return [];
+  } catch (error) {
+    console.error('❌ Error fetching all users:', error);
+    return [];
+  }
+};
+
 // Additional Kit interface from kit.ts for compatibility
 export interface SimpleKit {
   id?: string;
@@ -51,15 +280,67 @@ const mapStatusToBackend = (status: Kit['status']): string => {
 
 // Helper function to map backend status to frontend status
 const mapStatusFromBackend = (backendStatus: string): Kit['status'] => {
-  // Map backend status values (from database) to frontend status values
-  const normalizedStatus = backendStatus?.toLowerCase() || '';
+  // Kiểm tra và log trạng thái ban đầu
+  console.log(`🔍 Mapping backend status: "${backendStatus}"`);
   
-  // Mapping based on actual database values
+  // Nếu không có giá trị, trả về mặc định
+  if (!backendStatus) {
+    console.warn('Empty status received, defaulting to available');
+    return 'available';
+  }
+  
+  // Chuẩn hóa chuỗi trạng thái
+  const normalizedStatus = backendStatus.toLowerCase();
+  console.log(`🔍 Normalized status: "${normalizedStatus}"`);
+  
+  // Xử lý các trường hợp không lỗi encoding
   if (normalizedStatus === 'đã vận chuyển' || normalizedStatus === 'da van chuyen') return 'available';
-  if (normalizedStatus === 'đã lấy mẫu' || normalizedStatus === 'da lay mau') return 'available';
-  if (normalizedStatus === 'đã tới kho' || normalizedStatus === 'da toi kho') return 'available';
+  if (normalizedStatus === 'đã lấy mẫu' || normalizedStatus === 'da lay mau') return 'completed';
+  if (normalizedStatus === 'đã tới kho' || normalizedStatus === 'da toi kho') return 'expired';
   if (normalizedStatus === 'đang vận chuyển' || normalizedStatus === 'dang van chuyen') return 'in-use';
   if (normalizedStatus === 'đang vận chuyển mẫu' || normalizedStatus === 'dang van chuyen mau') return 'in-use';
+  
+  // Xử lý các trường hợp có lỗi encoding với dấu "?"
+  if (normalizedStatus.includes('đã') || normalizedStatus.includes('da') || normalizedStatus.includes('đa')) {
+    if (normalizedStatus.includes('vận chuyển') || normalizedStatus.includes('van chuyen') || 
+        normalizedStatus.includes('v?n chuy?n') || normalizedStatus.includes('v?n chuy') || 
+        normalizedStatus.includes('van chuy')) {
+      console.log('✅ Matched pattern: "đã vận chuyển" -> available');
+      return 'available';
+    }
+    
+    if (normalizedStatus.includes('lấy mẫu') || normalizedStatus.includes('lay mau') || 
+        normalizedStatus.includes('l?y m?u') || normalizedStatus.includes('l?y mau') || 
+        normalizedStatus.includes('lay m?u')) {
+      console.log('✅ Matched pattern: "đã lấy mẫu" -> completed');
+      return 'completed';
+    }
+    
+    if (normalizedStatus.includes('tới kho') || normalizedStatus.includes('toi kho') || 
+        normalizedStatus.includes('t?i kho') || normalizedStatus.includes('toi kho')) {
+      console.log('✅ Matched pattern: "đã tới kho" -> expired');
+      return 'expired';
+    }
+  }
+  
+  if (normalizedStatus.includes('đang') || normalizedStatus.includes('dang') || normalizedStatus.includes('?ang')) {
+    if (normalizedStatus.includes('vận chuyển') || normalizedStatus.includes('van chuyen') || 
+        normalizedStatus.includes('v?n chuy?n') || normalizedStatus.includes('v?n chuy') || 
+        normalizedStatus.includes('van chuy')) {
+      console.log('✅ Matched pattern: "đang vận chuyển" -> in-use');
+      return 'in-use';
+    }
+  }
+  
+  // Hỗ trợ các trường hợp có lỗi encoding khác
+  if (normalizedStatus.includes('lay mau') || normalizedStatus.includes('l?y m?u')) return 'completed';
+  if (normalizedStatus.includes('toi kho') || normalizedStatus.includes('t?i kho')) return 'expired';
+  if (normalizedStatus.includes('van chuyen') || normalizedStatus.includes('v?n chuy?n')) {
+    if (normalizedStatus.startsWith('da') || normalizedStatus.startsWith('đa') || normalizedStatus.startsWith('đã') || normalizedStatus.startsWith('?a')) {
+      return 'available';
+    }
+    return 'in-use';
+  }
   
   // Legacy mappings for backward compatibility
   if (normalizedStatus === 'received') return 'available';
@@ -368,17 +649,17 @@ export const kitApi = {  /**
       const backendStatus = mapStatusToBackend(kitData.status);
       console.log(`🔄 Mapped status: ${kitData.status} -> ${backendStatus}`);
       
-      // Based on your successful curl: -d '"Processing"'
-      // The backend expects the status as a raw JSON string
-      const statusPayload = `"${backendStatus}"`;
+      // Create a proper JSON object with the status field
+      const statusPayload = { status: backendStatus };
       
       console.log('📤 Sending status payload:', statusPayload);
+      console.log('📤 Raw status value:', backendStatus);
       console.log('🔗 PUT URL:', `/api/Kit/${kitData.kitID}`);
       
       const response = await apiClient.put<ApiKitResponse>(`/api/Kit/${kitData.kitID}`, statusPayload, {
         headers: {
-          'Content-Type': 'application/json',
-          'accept': '*/*'
+          'Content-Type': 'application/json; charset=utf-8',
+          'Accept': '*/*'
         }
       });
       
@@ -419,14 +700,17 @@ export const kitApi = {  /**
     try {
       const backendStatus = mapStatusToBackend(kitData.status);
       console.log(`🚀 Updating kit ${kitData.kitID} status to: ${kitData.status} -> ${backendStatus}`);
-      console.log(`📤 Sending raw JSON string: "${backendStatus}"`);
+      
+      // Create a proper JSON object with the status field
+      const statusPayload = { status: backendStatus };
+      console.log(`📤 Sending JSON status payload:`, statusPayload);
+      console.log(`📤 Raw status value (Vietnamese): "${backendStatus}"`);
       console.log(`🔗 PUT URL: /api/Kit/${kitData.kitID}`);
       
-      // Send the status as a raw JSON string, matching the working curl example:
-      // curl -X 'PUT' 'http://localhost:5198/api/Kit/K04' -H 'Content-Type: application/json' -d '"Processing"'
-      const response = await apiClient.put(`/api/Kit/${kitData.kitID}`, `"${backendStatus}"`, {
+      // Send the status as a properly formatted JSON object
+      const response = await apiClient.put(`/api/Kit/${kitData.kitID}`, statusPayload, {
         headers: { 
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json; charset=utf-8',
           'Accept': '*/*'
         }
       });
@@ -558,6 +842,198 @@ export const kitApi = {  /**
     } catch (error) {
       console.error('Error searching kits:', error);
       throw new Error('Không thể tìm kiếm kit');
+    }
+  },
+
+  /**
+   * Update kit status with special handling for Vietnamese characters
+   * Use this method when encountering issues with Vietnamese characters in nvarchar fields
+   * @param kitData - The kit data with status to update
+   * @returns Promise<Kit>
+   */
+  async updateKitStatusVietnamese(kitData: Kit): Promise<Kit> {
+    try {
+      const backendStatus = mapStatusToBackend(kitData.status);
+      console.log(`🇻🇳 Updating kit ${kitData.kitID} status with Vietnamese handling`);
+      console.log(`🔄 Status mapping: ${kitData.status} -> "${backendStatus}"`);
+
+      // Create a proper JSON object with the status field
+      const statusPayload = { status: backendStatus };
+      
+      console.log(`📤 Sending status payload:`, statusPayload);
+
+      // Gửi với cấu hình tối ưu cho tiếng Việt
+      const response = await apiClient.put(`/api/Kit/${kitData.kitID}`, statusPayload, {
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Accept': '*/*'
+        }
+      });
+      
+      console.log(`✅ Kit status update successful:`, response.data);
+      
+      return {
+        ...kitData,
+        status: kitData.status
+      };
+    } catch (error) {
+      console.error('❌ Error updating kit status with Vietnamese handling:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('Response status:', error.response?.status);
+        console.error('Response data:', error.response?.data);
+        console.error('Request data:', error.config?.data);
+        
+        // Thử phương pháp thay thế nếu phương pháp đầu tiên thất bại
+        try {
+          console.log('⚠️ First method failed, trying alternative method...');
+          
+          // Lấy lại giá trị trạng thái để sử dụng trong phương pháp thay thế
+          const alternativeBackendStatus = mapStatusToBackend(kitData.status);
+          
+          // Phương pháp 2: Gửi trạng thái dưới dạng đối tượng JSON
+          const response = await apiClient.put(`/api/Kit/${kitData.kitID}`, { status: alternativeBackendStatus }, {
+            headers: {
+              'Content-Type': 'application/json; charset=utf-8',
+              'Accept': '*/*'
+            }
+          });
+          
+          console.log('✅ Alternative method succeeded:', response.data);
+          
+          return {
+            ...kitData,
+            status: kitData.status
+          };
+        } catch (fallbackError) {
+          console.error('❌ Alternative method also failed:', fallbackError);
+          throw fallbackError;
+        }
+      }
+      throw new Error(`Không thể cập nhật trạng thái kit: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
+
+  /**
+   * Fix kit status by updating it to match the desired status
+   * This is useful when encountering issues with Vietnamese characters in nvarchar fields
+   * @param kitId - The ID of the kit to fix
+   * @param desiredStatus - The desired status to set
+   * @returns Promise<Kit>
+   */
+  async fixKitStatus(kitId: string, desiredStatus: Kit['status']): Promise<Kit> {
+    try {
+      console.log(`🔧 Fixing kit status for ${kitId} to ${desiredStatus}`);
+      
+      // Fetch the current kit first
+      const currentKit = await this.getKitById(kitId);
+      console.log(`📊 Current kit status: ${currentKit.status}`);
+      
+      // Try multiple methods to update the status
+      try {
+        console.log(`🔄 Attempting to fix using updateKitStatusVietnamese`);
+        const updatedKit = await this.updateKitStatusVietnamese({
+          ...currentKit,
+          status: desiredStatus
+        });
+        console.log(`✅ Successfully fixed kit status using Vietnamese method`);
+        return updatedKit;
+      } catch (error) {
+        console.error(`❌ Vietnamese method failed:`, error);
+        
+        try {
+          console.log(`🔄 Attempting to fix using updateKitStatusMultiFormat`);
+          const updatedKit = await this.updateKitStatusMultiFormat({
+            ...currentKit,
+            status: desiredStatus
+          });
+          console.log(`✅ Successfully fixed kit status using MultiFormat method`);
+          return updatedKit;
+        } catch (innerError) {
+          console.error(`❌ MultiFormat method failed:`, innerError);
+          
+          console.log(`🔄 Attempting direct PUT method as last resort`);
+          // Final attempt with direct PUT and JSON object
+          const backendStatus = mapStatusToBackend(desiredStatus);
+          const response = await apiClient.put(`/api/Kit/${kitId}`, { status: backendStatus }, {
+            headers: {
+              'Content-Type': 'application/json; charset=utf-8',
+              'Accept': '*/*'
+            }
+          });
+          
+          console.log(`✅ Last resort method succeeded:`, response.data);
+          return {
+            ...currentKit,
+            status: desiredStatus
+          };
+        }
+      }
+    } catch (error) {
+      console.error(`❌ Failed to fix kit status:`, error);
+      throw new Error(`Không thể sửa trạng thái kit: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
+  
+  /**
+   * Refresh kit data from the server and ensure correct status mapping
+   * @param kitId - The ID of the kit to refresh
+   * @returns Promise<Kit>
+   */
+  async refreshKitData(kitId: string): Promise<Kit> {
+    try {
+      console.log(`🔄 Refreshing kit data for ${kitId}`);
+      
+      // Fetch the latest kit data
+      const response = await apiClient.get(`/api/Kit/${kitId}`);
+      const rawData = response.data;
+      console.log(`📊 Raw kit data from API:`, rawData);
+      
+      // Extract the actual kit object
+      let kitData: ApiKitResponse | null = null;
+      
+      if (rawData && typeof rawData === 'object') {
+        if (rawData.kitId) {
+          kitData = rawData;
+        } else if (rawData.$values && Array.isArray(rawData.$values) && rawData.$values.length > 0) {
+          kitData = rawData.$values.find((item: any) => item && typeof item === 'object' && item.kitId === kitId);
+        }
+      }
+      
+      if (!kitData) {
+        throw new Error(`Kit with ID ${kitId} not found in API response`);
+      }
+      
+      // Log the actual status value received
+      console.log(`🔍 Raw status from API: "${kitData.status}"`);
+      
+      // Check if status has proper Vietnamese encoding
+      const hasProperVietnameseEncoding = 
+        kitData.status?.includes('ả') || 
+        kitData.status?.includes('ậ') || 
+        kitData.status?.includes('ấ') || 
+        kitData.status?.includes('ấ') || 
+        kitData.status?.includes('ầ');
+      
+      console.log(`📊 Status has proper Vietnamese encoding: ${hasProperVietnameseEncoding}`);
+      
+      // Convert to normalized Kit object
+      const normalizedKit: Kit = {
+        kitID: kitData.kitId?.toString() || kitId,
+        customerID: kitData.customerId?.toString() || '',
+        staffID: kitData.staffId?.toString() || '',
+        bookingId: kitData.bookingId?.toString() || '',
+        description: kitData.description || '',
+        status: mapStatusFromBackend(kitData.status || ''),
+        receivedate: kitData.receivedate || '',
+        customerName: kitData.customer?.fullname || '',
+        staffName: kitData.staff?.fullname || ''
+      };
+      
+      console.log(`✅ Refreshed kit data:`, normalizedKit);
+      return normalizedKit;
+    } catch (error) {
+      console.error(`❌ Failed to refresh kit data:`, error);
+      throw new Error(`Không thể làm mới dữ liệu kit: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   },
 };
@@ -748,6 +1224,24 @@ export interface Appointment {
   status: string;
   customerName?: string;
   serviceName?: string;
+  staffName?: string;
+  customer?: {
+    userId?: string;
+    username?: string;
+    fullname?: string;
+    gender?: string;
+    roleId?: string;
+    email?: string;
+    phone?: string;
+    birthdate?: string;
+    image?: string;
+    address?: string;
+    bookingCustomers?: string[];
+  };
+  service?: {
+    name?: string;
+    description?: string;
+  };
 }
 
 export const appointmentsApi = {

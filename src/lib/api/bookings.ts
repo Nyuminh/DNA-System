@@ -80,3 +80,22 @@ export async function deleteBooking(bookingId: string): Promise<BookingResponse>
     };
   }
 }
+
+// Đảm bảo hàm được export đúng cách
+export const getAllBookings = async (): Promise<any[]> => {
+  try {
+    const res = await fetch('http://localhost:5198/api/Appointments');
+    let bookings = await res.json();
+    if (!Array.isArray(bookings)) {
+      if (bookings.$values && Array.isArray(bookings.$values)) {
+        bookings = bookings.$values;
+      } else {
+        return [];
+      }
+    }
+    return bookings;
+  } catch (error) {
+    console.error('Error fetching bookings:', error);
+    return [];
+  }
+};
