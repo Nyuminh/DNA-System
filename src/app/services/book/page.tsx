@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { getFeedbacksByServiceId } from '@/lib/api/feedback';
 import { getUsers } from '@/lib/api/users';
 import { getUserProfile } from '@/lib/api/auth';
+import {getAllBookings} from '@/lib/api/bookings';
 
 interface Participant {
   name: string;
@@ -222,93 +223,131 @@ function BookServiceContent() {
   };  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Lấy username từ localStorage (nếu đã lưu sau login)
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const username = user.username;
-    
-    if (!username) {
-      // Lưu form data vào localStorage trước khi chuyển hướng
-      localStorage.setItem('pendingBookingData', JSON.stringify({
-        formData,
-        serviceId
-      }));
-      // Chuyển hướng đến trang đăng nhập với returnUrl
-      router.push(`/auth/login?returnUrl=${encodeURIComponent('/services/book?serviceId=' + serviceId)}`);
-      return;
-    }
-    
-    // Code xử lý đặt lịch nếu đã đăng nhập
-    const customerId = await getUserIdByUsername(username);
-    if (!customerId) {
-      alert("Không tìm thấy tài khoản người dùng!");
-      return;
-    }
-
     try {
-      const { createBooking } = await import('@/lib/api/bookings');
-      // const customerId = "U03"; // TODO: Lấy từ user đăng nhập thực tế
-
+      // Kiểm tra lại dữ liệu booking mới nhất trước khi submit
+      const currentBookings = await getAllBookings();
+      
       // Xử lý giờ theo lựa chọn
-      let time = formData.appointmentTime || '08:00'; // fallback nếu chưa chọn
-      // Ghép ngày và giờ thành ISO string
-      let date = '';
-      if (formData.appointmentDate && time) {
-        const localDate = new Date(`${formData.appointmentDate}T${time}:00`);
-        // Cộng thêm 7 tiếng (7 * 60 * 60 * 1000 ms)
-        const utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000);
-        date = utcDate.toISOString();
-      } else {
-        date = new Date().toISOString();
+      const [startTime] = formData.appointmentTime.split('-');
+      const dateStr = formData.appointmentDate;
+      
+      // Đếm lại số lượng booking cho khung giờ này
+      let bookingCount = 0;
+      currentBookings.forEach(booking => {
+        const bookingDate = new Date(booking.date);
+        const bookingDateStr = bookingDate.toISOString().split('T')[0];
+        const bookingTimeStr = bookingDate.toTimeString().slice(0, 5);
+        
+        if (bookingDateStr === dateStr && bookingTimeStr === startTime) {
+          bookingCount++;
+        }
+      });
+      
+      // Kiểm tra số lượng booking
+      if (bookingCount >= 3) {
+        alert("Ca làm việc này đã đầy. Vui lòng chọn thời gian khác.");
+        
+        // Cập nhật lại bookingCounts
+        const newCounts = {...bookingCounts};
+        if (!newCounts[dateStr]) newCounts[dateStr] = {};
+        newCounts[dateStr][startTime] = bookingCount;
+        setBookingCounts(newCounts);
+        
+        return;
       }
-
-      const address =
-        formData.collectionMethod === 'facility'
-          ? '123 Đường Cầu Giấy, Quận Cầu Giấy, Hà Nội'
-          : formData.address;
-
-      const method =
-        formData.collectionMethod === 'self'
-          ? 'Tự thu mẫu'
-          : formData.collectionMethod === 'facility'
-            ? 'Tại cơ sở y tế'
-            : formData.collectionMethod;
-
-
-      const staffId = await getLeastLoadedStaffId();
-      if (!staffId) {
-        alert("Không tìm thấy nhân viên phù hợp!");
+      
+      // Lấy username từ localStorage (nếu đã lưu sau login)
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const username = user.username;
+      
+      if (!username) {
+        // Lưu form data vào localStorage trước khi chuyển hướng
+        localStorage.setItem('pendingBookingData', JSON.stringify({
+          formData,
+          serviceId
+        }));
+        // Chuyển hướng đến trang đăng nhập với returnUrl
+        router.push(`/auth/login?returnUrl=${encodeURIComponent('/services/book?serviceId=' + serviceId)}`);
+        return;
+      }
+      
+      // Code xử lý đặt lịch nếu đã đăng nhập
+      const customerId = await getUserIdByUsername(username);
+      if (!customerId) {
+        alert("Không tìm thấy tài khoản người dùng!");
         return;
       }
 
-      const result = await createBooking({
-        customerId,
-        date,
-        staffId,
-        serviceId: serviceId ?? "",
-        address,
-        method,
-        status: "Đã xác nhận", // Thêm dòng này để gửi status lên API
-      });
+      try {
+        const { createBooking } = await import('@/lib/api/bookings');
 
-      console.log('Dữ liệu gửi lên API:', {
-        customerId,
-        date,
-        staffId: "",
-        serviceId: serviceId ?? "",
-        address,
-        method,
-      });
-      console.log('Kết quả trả về:', result);
+        // Xử lý giờ theo lựa chọn - Lấy thời gian đầu từ khung giờ
+        let timeRange = formData.appointmentTime || '08:00-08:30'; // fallback nếu chưa chọn
+        let startTime = timeRange.split('-')[0]; // Lấy phần đầu của khung giờ (ví dụ: "08:00" từ "08:00-08:30")
+        
+        // Ghép ngày và giờ thành ISO string
+        let date = '';
+        if (formData.appointmentDate && startTime) {
+          const localDate = new Date(`${formData.appointmentDate}T${startTime}:00`);
+          // Điều chỉnh múi giờ
+          const utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000);
+          date = utcDate.toISOString();
+        } else {
+          date = new Date().toISOString();
+        }
 
-      if (result.success) {
-        alert(`Đặt xét nghiệm thành công! Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.`);
-        router.push('/');
-      } else {
-        alert(result.message || 'Có lỗi xảy ra khi đặt lịch');
+        const address =
+          formData.collectionMethod === 'facility'
+            ? '123 Đường Cầu Giấy, Quận Cầu Giấy, Hà Nội'
+            : formData.address;
+
+        const method =
+          formData.collectionMethod === 'self'
+            ? 'Tự thu mẫu'
+            : formData.collectionMethod === 'facility'
+              ? 'Tại cơ sở y tế'
+              : formData.collectionMethod;
+
+
+        const staffId = await getLeastLoadedStaffId();
+        if (!staffId) {
+          alert("Không tìm thấy nhân viên phù hợp!");
+          return;
+        }
+
+        const result = await createBooking({
+          customerId,
+          date,
+          staffId,
+          serviceId: serviceId ?? "",
+          address,
+          method,
+          status: "Đã xác nhận", // Thêm dòng này để gửi status lên API
+        });
+
+        console.log('Dữ liệu gửi lên API:', {
+          customerId,
+          date,
+          staffId: "",
+          serviceId: serviceId ?? "",
+          address,
+          method,
+        });
+        console.log('Kết quả trả về:', result);
+
+        if (result.success) {
+          alert(`Đặt xét nghiệm thành công! Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.`);
+          router.push('/');
+        } else {
+          alert(result.message || 'Có lỗi xảy ra khi đặt lịch');
+        }
+      } catch (error) {
+        console.error('Submit error:', error);
+        alert('Có lỗi xảy ra khi đặt lịch. Vui lòng thử lại.');
       }
     } catch (error) {
-      console.error('Submit error:', error);
-      alert('Có lỗi xảy ra khi đặt lịch. Vui lòng thử lại.');
+      console.error('Error in handleSubmit:', error);
+      alert('Có lỗi xảy ra. Vui lòng kiểm tra lại dữ liệu và thử lại.');
     }
   };
 
@@ -322,10 +361,27 @@ function BookServiceContent() {
     "13:30", "14:30", "15:30", "16:30"
   ];
 
+  // Thay đổi cách hiển thị khung giờ 
+  // Thêm vào ngay sau phần khai báo mảng ALL_TIME_SLOTS
+  // Thêm một mảng cố định chứa các khung giờ 30 phút
+  const TIME_SLOTS_30MIN = [
+    "08:00-08:30", "08:30-09:00", 
+    "09:00-09:30", "09:30-10:00", 
+    "10:00-10:30", "10:30-11:00",
+    "11:00-11:30", "11:30-12:00",
+    "13:30-14:00", "14:00-14:30",
+    "14:30-15:00", "15:00-15:30",
+    "15:30-16:00", "16:00-16:30",
+    "16:30-17:00", "17:00-17:30"
+  ];
+
+  // Thêm state để lưu các khung giờ có sẵn cho ngày đã chọn
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
+
   // Thêm useEffect để cập nhật tùy chọn thời gian khi ngày thay đổi
   useEffect(() => {
     if (!formData.appointmentDate) {
-      setAvailableTimes(ALL_TIME_SLOTS);
+      setAvailableTimeSlots(TIME_SLOTS_30MIN);
       return;
     }
 
@@ -334,7 +390,7 @@ function BookServiceContent() {
     
     // Nếu đây không phải là ngày hiện tại, hiển thị tất cả các tùy chọn
     if (selectedDate.toDateString() !== today.toDateString()) {
-      setAvailableTimes(ALL_TIME_SLOTS);
+      setAvailableTimeSlots(TIME_SLOTS_30MIN);
       return;
     }
     
@@ -342,8 +398,9 @@ function BookServiceContent() {
     const currentHour = today.getHours();
     const currentMinute = today.getMinutes();
     
-    const availableSlots = ALL_TIME_SLOTS.filter(timeSlot => {
-      const [hours, minutes] = timeSlot.split(':').map(Number);
+    const availableSlots = TIME_SLOTS_30MIN.filter(timeSlot => {
+      const [startTime] = timeSlot.split('-');
+      const [hours, minutes] = startTime.split(':').map(Number);
       
       // So sánh thời gian
       if (hours > currentHour) return true;
@@ -351,7 +408,7 @@ function BookServiceContent() {
       return false;
     });
     
-    setAvailableTimes(availableSlots);
+    setAvailableTimeSlots(availableSlots);
     
     // Nếu thời gian đã chọn không còn trong danh sách có sẵn, đặt lại về rỗng
     if (formData.appointmentTime && !availableSlots.includes(formData.appointmentTime)) {
@@ -374,6 +431,46 @@ function BookServiceContent() {
     // Chuyển hướng đến trang đăng nhập với returnUrl
     router.push(`/auth/login?returnUrl=${encodeURIComponent('/services/book?serviceId=' + serviceId)}`);
   };
+
+  // Thêm state để lưu trữ số lượng booking theo ngày và giờ
+  const [bookingCounts, setBookingCounts] = useState<Record<string, Record<string, number>>>({});
+  const [isLoadingBookings, setIsLoadingBookings] = useState<boolean>(true);
+
+  // Thêm useEffect để lấy tất cả booking khi component mount hoặc khi ngày thay đổi
+  useEffect(() => {
+    const fetchAllBookings = async () => {
+      setIsLoadingBookings(true);
+      const fetchedBookings = await getAllBookings();
+      
+      // Xử lý đếm booking theo ngày và giờ
+      const counts: Record<string, Record<string, number>> = {};
+      
+      fetchedBookings.forEach(booking => {
+        try {
+          const bookingDate = new Date(booking.date);
+          const dateStr = bookingDate.toISOString().split('T')[0];
+          const timeStr = bookingDate.toTimeString().slice(0, 5);
+          
+          if (!counts[dateStr]) {
+            counts[dateStr] = {};
+          }
+          
+          if (!counts[dateStr][timeStr]) {
+            counts[dateStr][timeStr] = 0;
+          }
+          
+          counts[dateStr][timeStr]++;
+        } catch (error) {
+          console.error('Error processing booking date:', booking.date, error);
+        }
+      });
+      
+      setBookingCounts(counts);
+      setIsLoadingBookings(false);
+    };
+    
+    fetchAllBookings();
+  }, [formData.appointmentDate]); // Chạy lại khi ngày thay đổi
 
   return (
     <MainLayout>
@@ -669,47 +766,93 @@ function BookServiceContent() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
+                      {/* Chọn ngày và khung giờ 30 phút */}
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-3">
+                          Chọn ngày và giờ lấy mẫu
+                        </label>
                         <div>
-                          <label htmlFor="appointmentDate" className="block text-sm font-medium text-gray-700">
-                            Ngày lấy mẫu
-                          </label>
-                          <div className="mt-1">
-                            <input
-                              type="date"
-                              name="appointmentDate"
-                              id="appointmentDate"
-                              className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
-                              value={formData.appointmentDate}
-                              onChange={handleInputChange}
-                              min={new Date().toISOString().split('T')[0]}
-                              required
-                            />
+                          <div className="mb-4">
+                            <label htmlFor="appointmentDate" className="block text-sm font-medium text-gray-700">
+                              Ngày lấy mẫu
+                            </label>
+                            <div className="mt-1">
+                              <input
+                                type="date"
+                                name="appointmentDate"
+                                id="appointmentDate"
+                                className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
+                                value={formData.appointmentDate}
+                                onChange={handleInputChange}
+                                min={new Date().toISOString().split('T')[0]}
+                                required
+                              />
+                            </div>
                           </div>
-                        </div>
-                        <div>
-                          <label htmlFor="appointmentTime" className="block text-sm font-medium text-gray-700">
-                            Thời gian lấy mẫu
-                          </label>
-                          <div className="mt-1">
-                            <select
-                              id="appointmentTime"
-                              name="appointmentTime"
-                              className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
-                              value={formData.appointmentTime}
-                              onChange={handleInputChange}
-                              required
-                            >
-                              <option value="">Chọn thời gian</option>
-                              {availableTimes.map((time) => (
-                                <option key={time} value={time}>{time}</option>
-                              ))}
-                            </select>
+
+                          <div className="mt-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Chọn khung giờ
+                            </label>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                              {availableTimeSlots.map((timeSlot) => {
+                                const [startTime] = timeSlot.split('-');
+                                const dateStr = formData.appointmentDate;
+                                const count = bookingCounts[dateStr]?.[startTime] || 0;
+                                const isUnavailable = count >= 3;
+                                
+                                return (
+                                  <div key={timeSlot} className="relative">
+                                    <input
+                                      type="radio"
+                                      id={`time-slot-${timeSlot}`}
+                                      name="appointmentTime"
+                                      value={timeSlot}
+                                      checked={formData.appointmentTime === timeSlot}
+                                      onChange={handleInputChange}
+                                      className="sr-only peer"
+                                      disabled={isUnavailable}
+                                      required
+                                    />
+                                    <label
+                                      htmlFor={`time-slot-${timeSlot}`}
+                                      className={`flex p-3 border border-gray-300 rounded-lg cursor-pointer focus:outline-none peer-checked:border-blue-500 peer-checked:bg-blue-50 hover:bg-gray-50 
+                                      ${isUnavailable ? 'cursor-not-allowed bg-gray-100 text-gray-400' : ''}`}
+                                    >
+                                      <div className="w-full">
+                                        <div className="flex items-center justify-center">
+                                          {isUnavailable ? (
+                                            <div className="text-sm font-medium text-red-500">Hết chỗ</div>
+                                          ) : (
+                                            <div className="text-sm font-medium text-gray-900">{timeSlot}</div>
+                                          )}
+                                        </div>
+                                        {/* Hiển thị số slot còn lại cho TẤT CẢ khung giờ còn trống */}
+                                        {!isUnavailable && (
+                                          <div className="mt-1 text-xs text-center text-gray-500">
+                                            Còn {3 - count} slot
+                                          </div>
+                                        )}
+                                      </div>
+                                    </label>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            
+                            {isLoadingBookings && (
+                              <div className="mt-2 text-sm text-blue-600 flex items-center">
+                                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Đang kiểm tra các ca làm việc còn trống...
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    </div>)}
                   
                   {(formData.collectionMethod === 'self') && (
                     <div className="mt-6 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
@@ -779,7 +922,7 @@ function BookServiceContent() {
                   {formData.participants.map((participant, index) => (
                     <div key={index} className="mb-8 pb-8 border-b border-gray-200 last:mb-0 last:pb-0 last:border-0">
                       <div className="flex justify-between items-center mb-4">
-                        <h4 className="text-md font-medium text-gray-900">Người tham gia {index + 1}</h4>
+                        <h4 className="text-md font-medium text-gray-900">Người tham gia</h4>
                         {index > 0 && (
                           <button
                             type="button"
@@ -887,19 +1030,7 @@ function BookServiceContent() {
                     </div>
                   ))}
                   
-                  {/* Thêm nút thêm người tham gia */}
-                  <div className="mt-4 flex justify-center">
-                    <button
-                      type="button"
-                      onClick={addParticipant}
-                      className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-                      </svg>
-                      Thêm người tham gia
-                    </button>
-                  </div>
+                
                 </div>
 
                 {/* Terms and conditions */}
