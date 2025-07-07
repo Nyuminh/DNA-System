@@ -263,7 +263,11 @@ export default function ServicesPage() {
                           <h4 className="text-xl font-bold text-gray-900 mb-2">{service.name}</h4>
                           <p className="text-gray-600 mb-4 line-clamp-3">{service.description}</p>
                           <div className="flex justify-between items-center">
-                            <p className="text-lg font-bold text-blue-600">{service.price+" VND"}</p>
+                            <p className="text-lg font-bold text-blue-600">
+                              {new Intl.NumberFormat('vi-VN', { 
+                                maximumFractionDigits: 0 
+                              }).format(Number(service.price))} ₫
+                            </p>
                             <Link 
                               href={`/services/book?serviceId=${encodeURIComponent(String(service.id))}`}
                               className="inline-block bg-blue-600 text-white text-sm px-4 py-2 rounded hover:bg-blue-700"

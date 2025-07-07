@@ -11,6 +11,7 @@ import { getFeedbacksByServiceId } from '@/lib/api/feedback';
 import { getUsers } from '@/lib/api/users';
 import { getUserProfile } from '@/lib/api/auth';
 import {getAllBookings} from '@/lib/api/bookings';
+import { createRelative } from '@/lib/api/relatives';
 
 interface Participant {
   name: string;
@@ -18,6 +19,7 @@ interface Participant {
   dob: string;
   gender: string;
   role: string;
+  address: string;
 }
 
 interface ContactInfo {
@@ -26,6 +28,7 @@ interface ContactInfo {
   email: string;
   gender:string;
   dob: string;
+  address: string;
 }
 
 interface FormData {
@@ -74,7 +77,8 @@ function BookServiceContent() {
               phone: profileData?.phone  || '',
               email: profileData?.email || '',
               dob: formatDateForInput(profileData?.birthdate || ''),
-              gender: mapGenderValue(profileData?.gender || '')
+              gender: mapGenderValue(profileData?.gender || ''),
+              address: profileData?.address || '',
             }
           }));
         })
@@ -130,7 +134,7 @@ function BookServiceContent() {
     address: '',
     cityProvince: '',
     participants: [
-      { name: '', phone: '', dob: '', gender: '', role: '' }
+      { name: '', phone: '', dob: '', gender: '', role: '' ,address: '' }
     ],
     contactInfo: {
       name: '',
@@ -138,6 +142,7 @@ function BookServiceContent() {
       email: '',
       gender: '',
       dob: '',
+      address: '',
     },
     termsAccepted: false,
   });
@@ -207,15 +212,7 @@ function BookServiceContent() {
     setFormData({ ...formData, participants: updatedParticipants });
   };
 
-  const addParticipant = () => {
-    setFormData({
-      ...formData,
-      participants: [
-        ...formData.participants,
-        { name: '', phone: '', dob: '', gender: '', role: '' }
-      ]
-    });
-  };
+
   const removeParticipant = (index: number) => {
     const updatedParticipants = [...formData.participants];
     updatedParticipants.splice(index, 1);
@@ -287,7 +284,19 @@ function BookServiceContent() {
         
         // Ghép ngày và giờ thành ISO string
         let date = '';
-        if (formData.appointmentDate && startTime) {
+        if (formData.collectionMethod === 'self') {
+          // Sử dụng thời gian hiện tại theo giờ Việt Nam cho phương thức tự thu mẫu
+          const vietnamTime = new Date();
+          
+          // Log thông tin để debug
+          console.log('Thời gian hiện tại (tự thu mẫu):', vietnamTime.toString());
+          
+          // Đảm bảo múi giờ UTC+7 khi lưu vào database
+          const offset = vietnamTime.getTimezoneOffset();
+          const vietnamUTCTime = new Date(vietnamTime.getTime() - (offset * 60 * 1000));
+          date = vietnamUTCTime.toISOString();
+        } else if (formData.appointmentDate && startTime) {
+          // Vẫn giữ nguyên cách xử lý giờ được chọn cho phương thức tại cơ sở y tế
           const localDate = new Date(`${formData.appointmentDate}T${startTime}:00`);
           // Điều chỉnh múi giờ
           const utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000);
@@ -336,6 +345,11 @@ function BookServiceContent() {
         console.log('Kết quả trả về:', result);
 
         if (result.success) {
+          // Nếu đặt lịch thành công, lưu người tham gia như là người thân
+          if (saveAsRelatives) {
+            await saveParticipantsAsRelatives(customerId);
+          }
+          
           alert(`Đặt xét nghiệm thành công! Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.`);
           router.push('/');
         } else {
@@ -471,6 +485,59 @@ function BookServiceContent() {
     
     fetchAllBookings();
   }, [formData.appointmentDate]); // Chạy lại khi ngày thay đổi
+
+  // Thêm effect để tự động điền địa chỉ khi chọn phương thức tự thu mẫu
+  useEffect(() => {
+    if (formData.collectionMethod === 'self' && userProfile?.address) {
+      // Tự động điền địa chỉ từ thông tin người dùng đã đăng nhập
+      setFormData(prev => ({
+        ...prev,
+        address: userProfile.address
+      }));
+    }
+  }, [formData.collectionMethod, userProfile]);
+
+  // Thêm state theo dõi việc lưu người thân
+  const [saveAsRelatives, setSaveAsRelatives] = useState<boolean>(true);
+
+  // Hàm để lưu người tham gia như là người thân
+  const saveParticipantsAsRelatives = async (userId: string) => {
+    try {
+      // Filter ra những người tham gia thực sự (có đầy đủ thông tin)
+      const validParticipants = formData.participants.filter(
+        p => p.name && p.phone && p.dob && p.gender && p.role
+      );
+      
+      // Nếu không có người tham gia hợp lệ, không làm gì cả
+      if (validParticipants.length === 0) return;
+      
+      // Lưu từng người tham gia như là người thân
+      const savePromises = validParticipants.map(async (participant) => {
+        // Tạo object dữ liệu người thân ĐÚNG với cấu trúc API yêu cầu
+        const relativeData = {
+          userId: userId,
+          fullname: participant.name,  // Sửa từ name thành fullname
+          relationship: participant.role,
+          gender: participant.gender === 'male' ? 'Nam' : 'Nữ',
+          birthdate: participant.dob,  // Sửa từ dob thành birthdate
+          phone: participant.phone,
+          address: participant.address || formData.address || ''
+        };
+        
+        console.log('Đang lưu người thân:', relativeData);
+        
+        // Gọi API để lưu người thân
+        const result = await createRelative(relativeData);
+        return result;
+      });
+      
+      // Chờ tất cả các request hoàn thành
+      const results = await Promise.all(savePromises);
+      console.log('Kết quả lưu người thân:', results);
+    } catch (error) {
+      console.error('Lỗi khi lưu người thân:', error);
+    }
+  };
 
   return (
     <MainLayout>
@@ -869,53 +936,37 @@ function BookServiceContent() {
                             name="address"
                             id="address"
                             className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
-                            placeholder="Số nhà, đường, phường/xã"
+                            placeholder={userProfile?.address ? "Địa chỉ từ hồ sơ của bạn" : "Số nhà, đường, phường/xã"}
                             value={formData.address}
                             onChange={handleInputChange}
                             required={formData.collectionMethod === 'self'}
                           />
                         </div>
+                        <p className="mt-2 text-sm text-gray-500">
+                          Kit xét nghiệm sẽ được giao đến địa chỉ này trong thời gian sớm nhất
+                        </p>
                       </div>
                       
-                      <div>
-      <label htmlFor="appointmentDate" className="block text-sm font-medium text-gray-700">
-        Ngày nhận kit
-      </label>
-      <div className="mt-1">
-        <input
-          type="date"
-          name="appointmentDate"
-          id="appointmentDate"
-          className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
-          value={formData.appointmentDate}
-          onChange={handleInputChange}
-          min={new Date().toISOString().split('T')[0]}
-          required={formData.collectionMethod === 'self'}
-        />
-      </div>
-    </div>
-    <div>
-      <label htmlFor="appointmentTime" className="block text-sm font-medium text-gray-700">
-        Thời gian nhận kit
-      </label>
-      <div className="mt-1">
-        <select
-          id="appointmentTime"
-          name="appointmentTime"
-          className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
-          value={formData.appointmentTime}
-          onChange={handleInputChange}
-          required={formData.collectionMethod === 'self'}
-        >
-          <option value="">Chọn thời gian</option>
-          {availableTimes.map((time) => (
-            <option key={time} value={time}>{time}</option>
-          ))}
-        </select>
-      </div>
-    </div>
-  </div>
-  )}
+                      {/* Thông báo về thời gian */}
+                      <div className="sm:col-span-2">
+                        <div className="bg-blue-50 rounded-md p-4">
+                          <div className="flex">
+                            <div className="flex-shrink-0">
+                              <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                            <div className="ml-3">
+                              <p className="text-sm text-blue-700">
+                                Thời gian đặt lịch sẽ được ghi nhận tự động khi bạn nhấn nút "Xác nhận đặt dịch vụ".
+                                Nhân viên sẽ liên hệ với bạn trong vòng 24 giờ để xác nhận thời gian giao kit xét nghiệm.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Participants information */}
@@ -925,7 +976,7 @@ function BookServiceContent() {
                   {formData.participants.map((participant, index) => (
                     <div key={index} className="mb-8 pb-8 border-b border-gray-200 last:mb-0 last:pb-0 last:border-0">
                       <div className="flex justify-between items-center mb-4">
-                        <h4 className="text-md font-medium text-gray-900">Người tham gia</h4>
+                        <h4 className="text-md font-medium text-gray-900">Người tham gia </h4>
                         {index > 0 && (
                           <button
                             type="button"
@@ -948,6 +999,7 @@ function BookServiceContent() {
                             <input
                               type="text"
                               id={`name-${index}`}
+                              placeholder=''
                               value={participant.name}
                               onChange={(e) => handleParticipantChange(index, 'name', e.target.value)}
                               className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
@@ -1020,13 +1072,30 @@ function BookServiceContent() {
                               required
                             >
                               <option value="">Chọn vai trò</option>
-                              <option value="father">Cha (giả định)</option>
-                              <option value="mother">Mẹ</option>
-                              <option value="child">Con</option>
-                              <option value="sibling">Anh/Chị/Em</option>
-                              <option value="grandparent">Ông/Bà</option>
-                              <option value="other">Khác</option>
+                              <option value="Cha">Cha (giả định)</option>
+                              <option value="Mẹ">Mẹ</option>
+                              <option value="Con">Con</option>
+                              <option value="Anh/Chị/Em">Anh/Chị/Em</option>
+                              <option value="Ông/Bà">Ông/Bà</option>
+                              <option value="Khác">Khác</option>
                             </select>
+                          </div>
+                        </div>
+                        
+                        {/* Thêm trường địa chỉ */}
+                        <div className="sm:col-span-2">
+                          <label htmlFor={`address-${index}`} className="block text-sm font-medium text-gray-700">
+                            Địa chỉ
+                          </label>
+                          <div className="mt-1">
+                            <input
+                              type="text"
+                              id={`address-${index}`}
+                              value={participant.address || ''}
+                              onChange={(e) => handleParticipantChange(index, 'address', e.target.value)}
+                              className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
+                              placeholder="Nhập địa chỉ"
+                            />
                           </div>
                         </div>
                       </div>
@@ -1356,6 +1425,7 @@ function ServiceReviews({ serviceId }: { serviceId: string }) {
                               viewBox="0 0 20 20"
                               fill="currentColor"
                             >
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                             </svg>
                           ))}
