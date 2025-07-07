@@ -883,26 +883,23 @@ function BookServiceContent() {
                                     />
                                     <label
                                       htmlFor={`time-slot-${timeSlot}`}
-                                      className={`flex p-3 border ${isUnavailable ? 'border-gray-200' : 'border-gray-300'} rounded-lg cursor-pointer focus:outline-none peer-checked:border-blue-500 peer-checked:bg-blue-50 hover:bg-gray-50 
-                                      ${isUnavailable ? 'cursor-not-allowed bg-gray-100 opacity-75' : ''}`}
+                                      className={`flex items-center justify-center p-3 h-14 border rounded-lg cursor-pointer focus:outline-none 
+                                      ${isUnavailable 
+                                        ? 'border-gray-200 bg-gray-100 opacity-75 cursor-not-allowed' 
+                                        : 'border-gray-300 peer-checked:border-blue-500 peer-checked:bg-blue-50 hover:bg-gray-50'
+                                      }`}
                                     >
-                                      <div className="w-full">
-                                        <div className="flex items-center justify-center">
-                                          {isUnavailable ? (
-                                            <div className="flex flex-col items-center">
-                                              <div className="text-sm font-medium text-gray-400">{timeSlot}</div>
-                                              <div className="text-xs text-red-400">(Hết chỗ)</div>
-                                            </div>
-                                          ) : (
-                                            <div className="text-sm font-medium text-gray-900">{timeSlot}</div>
-                                          )}
-                                        </div>
-                                        {/* Hiển thị số slot còn lại cho TẤT CẢ khung giờ còn trống */}
-                                        {!isUnavailable && (
-                                          <div className="mt-1 text-xs text-center text-gray-500">
-                                            Còn {3 - count} slot
-                                          </div>
+                                      <div className="text-center">
+                                        {isUnavailable ? (
+                                          <div className="text-sm font-medium text-gray-400">{timeSlot}</div>
+                                        ) : (
+                                          <div className="text-sm font-medium text-gray-900">{timeSlot}</div>
                                         )}
+                                        
+                                        {/* Hiển thị thông báo nếu hết chỗ */}
+                                        {/* {isUnavailable && (
+                                          <div className="text-xs text-red-400">Đã đầy</div>
+                                        )} */}
                                       </div>
                                     </label>
                                   </div>

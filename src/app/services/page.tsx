@@ -261,7 +261,9 @@ export default function ServicesPage() {
                         )}
                         <div className="p-6">
                           <h4 className="text-xl font-bold text-gray-900 mb-2">{service.name}</h4>
-                          <p className="text-gray-600 mb-4 line-clamp-3">{service.description}</p>
+                          <div className="h-20 mb-4 overflow-hidden">
+                            <p className="text-gray-600 line-clamp-3">{service.description}</p>
+                          </div>
                           <div className="flex justify-between items-center">
                             <p className="text-lg font-bold text-blue-600">
                               {new Intl.NumberFormat('vi-VN', { 
