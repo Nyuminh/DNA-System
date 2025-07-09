@@ -9,10 +9,11 @@ import { deleteBooking } from "@/lib/api/bookings";
 interface Booking {
   id: string;
   bookingId: string;
-  serviceId: string;      // thêm dòng này để lưu serviceId
-  serviceName: string;    // tên dịch vụ sẽ lấy từ API Services
-  staffName: string;      // nếu cần hiện tên nhân viên
+  serviceId: string;
+  serviceName: string;
+  staffName: string;
   date: string;
+  time: string;     
   status: string;
   address: string;
   method: string;
@@ -139,11 +140,17 @@ export default function MyBookingPage() {
 
           return {
             id: item.id || '',
-            bookingId: item.bookingId || item.bookingID || '', // phòng trường hợp trả về bookingID
+            bookingId: item.bookingId || item.bookingID || '',
             serviceId: String(serviceId),
             serviceName: service ? service.name : '',
-            staffName: staff?.name || '', // name đã là fullName hoặc name
-            date: item.date ? item.date.slice(0, 10) : '',
+            staffName: staff?.name || '',
+            
+            // Tách riêng ngày và giờ từ trường date
+            date: item.date ? item.date.split('T')[0] : '',
+            time: item.date && item.date.includes('T') ? 
+              item.date.split('T')[1].substring(0, 5) : // Lấy phần giờ:phút
+              item.time || '',
+              
             status: item.status || 'Chờ xác nhận',
             address: item.address || '',
             method: item.method || '',
@@ -229,7 +236,7 @@ export default function MyBookingPage() {
                 <div className="col-span-2">TÊN DỊCH VỤ</div>
                 <div className="col-span-2">NHÂN VIÊN</div>
                 <div className="col-span-2">ĐỊA CHỈ</div>
-                <div className="col-span-1 text-center">NGÀY HẸN</div>
+                <div className="col-span-1 text-center">NGÀY ĐẶT</div>
                 <div className="col-span-1">PHƯƠNG THỨC</div>
                 <div className="col-span-1 text-center">TRẠNG THÁI</div>
                 <div className="col-span-1 text-center">TRẠNG THÁI KIT</div>
@@ -249,7 +256,16 @@ export default function MyBookingPage() {
                     {booking.staffName || <span className="italic text-gray-400">---</span>}
                   </div>
                   <div className="col-span-2 text-gray-900 break-words">{booking.address || <span className="italic text-gray-400">---</span>}</div>
-                  <div className="col-span-1 text-gray-900 text-center">{booking.date || <span className="italic text-gray-400">---</span>}</div>
+                  <div className="col-span-1 text-center">
+                    <div className="text-gray-900">
+                      {booking.date || <span className="italic text-gray-400">---</span>}
+                      {booking.time && (
+                        <div className="mt-1 text-xs text-blue-600 font-medium">
+                          {booking.time}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   <div className="col-span-1">
                     <span className="inline-block bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium w-full text-center">
                       {booking.method || <span className="italic text-gray-400">---</span>}
@@ -257,7 +273,7 @@ export default function MyBookingPage() {
                   </div>
                   <div className="col-span-1 text-center">
                     <span
-                      className={`inline-block px-2 py-[2px] rounded-full font-bold uppercase text-center w-full text-[11px] ${
+                      className={`inline-block px-2 py-1 rounded-full font-medium text-center w-full ${
                         booking.status === 'Hoàn thành'
                           ? 'bg-green-100 text-green-800'
                           : booking.status === 'Đang thực hiện'
@@ -275,7 +291,7 @@ export default function MyBookingPage() {
                   </div>
                   <div className="col-span-1 text-center">
                     <span
-                      className={`inline-block px-2 py-[2px] rounded-full font-bold uppercase text-center w-full text-[11px] ${
+                      className={`inline-block px-2 py-1 rounded-full font-medium text-center w-full ${
                         // XANH - Các trạng thái hoàn thành
                         ['Đã nhận', 'Đã vận chuyển', 'Đã lấy mẫu', 'Đã tới kho'].includes(kitStatuses[booking.bookingId])
                           ? 'bg-green-100 text-green-800'

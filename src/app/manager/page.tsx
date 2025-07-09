@@ -209,10 +209,7 @@ export default function ManagerDashboard() {
                 <Cog6ToothIcon className="mr-3 h-5 w-5" />
                 Cài đặt
               </Link>
-              <Link href="/manager/notifications" className="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900">
-                <BellIcon className="mr-3 h-5 w-5" />
-                Thông báo
-              </Link>
+            
               <div className="border-t border-slate-200 my-4"></div>
               <button
                 onClick={handleLogout}
