@@ -103,7 +103,7 @@ export default function OrderManagement() {
     if (!method) return 'facility-collection';
     
     // Với dữ liệu từ database là tiếng Việt
-    if (method === 'Tại nhà') return 'home-collection';
+    if (method === 'Tự thu mẫu') return 'self-collection';
     if (method === 'Tại cơ sở') return 'facility-collection';
     
     // Giữ backward compatibility với các giá trị cũ
@@ -197,13 +197,13 @@ export default function OrderManagement() {
   const getMethodText = (method: Order['method']) => {
     switch (method) {
       case 'self-collection':
-        return 'Tự lấy mẫu';
+        return 'Tự thu mẫu';
       case 'facility-collection':
         return 'Tại cơ sở';
       case 'home-collection':
         return 'Tại nhà';
       default:
-        return '';
+        return 'Không xác định';
     }
   };
 

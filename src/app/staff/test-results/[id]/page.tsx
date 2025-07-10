@@ -422,9 +422,15 @@ export default function AppointmentDetailPage() {
   };
 
   const getMethodText = (method: string) => {
-    if (method === 'Tại nhà') return 'Tại nhà';
+    // Debug giá trị method
+    console.log('Method value received:', method);
+    
+    // Hiển thị chính xác như trong database
+    if (method === 'Tự thu mẫu') return 'Tự thu mẫu';
     if (method === 'Tại cơ sở') return 'Tại cơ sở';
-    return method || 'N/A';
+    
+    // Trường hợp khác
+    return method || 'Không xác định';
   };
 
   const formatDate = (dateString: string) => {
@@ -693,312 +699,312 @@ export default function AppointmentDetailPage() {
           </button>
         </div>
       </div>
-
+      
       {/* Lưới thông tin chính */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Thông tin lịch hẹn */}
         <div className="bg-white rounded-lg shadow p-6 border border-gray-100">
           <h2 className="text-lg font-semibold mb-4 text-blue-700">Thông tin lịch hẹn</h2>
           <div className="space-y-3 text-sm">
-            <div className="flex justify-between border-b pb-2">
+              <div className="flex justify-between border-b pb-2">
               <span className="font-medium text-gray-500">Mã lịch hẹn:</span>
               <span className="font-semibold">{appointment.bookingId}</span>
-            </div>
-            <div className="flex justify-between border-b pb-2">
+              </div>
+              <div className="flex justify-between border-b pb-2">
               <span className="font-medium text-gray-500">Khách hàng:</span>
               <span className="font-semibold">{appointment.customer?.fullname || customerInfo?.fullname || customerInfo?.username || appointment.customerId}</span>
-            </div>
-            <div className="flex justify-between border-b pb-2">
+              </div>
+              <div className="flex justify-between border-b pb-2">
               <span className="font-medium text-gray-500">Ngày hẹn:</span>
-              <span>{formatDate(appointment.date)}</span>
-            </div>
-            <div className="flex justify-between border-b pb-2">
+                <span>{formatDate(appointment.date)}</span>
+              </div>
+              <div className="flex justify-between border-b pb-2">
               <span className="font-medium text-gray-500">Dịch vụ:</span>
-              <span>{appointment.serviceId}</span>
-            </div>
-            <div className="flex justify-between border-b pb-2">
+                <span>{appointment.serviceId}</span>
+              </div>
+              <div className="flex justify-between border-b pb-2">
               <span className="font-medium text-gray-500">Phương thức:</span>
-              <span>{getMethodText(appointment.method)}</span>
-            </div>
-            <div className="flex justify-between border-b pb-2">
+                <span>{getMethodText(appointment.method)}</span>
+              </div>
+              <div className="flex justify-between border-b pb-2">
               <span className="font-medium text-gray-500">Địa chỉ:</span>
-              <span>{appointment.address || 'N/A'}</span>
-            </div>
+                <span>{appointment.address || 'N/A'}</span>
+              </div>
             <div className="flex justify-between border-b pb-2 items-center">
               <span className="font-medium text-gray-500">Trạng thái:</span>
               <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(status as AppointmentStatus)}`}>{getStatusText(status as AppointmentStatus)}</span>
+              </div>
             </div>
           </div>
-        </div>
-
+          
         {/* Trạng thái xử lý & thao tác */}
         <div className="bg-white rounded-lg shadow p-6 border border-gray-100 flex flex-col gap-4">
           <h2 className="text-lg font-semibold mb-4 text-blue-700">Trạng thái & Thao tác</h2>
           {/* Các bước trạng thái */}
-          <div className="space-y-4">
-            <div className="flex items-center">
-              <div className={`w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white`}>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
+            <div className="space-y-4">
+              <div className="flex items-center">
+                <div className={`w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white`}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="font-medium">Đang chờ mẫu</p>
+                  <p className="text-sm text-gray-500">{formatDate(appointment.date)}</p>
+                </div>
               </div>
-              <div className="ml-3">
-                <p className="font-medium">Đang chờ mẫu</p>
-                <p className="text-sm text-gray-500">{formatDate(appointment.date)}</p>
+              
+              <div className="flex items-center">
+                <div className={`w-8 h-8 rounded-full ${status === 'in-progress' || status === 'completed' ? 'bg-green-500' : 'bg-gray-300'} flex items-center justify-center text-white`}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="font-medium">Đang thực hiện</p>
+                  <p className="text-sm text-gray-500">{status === 'in-progress' || status === 'completed' ? 'Confirmed' : 'Not confirmed'}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center">
+                <div className={`w-8 h-8 rounded-full ${status === 'completed' ? 'bg-green-500' : 'bg-gray-300'} flex items-center justify-center text-white`}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="font-medium">Hoàn thành</p>
+                  <p className="text-sm text-gray-500">{status === 'completed' ? 'Completed' : 'Not completed'}</p>
+                </div>
               </div>
             </div>
-            
-            <div className="flex items-center">
-              <div className={`w-8 h-8 rounded-full ${status === 'in-progress' || status === 'completed' ? 'bg-green-500' : 'bg-gray-300'} flex items-center justify-center text-white`}>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="font-medium">Đang thực hiện</p>
-                <p className="text-sm text-gray-500">{status === 'in-progress' || status === 'completed' ? 'Confirmed' : 'Not confirmed'}</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center">
-              <div className={`w-8 h-8 rounded-full ${status === 'completed' ? 'bg-green-500' : 'bg-gray-300'} flex items-center justify-center text-white`}>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="font-medium">Hoàn thành</p>
-                <p className="text-sm text-gray-500">{status === 'completed' ? 'Completed' : 'Not completed'}</p>
-              </div>
-            </div>
-          </div>
           {/* Các nút thao tác cập nhật trạng thái, nhập kết quả, tạo kit ... */}
           <div className="flex flex-wrap gap-2 mt-4">
-            <button 
-              onClick={() => handleUpdateStatus('in-progress')}
-              disabled={updating || status === 'in-progress' || status === 'completed' || status === 'cancelled'}
-              className={`px-4 py-2 rounded ${
-                updating || status === 'in-progress' || status === 'completed' || status === 'cancelled'
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-blue-500 text-white hover:bg-blue-600'
-              }`}
-              title={
-                status === 'pending' 
-                  ? kitExists 
-                    ? kitInfo?.status === 'expired' 
-                      ? 'Chuyển sang trạng thái đang thực hiện' 
-                      : `Kit phải ở trạng thái "Đã tới kho" trước khi chuyển sang thực hiện (hiện tại: ${kitInfo ? getKitStatusText(kitInfo.status) : 'N/A'})`
-                    : 'Booking này chưa có kit. Vui lòng tạo kit trước.'
-                  : ''
-              }
-            >
-              {updating ? 'Đang xử lý...' : 'Đang thực hiện'}
-            </button>
-            
-            <button 
-              onClick={() => setShowResultForm(true)}
-              disabled={updating || status === 'completed' || status === 'cancelled' || status !== 'in-progress'}
-              className={`px-4 py-2 rounded ${
-                updating || status === 'completed' || status === 'cancelled' || status !== 'in-progress'
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-green-500 text-white hover:bg-green-600'
-              }`}
-              title={status !== 'in-progress' ? 'Hãy chuyển sang trạng thái đang thực hiện trước khi nhập kết quả' : 'Nhập kết quả xét nghiệm'}
-            >
-              {updating ? 'Đang xử lý...' : 'Nhập kết quả'}
-            </button>
-            
-            <button 
-              onClick={() => handleUpdateStatus('cancelled')}
-              disabled={updating || status === 'completed' || status === 'cancelled'}
-              className={`px-4 py-2 rounded ${
-                updating || status === 'completed' || status === 'cancelled'
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-red-500 text-white hover:bg-red-600'
-              }`}
-            >
-              {updating ? 'Đang xử lý...' : 'Hủy'}
-            </button>
-
-            {checkingKit ? (
-              <button className="px-4 py-2 rounded bg-gray-400 text-white cursor-wait flex items-center">
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Đang kiểm tra kit...
-              </button>
-            ) : kitExists ? (
-              <div className="flex items-center gap-2">
                 <button 
-                  onClick={handleViewKit}
-                  className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 flex items-center"
+                  onClick={() => handleUpdateStatus('in-progress')}
+                  disabled={updating || status === 'in-progress' || status === 'completed' || status === 'cancelled'}
+                  className={`px-4 py-2 rounded ${
+                    updating || status === 'in-progress' || status === 'completed' || status === 'cancelled'
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                  }`}
+                  title={
+                    status === 'pending' 
+                      ? kitExists 
+                        ? kitInfo?.status === 'expired' 
+                          ? 'Chuyển sang trạng thái đang thực hiện' 
+                          : `Kit phải ở trạng thái "Đã tới kho" trước khi chuyển sang thực hiện (hiện tại: ${kitInfo ? getKitStatusText(kitInfo.status) : 'N/A'})`
+                        : 'Booking này chưa có kit. Vui lòng tạo kit trước.'
+                      : ''
+                  }
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                  Xem Kit: {kitInfo?.kitID}
+                  {updating ? 'Đang xử lý...' : 'Đang thực hiện'}
                 </button>
-                <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Kit: {kitInfo && getKitStatusText(kitInfo.status)}
-                </div>
-                <button
-                  onClick={refreshKitStatus}
-                  className="p-1.5 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200"
-                  title="Làm mới trạng thái kit"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => router.push(`/staff/kits?bookingId=${appointment.bookingId}&customerId=${appointment.customerId}&staffId=${appointment.staffId || user?.userID || ''}&description=Kit cho lịch hẹn #${appointment.bookingId}&returnUrl=${encodeURIComponent(`/staff/test-results/${id}`)}`)}
-                  className="px-4 py-2 rounded bg-purple-500 text-white hover:bg-purple-600 flex items-center"
-                  title="Tạo kit cho booking này"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Tạo Kit
-                </button>
-                <div className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  Chưa có kit
-                </div>
-                <button
-                  onClick={refreshKitStatus}
-                  className="p-1.5 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200"
-                  title="Làm mới trạng thái kit"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                </button>
-              </div>
-            )}
-          </div>
-          
-          {status === 'in-progress' && !showResultForm && (
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
-              <p className="text-blue-700 flex items-center font-medium">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Booking đang trong trạng thái thực hiện
-              </p>
-              <div className="mt-2 ml-7">
-                <p className="text-sm text-blue-600 mb-2">
-                  Bạn có thể nhập kết quả xét nghiệm ngay bây giờ bằng cách bấm nút "Nhập kết quả" ở trên.
-                </p>
-                <p className="text-sm text-blue-600">
-                  <strong>Lưu ý:</strong> Nếu bạn không thấy dữ liệu đầy đủ, hãy bấm nút "Làm mới" ở góc trên cùng bên phải.
-                </p>
+                
                 <button 
                   onClick={() => setShowResultForm(true)}
-                  className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  disabled={updating || status === 'completed' || status === 'cancelled' || status !== 'in-progress'}
+                  className={`px-4 py-2 rounded ${
+                    updating || status === 'completed' || status === 'cancelled' || status !== 'in-progress'
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-green-500 text-white hover:bg-green-600'
+                  }`}
+                  title={status !== 'in-progress' ? 'Hãy chuyển sang trạng thái đang thực hiện trước khi nhập kết quả' : 'Nhập kết quả xét nghiệm'}
                 >
-                  Nhập kết quả ngay
+                  {updating ? 'Đang xử lý...' : 'Nhập kết quả'}
                 </button>
-              </div>
-            </div>
-          )}
-          
-          {status === 'pending' && (
-            <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-100">
-              <p className="text-yellow-700 flex items-center font-medium">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Thông tin về việc chuyển trạng thái
-              </p>
-              <div className="mt-2 ml-7">
-                <p className="text-sm text-yellow-700 mb-2">
-                  <strong>Điều kiện để chuyển sang trạng thái "Đang thực hiện":</strong>
-                </p>
-                <ul className="list-disc ml-5 text-sm text-yellow-700 space-y-1">
-                  <li>Booking phải có kit đã được tạo</li>
-                  <li>Kit phải ở trạng thái "Đã tới kho"</li>
-                </ul>
+                
+                <button 
+                  onClick={() => handleUpdateStatus('cancelled')}
+                  disabled={updating || status === 'completed' || status === 'cancelled'}
+                  className={`px-4 py-2 rounded ${
+                    updating || status === 'completed' || status === 'cancelled'
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-red-500 text-white hover:bg-red-600'
+                  }`}
+                >
+                  {updating ? 'Đang xử lý...' : 'Hủy'}
+                </button>
+
                 {checkingKit ? (
-                  <div className="flex items-center space-x-2 mt-2 text-sm text-blue-600">
-                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <button className="px-4 py-2 rounded bg-gray-400 text-white cursor-wait flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <span>Đang kiểm tra trạng thái kit...</span>
-                  </div>
+                    Đang kiểm tra kit...
+                  </button>
                 ) : kitExists ? (
-                  kitInfo?.status === 'expired' ? (
-                    <p className="mt-2 text-sm text-green-600">
-                      ✅ Tất cả điều kiện đã thỏa mãn. Bạn có thể chuyển sang trạng thái "Đang thực hiện".
-                    </p>
-                  ) : (
-                    <p className="mt-2 text-sm text-yellow-700">
-                      ⚠️ Trạng thái kit hiện tại: <strong>{kitInfo ? getKitStatusText(kitInfo.status) : 'N/A'}</strong>. 
-                      Cần đổi sang <strong>Đã tới kho</strong> trước khi có thể chuyển trạng thái booking.
-                    </p>
-                  )
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={handleViewKit}
+                      className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 flex items-center"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                      Xem Kit: {kitInfo?.kitID}
+                    </button>
+                    <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Kit: {kitInfo && getKitStatusText(kitInfo.status)}
+                    </div>
+                    <button
+                      onClick={refreshKitStatus}
+                      className="p-1.5 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200"
+                      title="Làm mới trạng thái kit"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    </button>
+                  </div>
                 ) : (
-                  <p className="mt-2 text-sm text-yellow-700">
-                    ⚠️ Booking này chưa có kit. Vui lòng tạo kit trước khi chuyển trạng thái.
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => router.push(`/staff/kits?bookingId=${appointment.bookingId}&customerId=${appointment.customerId}&staffId=${appointment.staffId || user?.userID || ''}&description=Kit cho lịch hẹn #${appointment.bookingId}&returnUrl=${encodeURIComponent(`/staff/test-results/${id}`)}`)}
+                      className="px-4 py-2 rounded bg-purple-500 text-white hover:bg-purple-600 flex items-center"
+                      title="Tạo kit cho booking này"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Tạo Kit
+                    </button>
+                    <div className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      Chưa có kit
+                    </div>
+                    <button
+                      onClick={refreshKitStatus}
+                      className="p-1.5 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200"
+                      title="Làm mới trạng thái kit"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    </button>
+                  </div>
                 )}
               </div>
-            </div>
-          )}
+              
+              {status === 'in-progress' && !showResultForm && (
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                  <p className="text-blue-700 flex items-center font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Booking đang trong trạng thái thực hiện
+                  </p>
+                  <div className="mt-2 ml-7">
+                    <p className="text-sm text-blue-600 mb-2">
+                      Bạn có thể nhập kết quả xét nghiệm ngay bây giờ bằng cách bấm nút "Nhập kết quả" ở trên.
+                    </p>
+                    <p className="text-sm text-blue-600">
+                      <strong>Lưu ý:</strong> Nếu bạn không thấy dữ liệu đầy đủ, hãy bấm nút "Làm mới" ở góc trên cùng bên phải.
+                    </p>
+                    <button 
+                      onClick={() => setShowResultForm(true)}
+                      className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      Nhập kết quả ngay
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {status === 'pending' && (
+                <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-100">
+                  <p className="text-yellow-700 flex items-center font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Thông tin về việc chuyển trạng thái
+                  </p>
+                  <div className="mt-2 ml-7">
+                    <p className="text-sm text-yellow-700 mb-2">
+                      <strong>Điều kiện để chuyển sang trạng thái "Đang thực hiện":</strong>
+                    </p>
+                    <ul className="list-disc ml-5 text-sm text-yellow-700 space-y-1">
+                      <li>Booking phải có kit đã được tạo</li>
+                      <li>Kit phải ở trạng thái "Đã tới kho"</li>
+                    </ul>
+                    {checkingKit ? (
+                      <div className="flex items-center space-x-2 mt-2 text-sm text-blue-600">
+                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Đang kiểm tra trạng thái kit...</span>
+                      </div>
+                    ) : kitExists ? (
+                      kitInfo?.status === 'expired' ? (
+                        <p className="mt-2 text-sm text-green-600">
+                          ✅ Tất cả điều kiện đã thỏa mãn. Bạn có thể chuyển sang trạng thái "Đang thực hiện".
+                        </p>
+                      ) : (
+                        <p className="mt-2 text-sm text-yellow-700">
+                          ⚠️ Trạng thái kit hiện tại: <strong>{kitInfo ? getKitStatusText(kitInfo.status) : 'N/A'}</strong>. 
+                          Cần đổi sang <strong>Đã tới kho</strong> trước khi có thể chuyển trạng thái booking.
+                        </p>
+                      )
+                    ) : (
+                      <p className="mt-2 text-sm text-yellow-700">
+                        ⚠️ Booking này chưa có kit. Vui lòng tạo kit trước khi chuyển trạng thái.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+          </div>
         </div>
-      </div>
-
+        
       {/* Thông tin người xét nghiệm cùng */}
       <div className="mt-8">
         <div className="bg-white rounded-lg shadow p-6 border border-gray-100">
           <h2 className="text-lg font-semibold mb-4 text-blue-700">Thông tin người xét nghiệm cùng</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div className="border-b pb-2">
-              <span className="text-sm font-medium text-gray-500">Họ và tên:</span>
-              <p className="mt-1 font-medium">{relatedPerson.fullName}</p>
-            </div>
-            
-            <div className="border-b pb-2">
-              <span className="text-sm font-medium text-gray-500">Số điện thoại:</span>
-              <p className="mt-1 font-medium">{relatedPerson.phoneNumber}</p>
-            </div>
-            
-            <div className="border-b pb-2">
-              <span className="text-sm font-medium text-gray-500">Ngày sinh:</span>
-              <p className="mt-1 font-medium">
-                {new Date(relatedPerson.dateOfBirth).toLocaleDateString('vi-VN', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: 'numeric'
-                })}
-              </p>
-            </div>
-            
-            <div className="border-b pb-2">
-              <span className="text-sm font-medium text-gray-500">Giới tính:</span>
-              <p className="mt-1 font-medium">{relatedPerson.gender}</p>
-            </div>
-            
-            <div className="md:col-span-2 border-b pb-2">
-              <span className="text-sm font-medium text-gray-500">Vai trò:</span>
-              <p className="mt-1 font-medium">{relatedPerson.role}</p>
+              <div className="border-b pb-2">
+                <span className="text-sm font-medium text-gray-500">Họ và tên:</span>
+                <p className="mt-1 font-medium">{relatedPerson.fullName}</p>
+              </div>
+              
+              <div className="border-b pb-2">
+                <span className="text-sm font-medium text-gray-500">Số điện thoại:</span>
+                <p className="mt-1 font-medium">{relatedPerson.phoneNumber}</p>
+              </div>
+              
+              <div className="border-b pb-2">
+                <span className="text-sm font-medium text-gray-500">Ngày sinh:</span>
+                <p className="mt-1 font-medium">
+                  {new Date(relatedPerson.dateOfBirth).toLocaleDateString('vi-VN', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                  })}
+                </p>
+              </div>
+              
+              <div className="border-b pb-2">
+                <span className="text-sm font-medium text-gray-500">Giới tính:</span>
+                <p className="mt-1 font-medium">{relatedPerson.gender}</p>
+              </div>
+              
+              <div className="md:col-span-2 border-b pb-2">
+                <span className="text-sm font-medium text-gray-500">Vai trò:</span>
+                <p className="mt-1 font-medium">{relatedPerson.role}</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
+        
       {/* Kết quả xét nghiệm */}
-      {status === 'completed' && (
+        {status === 'completed' && (
         <div className="mt-8">
           <div className="bg-white rounded-lg shadow p-6 border border-gray-100">
             <h2 className="text-lg font-semibold mb-4 text-blue-700">Kết quả xét nghiệm</h2>
@@ -1052,11 +1058,11 @@ export default function AppointmentDetailPage() {
               </div>
             )}
           </div>
-        </div>
-      )}
-
-      {/* Form nhập kết quả xét nghiệm */}
-      {showResultForm && (
+          </div>
+        )}
+        
+        {/* Form nhập kết quả xét nghiệm */}
+        {showResultForm && (
         <div className="mt-8">
           <div className="bg-white rounded-lg shadow p-6 border border-gray-100">
             <h2 className="text-lg font-semibold mb-4 text-blue-700">Nhập kết quả xét nghiệm</h2>
@@ -1136,7 +1142,7 @@ export default function AppointmentDetailPage() {
               </div>
             </form>
           </div>
-        </div>
+      </div>
       )}
       <KitDetailModal />
     </div>
