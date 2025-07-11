@@ -950,7 +950,12 @@ export default function AppointmentDetailPage() {
                 ) : (
                   <div className="flex items-center gap-2">
                     <button 
-                      onClick={() => router.push(`/staff/kits?bookingId=${appointment.bookingId}&customerId=${appointment.customerId}&staffId=${appointment.staffId || user?.userID || ''}&description=Kit cho lịch hẹn #${appointment.bookingId}&returnUrl=${encodeURIComponent(`/staff/test-results/${id}`)}`)}
+                      onClick={() => {
+                        // Tạo URL với đường dẫn đầy đủ
+                        const currentUrl = `/staff/test-results/${id}`;
+                        const kitUrl = `/staff/kits?bookingId=${appointment.bookingId}&customerId=${appointment.customerId}&staffId=${appointment.staffId || user?.userID || ''}&description=${encodeURIComponent(`Kit cho lịch hẹn #${appointment.bookingId}`)}&returnUrl=${encodeURIComponent(currentUrl)}`;
+                        router.push(kitUrl);
+                      }}
                       className="px-4 py-2 rounded bg-purple-500 text-white hover:bg-purple-600 flex items-center"
                       title="Tạo kit cho booking này"
                     >
