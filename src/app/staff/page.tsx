@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import Link from 'next/link';
 import {
   BeakerIcon,
   CubeIcon,
@@ -143,9 +144,9 @@ export default function StaffDashboard() {
             </div>
           </div>
 
-          <button className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+          <Link href="/staff/kits" className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors block text-center">
             Xem tất cả Kit
-          </button>
+          </Link>
         </div>
 
         {/* Test Results Overview */}
@@ -183,9 +184,9 @@ export default function StaffDashboard() {
             </div>
           </div>
 
-          <button className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-            Xem kết quả chờ xử lý
-          </button>
+          <Link href="/staff/test-results" className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors block text-center">
+            Xem kết quả
+          </Link>
         </div>
       </div>
 
@@ -193,20 +194,20 @@ export default function StaffDashboard() {
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         <h3 className="text-lg font-semibold text-slate-900 mb-4">Thao tác nhanh</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="flex items-center space-x-3 p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+          <Link href="/staff/kits" className="flex items-center space-x-3 p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
             <CubeIcon className="h-6 w-6 text-blue-600" />
-            <span className="text-sm font-medium text-slate-700">Thêm Kit mới</span>
-          </button>
+            <span className="text-sm font-medium text-slate-700">Quản lý Kit</span>
+          </Link>
           
-          <button className="flex items-center space-x-3 p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+          <Link href="/staff/test-results" className="flex items-center space-x-3 p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
             <DocumentTextIcon className="h-6 w-6 text-green-600" />
-            <span className="text-sm font-medium text-slate-700">Nhập kết quả</span>
-          </button>
+            <span className="text-sm font-medium text-slate-700">Quản lý kết quả</span>
+          </Link>
           
-          <button className="flex items-center space-x-3 p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+          <Link href="/staff/profile" className="flex items-center space-x-3 p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
             <BeakerIcon className="h-6 w-6 text-orange-600" />
-            <span className="text-sm font-medium text-slate-700">Xem mẫu xét nghiệm</span>
-          </button>
+            <span className="text-sm font-medium text-slate-700">Hồ sơ cá nhân</span>
+          </Link>
         </div>
       </div>
     </div>

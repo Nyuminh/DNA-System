@@ -22,6 +22,24 @@ export interface Report {
   generatedBy: string;
 }
 
+// Interface cho Admin User
+export interface AdminUser {
+  userID: string;
+  username: string;
+  password?: string;
+  fullname: string;
+  gender: "Male" | "Female" | "Other";
+  roleID: string;
+  email: string;
+  phone: string;
+  birthdate: string;
+  image: string;
+  address: string;
+  status: "active" | "inactive" | "suspended";
+  createdAt: string;
+  lastLogin?: string;
+}
+
 // Interface cho Admin Profile
 export interface AdminProfile {
   id: string;
@@ -65,6 +83,19 @@ export interface ActivityLog {
   timestamp: string;
   details: string;
   ipAddress: string;
+}
+
+// Interface cho cập nhật thông tin tài khoản người dùng
+export interface UpdateUserRequest {
+  username: string;
+  password: string; // Trường bắt buộc khi cập nhật theo API
+  fullname: string;
+  roleId: string; // Đã đổi từ roleID thành roleId theo API thực tế
+  email: string;
+  phone: string;
+  birthdate: string;
+  image?: string;
+  address: string;
 }
 
 // Lấy dashboard statistics
@@ -116,26 +147,60 @@ export const getAdminReports = async (type?: string): Promise<{ success: boolean
   }
 };
 
-// Quản lý services (Admin)
-export const getAdminServices = async (): Promise<{ success: boolean; services?: any[]; message?: string }> => {
+// Lấy danh sách users
+export const getAllUsers = async (): Promise<{ success: boolean; users?: AdminUser[]; message?: string }> => {
   try {
-    const response = await apiClient.get('/Admin/services');
+    const response = await apiClient.get('/api/User');
     
     if (response.status >= 200 && response.status < 300) {
+      console.log('API User Response:', response.data); // Debug log
+      
+      // Transform API response to match AdminUser interface
+      const users: AdminUser[] = response.data.map((user: any) => {
+        // Debug log cho mỗi user
+        console.log('Processing user:', user);
+        
+        // Các thuộc tính user có thể được trả về từ API với nhiều tên khác nhau
+        const userId = user.userID || user.UserId || user.userId || user.userid || user.id || user.ID || `user-${Math.random().toString(36).substring(2, 9)}`;
+        const roleId = user.roleID || user.RoleId || user.roleId || user.roleid || user.role || user.Role || 'R003';
+        // Lấy password từ API nếu có
+        const password = user.password || user.Password || '';
+        
+        console.log(`Extracted userID: ${userId}, roleID: ${roleId}`);
+        
+        return {
+          userID: userId,
+          username: user.username || user.userName || user.Username || user.UserName || '',
+          password: password, // Lưu trữ password từ API
+          fullname: user.fullname || user.fullName || user.Fullname || user.FullName || user.name || user.Name || '',
+          gender: user.gender || user.Gender || 'Khác',
+          roleID: roleId,
+          email: user.email || user.Email || '',
+          phone: user.phone || user.phoneNumber || user.Phone || user.PhoneNumber || '',
+          birthdate: user.birthdate || user.dateOfBirth || user.Birthdate || user.DateOfBirth || '',
+          image: user.image || user.avatar || user.Image || user.Avatar || '',
+          address: user.address || user.Address || '',
+          status: user.status || user.Status || (user.isActive || user.IsActive ? 'active' : 'inactive'),
+          createdAt: user.createdAt || user.createDate || user.CreatedAt || user.CreateDate || new Date().toISOString(),
+          lastLogin: user.lastLogin || user.lastLoginDate || user.LastLogin || undefined
+        };
+      });
+
       return {
         success: true,
-        services: response.data
+        users: users
       };
     }
     
     return {
       success: false,
-      message: 'Không thể lấy danh sách dịch vụ admin'
+      message: 'Không thể lấy danh sách người dùng'
     };
   } catch (error) {
+    console.error('Error fetching users:', error);
     return {
       success: false,
-      message: 'Có lỗi xảy ra khi lấy danh sách dịch vụ admin'
+      message: 'Có lỗi xảy ra khi lấy danh sách người dùng'
     };
   }
 };
@@ -301,5 +366,77 @@ export const adminProfileAPI = {  // Lấy thông tin profile admin hiện tại
         message: 'Có lỗi xảy ra khi lấy lịch sử hoạt động'
       };
     }
+  }
+};
+
+// Cập nhật thông tin người dùng theo ID (Dành cho Admin)
+export const updateUserById = async (userId: string, userData: UpdateUserRequest): Promise<{
+  success: boolean;
+  message: string;
+  updatedUser?: AdminUser;
+}> => {
+  try {
+    console.log('Input userData:', userData);
+    
+    // Đảm bảo tất cả các trường bắt buộc đều được cung cấp
+    if (!userData.password) {
+      return {
+        success: false,
+        message: 'Thiếu thông tin mật khẩu. Vui lòng cung cấp mật khẩu để cập nhật thông tin.'
+      };
+    }
+    
+    // Chuẩn hóa dữ liệu trước khi gửi API
+    const formattedData = {
+      username: userData.username,
+      password: userData.password,
+      fullname: userData.fullname,
+      roleId: userData.roleId, // Đã sửa thành roleId
+      email: userData.email,
+      phone: userData.phone,
+      address: userData.address,
+      // Đảm bảo định dạng ngày tháng là chuẩn ISO string
+      birthdate: userData.birthdate 
+        ? new Date(userData.birthdate).toISOString().split('T')[0] 
+        : new Date().toISOString().split('T')[0],
+      image: userData.image || null
+    };
+    
+    console.log('Formatted userData being sent:', formattedData);
+    console.log('Endpoint being called:', `/api/User/${userId}`);
+    
+    const response = await apiClient.put(`/api/User/${userId}`, formattedData);
+    
+    console.log('API response:', response);
+    
+    if (response.status >= 200 && response.status < 300) {
+      return {
+        success: true,
+        message: 'Cập nhật thông tin người dùng thành công',
+        updatedUser: response.data
+      };
+    }
+    
+    return {
+      success: false,
+      message: 'Không thể cập nhật thông tin người dùng'
+    };
+  } catch (error: any) {
+    console.error('Error updating user details:', error);
+    console.error('Error response data:', error?.response?.data);
+    console.error('Error status:', error?.response?.status);
+    
+    // Hiển thị thông báo lỗi chi tiết từ server nếu có
+    const errorMessage = error?.response?.data?.title || 
+                         error?.response?.data?.message || 
+                         (error?.response?.data?.errors && Object.entries(error.response.data.errors)
+                           .map(([key, value]) => `${key}: ${value}`).join(', ')) ||
+                         error?.message || 
+                         'Có lỗi xảy ra khi cập nhật thông tin người dùng';
+    
+    return {
+      success: false,
+      message: errorMessage
+    };
   }
 };

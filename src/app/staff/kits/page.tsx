@@ -9,19 +9,25 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
   XMarkIcon,
-  PencilIcon
+  PencilIcon,
+  EyeIcon
 } from '@heroicons/react/24/outline';
 import { kitApi, Kit } from '@/lib/api/staff';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 
 interface NewKitForm {
   customerID: string;
   staffID: string;
+  bookingId: string;
   description: string;
   status: 'available' | 'in-use' | 'completed' | 'expired';
   receivedate: string;
 }
 
 export default function KitManagement() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [kits, setKits] = useState<Kit[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,16 +37,42 @@ export default function KitManagement() {
   const [formData, setFormData] = useState<NewKitForm>({
     customerID: '',
     staffID: '',
+    bookingId: '',
     description: '',
     status: 'available',
     receivedate: new Date().toISOString().split('T')[0]
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [editingStatus, setEditingStatus] = useState<{kitID: string, currentStatus: Kit['status']} | null>(null);
+  const [selectedKit, setSelectedKit] = useState<Kit | null>(null);
+  const [showKitModal, setShowKitModal] = useState(false);
+  const [kitDetailLoading, setKitDetailLoading] = useState(false);
 
   useEffect(() => {
     fetchKits();
-  }, []);  const fetchKits = async () => {
+    
+    // Check for URL parameters to pre-fill the form
+    const bookingId = searchParams.get('bookingId');
+    const customerId = searchParams.get('customerId');
+    const staffId = searchParams.get('staffId');
+    const description = searchParams.get('description');
+    
+    // If at least bookingId is present, pre-fill the form with available data
+    if (bookingId) {
+      setFormData(prev => ({
+        ...prev,
+        bookingId: bookingId || '',
+        customerID: customerId || '',
+        staffID: staffId || '',
+        description: description || '',
+        status: 'available',
+        receivedate: new Date().toISOString().split('T')[0]
+      }));
+      setShowAddForm(true);
+    }
+  }, [searchParams]);
+
+  const fetchKits = async () => {
     console.log('🔄 Starting to fetch kits...');
     setLoading(true);
     setError(null);
@@ -121,20 +153,33 @@ export default function KitManagement() {
         // Backend will auto-generate kitID
       };
       
-      await kitApi.createKit(kitDataToCreate);
+      console.log('📤 Sending kit data to API:', JSON.stringify(kitDataToCreate));
       
-      // Reset form and refresh list
+      const newKit = await kitApi.createKit(kitDataToCreate);
+      console.log('✅ Kit created successfully:', newKit);
+      toast.success(`Kit ${newKit.kitID} đã được tạo thành công`);
+      
+      // Reset form
       setFormData({
         customerID: '',
         staffID: '',
+        bookingId: '',
         description: '',
         status: 'available',
         receivedate: new Date().toISOString().split('T')[0]
       });
-      setShowAddForm(false);
-      await fetchKits(); // Refresh the list
       
-      console.log('✅ Kit created successfully');
+      // Kiểm tra xem có returnUrl trong searchParams không
+      const returnUrl = searchParams.get('returnUrl');
+      if (returnUrl) {
+        console.log('🔄 Redirecting to:', returnUrl);
+        router.push(returnUrl);
+      } else {
+        setShowAddForm(false);
+        await fetchKits(); // Chỉ refresh danh sách kits nếu không có returnUrl
+      }
+      
+      console.log('✅ Kit creation process completed');
     } catch (error) {
       console.error('❌ Error creating kit:', error);
       setError('Không thể tạo kit mới. Vui lòng thử lại.');
@@ -146,6 +191,7 @@ export default function KitManagement() {
     setFormData({
       customerID: '',
       staffID: '',
+      bookingId: '',
       description: '',
       status: 'available',
       receivedate: new Date().toISOString().split('T')[0]
@@ -165,8 +211,27 @@ export default function KitManagement() {
       
       // Create updated kit object
       const updatedKit = { ...kitToUpdate, status: newStatus };
+      console.log('📤 Sending updated kit to API:', JSON.stringify(updatedKit));
       
-      await kitApi.updateKitStatus(updatedKit);
+      try {
+        // Sử dụng hàm fixKitStatus mới
+        console.log('🔧 Using fixKitStatus to ensure proper status update...');
+        await kitApi.fixKitStatus(kitID, newStatus);
+        console.log('✅ Kit status fixed successfully');
+      } catch (error) {
+        console.error('❌ Fix kit status failed:', error);
+        
+        // Phương pháp dự phòng
+        console.log('🔄 Trying fallback methods...');
+        try {
+          await kitApi.updateKitStatusVietnamese(updatedKit);
+          console.log('✅ Vietnamese method succeeded');
+        } catch (fallbackError) {
+          console.error('❌ Vietnamese method failed:', fallbackError);
+          await kitApi.updateKitStatusMultiFormat(updatedKit);
+          console.log('✅ Multi-format method succeeded');
+        }
+      }
       
       // Update local state
       setKits(prev => prev.map(kit => 
@@ -175,9 +240,30 @@ export default function KitManagement() {
       
       setEditingStatus(null);
       console.log('✅ Kit status updated successfully');
+      toast.success('Cập nhật trạng thái kit thành công');
+      
+      // Refresh kit data from server to ensure we have the latest data
+      try {
+        console.log('🔄 Refreshing kit data from server...');
+        const refreshedKit = await kitApi.refreshKitData(kitID);
+        console.log('✅ Kit data refreshed:', refreshedKit);
+        
+        // Update the local state with the refreshed data
+        setKits(prev => prev.map(kit => 
+          kit.kitID === kitID ? refreshedKit : kit
+        ));
+      } catch (refreshError) {
+        console.error('❌ Error refreshing kit data:', refreshError);
+      }
+      
+      // Refresh the entire kit list after a delay
+      setTimeout(() => {
+        fetchKits();
+      }, 1000);
     } catch (error) {
       console.error('❌ Error updating kit status:', error);
       setError('Không thể cập nhật trạng thái kit. Vui lòng thử lại.');
+      toast.error('Không thể cập nhật trạng thái kit: ' + (error instanceof Error ? error.message : 'Lỗi không xác định'));
     }
   };
   const getStatusIcon = (status: Kit['status']) => {
@@ -198,13 +284,13 @@ export default function KitManagement() {
   const getStatusText = (status: Kit['status']) => {
     switch (status) {
       case 'available':
-        return 'Đã nhận';          // Maps to "Received" in database
+        return 'Đã vận chuyển';
       case 'in-use':
-        return 'Đang xử lý';       // Maps to "Processing" in database
+        return 'Đang vận chuyển';
       case 'completed':
-        return 'Chờ xử lý';        // Maps to "Pending" in database
+        return 'Đã lấy mẫu';
       case 'expired':
-        return 'Hết hạn';
+        return 'Đã tới kho';
       default:
         return 'Không xác định';
     }
@@ -228,6 +314,7 @@ export default function KitManagement() {
                          (kit.description && kit.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
                          (kit.customerID && kit.customerID.toLowerCase().includes(searchTerm.toLowerCase())) ||
                          (kit.staffID && kit.staffID.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                         (kit.bookingId && kit.bookingId.toLowerCase().includes(searchTerm.toLowerCase())) ||
                          (kit.customerName && kit.customerName.toLowerCase().includes(searchTerm.toLowerCase())) ||
                          (kit.staffName && kit.staffName.toLowerCase().includes(searchTerm.toLowerCase()));
     
@@ -243,6 +330,170 @@ export default function KitManagement() {
     completed: kits.filter(k => k.status === 'completed').length,
     expired: kits.filter(k => k.status === 'expired').length
   };
+
+  // Hàm để hiển thị modal chi tiết kit
+  const handleViewKit = async (kitID: string) => {
+    try {
+      setKitDetailLoading(true);
+      setShowKitModal(true);
+      
+      // Tìm kit trong state hiện tại
+      const kitFromState = kits.find(kit => kit.kitID === kitID);
+      
+      if (kitFromState) {
+        // Tạm thời hiển thị thông tin từ state
+        setSelectedKit(kitFromState);
+        
+        // Sau đó lấy thông tin chi tiết từ API
+        try {
+          const kitDetail = await kitApi.refreshKitData(kitID);
+          setSelectedKit(kitDetail);
+        } catch (error) {
+          console.error('Error fetching kit details:', error);
+          // Vẫn giữ thông tin từ state nếu API bị lỗi
+        }
+      } else {
+        toast.error('Không tìm thấy thông tin kit');
+      }
+    } catch (error) {
+      console.error('Error viewing kit details:', error);
+      toast.error('Không thể tải thông tin chi tiết kit');
+    } finally {
+      setKitDetailLoading(false);
+    }
+  };
+
+  // Component modal hiển thị chi tiết kit
+  const KitDetailModal = () => {
+    if (!showKitModal || !selectedKit) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+            <h3 className="text-lg font-medium text-gray-900">Chi tiết Kit {selectedKit.kitID}</h3>
+            <button 
+              onClick={() => setShowKitModal(false)}
+              className="text-gray-400 hover:text-gray-500"
+            >
+              <XMarkIcon className="h-6 w-6" />
+            </button>
+          </div>
+          
+          <div className="px-6 py-4">
+            {kitDetailLoading ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="border-b pb-2">
+                    <span className="font-medium text-gray-500">Mã Kit:</span>
+                    <p className="mt-1">{selectedKit.kitID}</p>
+                  </div>
+                  
+                  <div className="border-b pb-2">
+                    <span className="font-medium text-gray-500">Trạng thái:</span>
+                    <div className="mt-1">
+                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedKit.status)}`}>
+                        {getStatusText(selectedKit.status)}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="border-b pb-2">
+                    <span className="font-medium text-gray-500">Tên khách hàng:</span>
+                    <p className="mt-1">{selectedKit.customerName || 'N/A'}</p>
+                  </div>
+                  
+                  <div className="border-b pb-2">
+                    <span className="font-medium text-gray-500">Tên nhân viên:</span>
+                    <p className="mt-1">{selectedKit.staffName || 'N/A'}</p>
+                  </div>
+                  
+                  <div className="border-b pb-2">
+                    <span className="font-medium text-gray-500">ID Lịch hẹn:</span>
+                    <p className="mt-1">{selectedKit.bookingId || 'N/A'}</p>
+                  </div>
+                  
+                  <div className="border-b pb-2">
+                    <span className="font-medium text-gray-500">Ngày nhận:</span>
+                    <p className="mt-1">{selectedKit.receivedate ? new Date(selectedKit.receivedate).toLocaleDateString('vi-VN', {
+                      year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                    }) : 'N/A'}</p>
+                  </div>
+                </div>
+                
+                <div className="border-b pb-2">
+                  <span className="font-medium text-gray-500">Mô tả:</span>
+                  <p className="mt-1 whitespace-pre-line">{selectedKit.description || 'Không có mô tả'}</p>
+                </div>
+                
+                <div className="border-t pt-4">
+                  <div className="flex justify-end gap-2">
+                    {editingStatus?.kitID === selectedKit.kitID ? (
+                      <div className="flex items-center space-x-2">
+                        <select
+                          value={editingStatus.currentStatus}
+                          onChange={(e) => setEditingStatus({
+                            kitID: selectedKit.kitID,
+                            currentStatus: e.target.value as Kit['status']
+                          })}
+                          className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="available">Đã vận chuyển</option>
+                          <option value="in-use">Đang vận chuyển</option>
+                          <option value="completed">Đã lấy mẫu</option>
+                          <option value="expired">Đã tới kho</option>
+                        </select>
+                        <button
+                          onClick={() => {
+                            handleUpdateStatus(selectedKit.kitID, editingStatus.currentStatus);
+                            setShowKitModal(false);
+                          }}
+                          className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                        >
+                          Lưu
+                        </button>
+                        <button
+                          onClick={() => setEditingStatus(null)}
+                          className="px-3 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                        >
+                          Hủy
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setEditingStatus({
+                          kitID: selectedKit.kitID,
+                          currentStatus: selectedKit.status
+                        })}
+                        className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 flex items-center"
+                      >
+                        <PencilIcon className="h-4 w-4 mr-1" />
+                        Thay đổi trạng thái
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="border-t border-gray-200 px-6 py-4 flex justify-end">
+            <button
+              onClick={() => setShowKitModal(false)}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+            >
+              Đóng
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -303,7 +554,7 @@ export default function KitManagement() {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-2xl font-bold text-green-600">{stats.available}</div>
-              <div className="text-sm text-slate-500">Đã nhận</div>
+              <div className="text-sm text-slate-500">Đã vận chuyển</div>
             </div>
             <CheckCircleIcon className="h-8 w-8 text-green-400" />
           </div>
@@ -312,7 +563,7 @@ export default function KitManagement() {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-2xl font-bold text-blue-600">{stats.inUse}</div>
-              <div className="text-sm text-slate-500">Đang xử lý</div>
+              <div className="text-sm text-slate-500">Đang vận chuyển</div>
             </div>
             <CheckCircleIcon className="h-8 w-8 text-blue-400" />
           </div>
@@ -322,7 +573,7 @@ export default function KitManagement() {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-2xl font-bold text-purple-600">{stats.completed}</div>
-              <div className="text-sm text-slate-500">Chờ xử lý</div>
+              <div className="text-sm text-slate-500">Đã lấy mẫu</div>
             </div>
             <CheckCircleIcon className="h-8 w-8 text-purple-400" />
           </div>
@@ -332,7 +583,7 @@ export default function KitManagement() {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-2xl font-bold text-orange-600">{stats.expired}</div>
-              <div className="text-sm text-slate-500">Hết hạn</div>
+              <div className="text-sm text-slate-500">Đã tới kho</div>
             </div>
             <ExclamationTriangleIcon className="h-8 w-8 text-orange-400" />
           </div>
@@ -363,10 +614,10 @@ export default function KitManagement() {
                 className="border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">Tất cả trạng thái</option>
-                <option value="available">Đã nhận (Received)</option>
-                <option value="in-use">Đang xử lý (Processing)</option>
-                <option value="completed">Chờ xử lý (Pending)</option>
-                <option value="expired">Hết hạn</option>
+                <option value="available">Đã vận chuyển</option>
+                <option value="in-use">Đang vận chuyển</option>
+                <option value="completed">Đã lấy mẫu</option>
+                <option value="expired">Đã tới kho</option>
               </select>
             </div>
           </div>
@@ -376,16 +627,20 @@ export default function KitManagement() {
       {/* Kit List */}
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200">            <thead className="bg-slate-50">
+          <table className="min-w-full divide-y divide-slate-200">
+            <thead className="bg-slate-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Kit ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Customer ID
+                  Customer
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Staff ID
+                  Staff
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  Booking ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Mô tả
@@ -400,7 +655,8 @@ export default function KitManagement() {
                   Thao tác
                 </th>
               </tr>
-            </thead>            <tbody className="bg-white divide-y divide-slate-200">
+            </thead>
+            <tbody className="bg-white divide-y divide-slate-200">
               {filteredKits.map((kit, index) => (
                 <tr key={kit.kitID || `kit-${index}`} className="hover:bg-slate-50">
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -410,10 +666,16 @@ export default function KitManagement() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                    {kit.customerID || '-'}
+                    <div>{kit.customerName || kit.customerID || '-'}</div>
+                    {kit.customerName && kit.customerID && kit.customerName !== kit.customerID && (
+                      <div className="text-xs text-slate-500 mt-1">{kit.customerID}</div>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                    {kit.staffID || '-'}
+                    {kit.staffName || kit.staffID || '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    {kit.bookingId || '-'}
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-slate-900 max-w-xs truncate" title={kit.description || ''}>
@@ -431,10 +693,10 @@ export default function KitManagement() {
                           className="text-xs font-semibold rounded-full px-2 py-1 border focus:ring-2 focus:ring-blue-500"
                           autoFocus
                         >
-                          <option value="available">Đã nhận (Received)</option>
-                          <option value="in-use">Đang xử lý (Processing)</option>
-                          <option value="completed">Chờ xử lý (Pending)</option>
-                          <option value="expired">Hết hạn</option>
+                          <option value="available">Đã vận chuyển</option>
+                          <option value="in-use">Đang vận chuyển</option>
+                          <option value="completed">Đã lấy mẫu</option>
+                          <option value="expired">Đã tới kho</option>
                         </select>
                       ) : (
                         <button
@@ -450,13 +712,23 @@ export default function KitManagement() {
                     {kit.receivedate ? new Date(kit.receivedate).toLocaleDateString('vi-VN') : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button 
-                      onClick={() => setEditingStatus({kitID: kit.kitID, currentStatus: kit.status})}
-                      className="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-50 transition-colors"
-                      title="Chỉnh sửa trạng thái"
-                    >
-                      <PencilIcon className="h-4 w-4" />
-                    </button>
+                    <div className="flex space-x-1">
+                      <button 
+                        onClick={() => handleViewKit(kit.kitID)}
+                        className="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-50 transition-colors"
+                        title="Xem chi tiết kit"
+                      >
+                        <EyeIcon className="h-4 w-4" />
+                      </button>
+                      
+                      <button 
+                        onClick={() => setEditingStatus({kitID: kit.kitID, currentStatus: kit.status})}
+                        className="text-green-600 hover:text-green-900 p-1 rounded-full hover:bg-green-50 transition-colors"
+                        title="Chỉnh sửa trạng thái"
+                      >
+                        <PencilIcon className="h-4 w-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -532,6 +804,22 @@ export default function KitManagement() {
                   )}
                 </div>
 
+                {/* Booking ID */}
+                <div>
+                  <label htmlFor="bookingId" className="block text-sm font-medium text-slate-700 mb-2">
+                    Booking ID
+                  </label>
+                  <input
+                    type="text"
+                    id="bookingId"
+                    name="bookingId"
+                    value={formData.bookingId}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Nhập Booking ID"
+                  />
+                </div>
+
                 {/* Status */}
                 <div>
                   <label htmlFor="status" className="block text-sm font-medium text-slate-700 mb-2">
@@ -544,10 +832,10 @@ export default function KitManagement() {
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option value="available">Đã nhận (Received)</option>
-                    <option value="in-use">Đang xử lý (Processing)</option>
-                    <option value="completed">Chờ xử lý (Pending)</option>
-                    <option value="expired">Hết hạn</option>
+                    <option value="available">Đã vận chuyển</option>
+                    <option value="in-use">Đang vận chuyển</option>
+                    <option value="completed">Đã lấy mẫu</option>
+                    <option value="expired">Đã tới kho</option>
                   </select>
                 </div>
 
@@ -613,6 +901,8 @@ export default function KitManagement() {
           </div>
         </div>
       )}
+
+      <KitDetailModal />
     </div>
   );
 }

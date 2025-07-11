@@ -12,7 +12,6 @@ export interface RegisterRequest {
   phone: string;
   birthdate: string;
   address: string;
-  image?: File;
 }
 
 // Interface cho login request
@@ -848,54 +847,28 @@ export interface RegisterResponse {
 // Hàm gọi API đăng ký
 export const registerUser = async (registerData: RegisterRequest): Promise<RegisterResponse> => {
   try {
-    // Kiểm tra xem có file image không
-    if (registerData.image) {
-      // Nếu có file, sử dụng FormData
-      const formData = new FormData();
-      
-      // Thêm các trường dữ liệu
-      formData.append('username', registerData.username);
-      formData.append('password', registerData.password);
-      formData.append('fullname', registerData.fullname);
-      formData.append('gender', registerData.gender);
-      formData.append('email', registerData.email);
-      formData.append('phone', registerData.phone);
-      formData.append('birthdate', registerData.birthdate);
-      formData.append('address', registerData.address);      formData.append('roleID', 'R04'); // R04 - Customer role
-      formData.append('image', registerData.image);
+    // Sử dụng JSON
+    const jsonData = {
+      username: registerData.username,
+      password: registerData.password,
+      fullname: registerData.fullname,
+      gender: registerData.gender,
+      email: registerData.email,
+      phone: registerData.phone,
+      birthdate: registerData.birthdate,
+      address: registerData.address,
+      roleID: 'R04', // R04 - Customer role
+    };
 
-      const response = await apiClient.post('/api/Auth/register', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+    console.log('Sending register data as JSON:', jsonData);
 
-      return handleRegisterResponse(response);
-    } else {
-      // Nếu không có file, sử dụng JSON
-      const jsonData = {
-        username: registerData.username,
-        password: registerData.password,
-        fullname: registerData.fullname,
-        gender: registerData.gender,
-        email: registerData.email,
-        phone: registerData.phone,
-        birthdate: registerData.birthdate,
-        address: registerData.address,
-        roleID: 'R04', // R04 - Customer role
-        image: null
-      };
+    const response = await apiClient.post('/api/Auth/register', jsonData, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-      console.log('Sending register data as JSON:', jsonData);
-
-      const response = await apiClient.post('/api/Auth/register', jsonData, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      return handleRegisterResponse(response);
-    }
+    return handleRegisterResponse(response);
   } catch (error: any) {
     console.error('Register error:', error);
     

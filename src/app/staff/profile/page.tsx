@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { staffProfileAPI, type StaffProfile } from '@/lib/api/staff';
 import {
   UserIcon,
   EnvelopeIcon,
@@ -11,20 +12,7 @@ import {
   CheckIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
-
-interface StaffProfile {
-  id: string;
-  username: string;
-  email: string;
-  fullName: string;
-  phone: string;
-  address: string;
-  department: string;
-  position: string;
-  employeeId: string;
-  joinDate: string;
-  avatar?: string;
-}
+import { toast } from 'react-hot-toast';
 
 export default function StaffProfile() {
   const { user } = useAuth();
@@ -34,27 +22,41 @@ export default function StaffProfile() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate fetching profile data
+    // Fetch real profile data using API
     const fetchProfile = async () => {
       try {
-        // Mock data - replace with actual API call
-        const mockProfile: StaffProfile = {
-          id: '1',
-          username: user?.username || 'staff',
-          email: user?.email || 'staff@dnatest.com',
-          fullName: 'Nguyễn Văn An',
-          phone: '0123456789',
-          address: '123 Đường ABC, Quận 1, TP.HCM',
-          department: 'Phòng xét nghiệm',
-          position: 'Kỹ thuật viên xét nghiệm',
-          employeeId: 'EMP001',
-          joinDate: '2023-01-15'
-        };
+        setLoading(true);
+        const response = await staffProfileAPI.getProfile();
         
-        setProfile(mockProfile);
-        setEditedProfile(mockProfile);
+        if (response.success && response.profile) {
+          setProfile(response.profile);
+          setEditedProfile(response.profile);
+        } else {
+          console.error('Failed to fetch profile:', response.message);
+          toast.error(response.message || 'Không thể tải thông tin hồ sơ');
+          
+          // Fallback to user data from auth context if API fails
+          if (user) {
+            const fallbackProfile: StaffProfile = {
+              id: user.userID || '1',
+              username: user.username || 'staff',
+              email: user.email || 'staff@dnatest.com',
+              fullName: user.fullname || 'Nhân viên',
+              phone: user.phone || '',
+              address: user.address || '',
+              department: 'Phòng xét nghiệm',
+              position: 'Kỹ thuật viên xét nghiệm',
+              employeeId: 'EMP001',
+              joinDate: new Date().toISOString(),
+              avatar: user.image || ''
+            };
+            setProfile(fallbackProfile);
+            setEditedProfile(fallbackProfile);
+          }
+        }
       } catch (error) {
         console.error('Error fetching profile:', error);
+        toast.error('Có lỗi xảy ra khi tải thông tin hồ sơ');
       } finally {
         setLoading(false);
       }
@@ -70,18 +72,18 @@ export default function StaffProfile() {
 
   const handleSave = async () => {
     try {
-      // Mock API call to save profile
-      console.log('Saving profile:', editedProfile);
+      const response = await staffProfileAPI.updateProfile(editedProfile);
       
-      // Update local state
-      setProfile(prev => prev ? { ...prev, ...editedProfile } : null);
-      setIsEditing(false);
-      
-      // Show success message (you can implement toast notification)
-      alert('Cập nhật hồ sơ thành công!');
+      if (response.success) {
+        setProfile(prev => prev ? { ...prev, ...editedProfile } : null);
+        setIsEditing(false);
+        toast.success(response.message || 'Cập nhật hồ sơ thành công!');
+      } else {
+        toast.error(response.message || 'Cập nhật hồ sơ thất bại!');
+      }
     } catch (error) {
       console.error('Error saving profile:', error);
-      alert('Có lỗi xảy ra khi cập nhật hồ sơ!');
+      toast.error('Có lỗi xảy ra khi cập nhật hồ sơ!');
     }
   };
 
@@ -117,7 +119,15 @@ export default function StaffProfile() {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="h-16 w-16 bg-white/20 rounded-xl flex items-center justify-center">
-              <UserIcon className="h-8 w-8 text-white" />
+              {profile.avatar ? (
+                <img 
+                  src={profile.avatar} 
+                  alt={profile.fullName}
+                  className="w-full h-full object-cover rounded-xl"
+                />
+              ) : (
+                <UserIcon className="h-8 w-8 text-white" />
+              )}
             </div>
             <div>
               <h1 className="text-2xl font-bold">{profile.fullName}</h1>

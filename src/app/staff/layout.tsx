@@ -15,6 +15,7 @@ import {
   DocumentTextIcon,
   CubeIcon
 } from '@heroicons/react/24/outline';
+import { staffProfileAPI } from '@/lib/api/staff';
 
 interface StaffLayoutProps {
   children: React.ReactNode;
@@ -30,13 +31,46 @@ export default function StaffLayout({ children }: StaffLayoutProps) {
     const fetchUserEmail = async () => {
       if (!user?.email || user.email === 'staff@dnatest.com') {
         try {
-          const { adminProfileAPI } = await import('@/lib/api/admin');
-          const result = await adminProfileAPI.getProfile();
+          // Kiểm tra token trước khi gọi API
+          const token = localStorage.getItem('token');
+          if (!token) {
+            console.warn('No token found, redirecting to login');
+            router.push('/auth/login');
+            return;
+          }
+
+          // Kiểm tra token có hết hạn hay không
+          const { isTokenValid } = await import('@/lib/api/auth');
+          if (!isTokenValid(token)) {
+            console.warn('Token is invalid or expired, redirecting to login');
+            const { forceLogout } = await import('@/lib/api/auth');
+            forceLogout();
+            logout();
+            router.push('/auth/login');
+            return;
+          }
+          
+          // Gọi API lấy profile
+          const result = await staffProfileAPI.getProfile();
           if (result.success && result.profile?.email) {
             setUserEmail(result.profile.email);
+          } else if (result.message?.includes('Phiên đăng nhập hết hạn')) {
+            console.warn('Session expired message from API');
+            const { forceLogout } = await import('@/lib/api/auth');
+            forceLogout();
+            logout();
+            router.push('/auth/login');
           }
-        } catch (error) {
-          console.error('Error fetching user email:', error);
+        } catch (error: any) {
+          console.error('Error fetching staff profile:', error);
+          // Xử lý lỗi 401 từ API
+          if (error?.response?.status === 401) {
+            console.warn('Received 401 error, logging out');
+            const { forceLogout } = await import('@/lib/api/auth');
+            forceLogout();
+            logout();
+            router.push('/auth/login');
+          }
         }
       } else {
         setUserEmail(user.email);
@@ -44,7 +78,7 @@ export default function StaffLayout({ children }: StaffLayoutProps) {
     };
 
     fetchUserEmail();
-  }, [user]);
+  }, [user, router, logout]);
 
   const displayEmail = userEmail || user?.email || 'staff@dnatest.com';
 
@@ -199,30 +233,6 @@ export default function StaffLayout({ children }: StaffLayoutProps) {
                 >
                   <BeakerIcon className="mr-3 h-5 w-5" />
                   Quản lý kết quả
-                </Link>
-                
-                <Link
-                  href="/staff/pending-results"
-                  className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ml-6 ${
-                    isActive("/staff/pending-results")
-                      ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                  }`}
-                >
-                  <DocumentTextIcon className="mr-3 h-4 w-4" />
-                  Kết quả chờ xử lý
-                </Link>
-                
-                <Link
-                  href="/staff/completed-results"
-                  className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ml-6 ${
-                    isActive("/staff/completed-results")
-                      ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                  }`}
-                >
-                  <ClipboardDocumentListIcon className="mr-3 h-4 w-4" />
-                  Kết quả hoàn thành
                 </Link>
               </div>
 
