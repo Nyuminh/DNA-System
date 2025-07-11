@@ -2,10 +2,11 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getAppointmentById, updateAppointment, updateAppointmentStatus, updateAppointmentStatusSafe, Appointment, TestResult, createTestResultV2, getTestResultsByBookingId, kitApi, Kit, getUserById, User, getAllUsers } from '@/lib/api/staff';
+import { getAppointmentById, updateAppointment, updateAppointmentStatus, updateAppointmentStatusSafe, Appointment, TestResult, createTestResultV2, getTestResultsByBookingId, kitApi, Kit, getUserById, User, getAllUsers, Relative, getRelativesByBookingId } from '@/lib/api/staff';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 
+// Define AppointmentStatus type
 type AppointmentStatus = 'pending' | 'in-progress' | 'completed' | 'cancelled';
 
 export default function AppointmentDetailPage() {
@@ -25,13 +26,8 @@ export default function AppointmentDetailPage() {
   
   // Form người xét nghiệm cùng
   const [showRelatedPersonForm, setShowRelatedPersonForm] = useState<boolean>(false);
-  const [relatedPerson, setRelatedPerson] = useState({
-    fullName: 'Nguyễn Văn A',
-    phoneNumber: '0912345678',
-    dateOfBirth: '1990-01-01',
-    gender: 'Nam',
-    role: 'Cha'
-  });
+  const [relatedPerson, setRelatedPerson] = useState<Relative | null>(null);
+  const [loadingRelatives, setLoadingRelatives] = useState<boolean>(false);
   
   // Kit related state
   const [kitExists, setKitExists] = useState<boolean>(false);
@@ -179,14 +175,14 @@ export default function AppointmentDetailPage() {
     }
     
     try {
-      console.log(`🔄 Fetching appointment data for ID: ${id}`);
+      console.log(`Fetching appointment data for ID: ${id}`);
       setLoading(true);
       setError(null);
       
       const data = await getAppointmentById(token, id as string);
       
       if (data) {
-        console.log('✅ Fetched appointment data:', data);
+        console.log('Fetched appointment data:', data);
         setAppointment(data);
         
         // Xác định trạng thái từ dữ liệu booking
@@ -197,27 +193,33 @@ export default function AppointmentDetailPage() {
         // Fetch customer info if we have customerId
         if (data.customerId) {
           try {
-            console.log(`⬇️ Fetching customer info for ID: ${data.customerId}`);
+            console.log(`Fetching customer info for ID: ${data.customerId}`);
             
             // First try to get all users to have a local cache
             const allUsers = await getAllUsers();
-            console.log(`📊 Got ${allUsers.length} users, searching for ID: ${data.customerId}`);
+            console.log(`Got ${allUsers.length} users, searching for ID: ${data.customerId}`);
             
             // Find customer in the list by exact ID match
             const matchingCustomer = allUsers.find(u => u.id === data.customerId);
             
             if (matchingCustomer) {
-              console.log("✅ Found exact customer match:", matchingCustomer);
+              console.log("Found exact customer match:", matchingCustomer);
               setCustomerInfo(matchingCustomer);
+              
+              // Fetch relatives by user ID
+              await fetchRelativeData(data.customerId, data.bookingId);
             } else {
-              console.log("⚠️ No exact ID match, trying with getUserById");
+              console.log("No exact ID match, trying with getUserById");
               // Try direct fetch as fallback
               const customerData = await getUserById(data.customerId);
               if (customerData) {
-                console.log("✅ Got customer via getUserById:", customerData);
+                console.log("Got customer via getUserById:", customerData);
                 setCustomerInfo(customerData);
+                
+                // Fetch relatives by user ID
+                await fetchRelativeData(data.customerId, data.bookingId);
               } else {
-                console.log("⚠️ Could not fetch customer info, using fallback");
+                console.log("Could not fetch customer info, using fallback");
                 // Create a fallback customer object to show ID
                 setCustomerInfo({
                   id: data.customerId,
@@ -228,7 +230,7 @@ export default function AppointmentDetailPage() {
               }
             }
           } catch (error) {
-            console.error("❌ Error fetching customer info:", error);
+            console.error("Error fetching customer info:", error);
             // Create a fallback customer object for error case
             setCustomerInfo({
               id: data.customerId,
@@ -260,7 +262,7 @@ export default function AppointmentDetailPage() {
           bookingId: data.bookingId || ''
         }));
       } else {
-        console.error('❌ Failed to fetch appointment data');
+        console.error('Failed to fetch appointment data');
         setError('Không thể tải dữ liệu lịch hẹn');
       }
     } catch (error: any) {
@@ -276,6 +278,46 @@ export default function AppointmentDetailPage() {
       setLoading(false);
     }
   };
+
+  // Hàm lấy thông tin người thân
+  const fetchRelativeData = async (userId: string, bookingId?: string) => {
+    if (!token || !bookingId) return;
+    
+    try {
+      setLoadingRelatives(true);
+      console.log(`Fetching relative data for booking ID: ${bookingId}`);
+      
+      // Sử dụng API để lấy người xét nghiệm cùng từ bookingId
+      const bookingRelatives = await getRelativesByBookingId(token, bookingId);
+      
+      if (bookingRelatives && bookingRelatives.length > 0) {
+        console.log(`Found ${bookingRelatives.length} relatives by booking ID:`, bookingRelatives);
+        setRelatedPerson(bookingRelatives[0]);
+      } else {
+        console.log('No relatives found for this booking');
+        // Sử dụng dữ liệu mặc định nếu không tìm thấy
+        setRelatedPerson({
+          fullname: 'Không có thông tin',
+          phone: 'Không có thông tin',
+          birthdate: new Date().toISOString().slice(0, 10),
+          gender: 'Không có thông tin',
+          relationship: 'Không có thông tin'
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching relative data:', error);
+      // Sử dụng dữ liệu mặc định nếu có lỗi
+      setRelatedPerson({
+        fullname: 'Không có thông tin',
+        phone: 'Không có thông tin',
+        birthdate: new Date().toISOString().slice(0, 10),
+        gender: 'Không có thông tin',
+        relationship: 'Không có thông tin'
+      });
+    } finally {
+      setLoadingRelatives(false);
+    }
+  };
   
   // Load data when component mounts
   useEffect(() => {
@@ -288,12 +330,12 @@ export default function AppointmentDetailPage() {
     
     try {
       setLoadingResults(true);
-      console.log(`🔍 Fetching test results for booking ID: ${bookingId}`);
+      console.log(`Fetching test results for booking ID: ${bookingId}`);
       
       // Gọi API để lấy kết quả xét nghiệm
       const results = await getTestResultsByBookingId(token, bookingId);
       
-      console.log(`✅ Found ${results.length} test results:`, results);
+      console.log(`Found ${results.length} test results:`, results);
       setExistingResults(results);
       
       if (results.length === 0) {
@@ -378,7 +420,7 @@ export default function AppointmentDetailPage() {
       const success = await updateAppointmentStatusSafe(token, id as string, apiStatus);
       
       if (success) {
-        console.log(`✅ Status updated successfully to: ${apiStatus}`);
+        console.log(`Status updated successfully to: ${apiStatus}`);
         
         // Cập nhật trạng thái trong state
         setAppointment(prevAppointment => {
@@ -400,7 +442,7 @@ export default function AppointmentDetailPage() {
           fetchTestResults(appointment.bookingId);
         }
       } else {
-        console.error("❌ Failed to update status");
+        console.error("Failed to update status");
         toast.error('Không thể cập nhật trạng thái');
         // Nếu API không thành công, thử fetch lại dữ liệu để xem trạng thái hiện tại
         await refetchAppointment();
@@ -480,11 +522,11 @@ export default function AppointmentDetailPage() {
     if (!token || !id) return;
     
     try {
-      console.log(`🔄 Re-fetching appointment data for ID: ${id}`);
+      console.log(`Re-fetching appointment data for ID: ${id}`);
       const data = await getAppointmentById(token, id as string);
       
       if (data) {
-        console.log('✅ Refreshed appointment data:', data);
+        console.log('Refreshed appointment data:', data);
         setAppointment(data);
         
         // Determine status from appointment data
@@ -497,7 +539,7 @@ export default function AppointmentDetailPage() {
           checkKitForBooking(data.bookingId);
         }
       } else {
-        console.error('❌ Failed to refresh appointment data');
+        console.error('Failed to refresh appointment data');
       }
     } catch (error) {
       console.error('Error re-fetching appointment:', error);
@@ -508,27 +550,27 @@ export default function AppointmentDetailPage() {
   const checkKitForBooking = async (bookingId: string) => {
     try {
       setCheckingKit(true);
-      console.log(`🔍 Checking if kit exists for booking ID: ${bookingId}`);
+      console.log(`Checking if kit exists for booking ID: ${bookingId}`);
       
       // Get all kits and filter by bookingId
       const allKits = await kitApi.getAllKits();
-      console.log(`🔄 Fetched ${allKits.length} kits from API`);
+      console.log(`Fetched ${allKits.length} kits from API`);
       
       const matchingKits = allKits.filter(kit => kit.bookingId === bookingId);
-      console.log(`🔍 Filter results: Found ${matchingKits.length} kit(s) matching bookingId ${bookingId}`);
+      console.log(`Filter results: Found ${matchingKits.length} kit(s) matching bookingId ${bookingId}`);
       
       if (matchingKits.length > 0) {
         const kit = matchingKits[0]; // Get the first matching kit
-        console.log(`✅ Found kit: ${kit.kitID}, Status: ${kit.status}`, kit);
+        console.log(`Found kit: ${kit.kitID}, Status: ${kit.status}`, kit);
         
         // Store kit data without additional name lookup
         setKitExists(true);
         setKitInfo(kit);
         
-        console.log(`📊 Status mapped from backend: ${kit.status}`);
-        console.log(`📝 Status text for display: ${getKitStatusText(kit.status)}`);
+        console.log(`Status mapped from backend: ${kit.status}`);
+        console.log(`Status text for display: ${getKitStatusText(kit.status)}`);
       } else {
-        console.log('❌ No kits found for this booking');
+        console.log('No kits found for this booking');
         setKitExists(false);
         setKitInfo(null);
       }
@@ -968,25 +1010,31 @@ export default function AppointmentDetailPage() {
       <div className="mt-8">
         <div className="bg-white rounded-lg shadow p-6 border border-gray-100">
           <h2 className="text-lg font-semibold mb-4 text-blue-700">Thông tin người xét nghiệm cùng</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          
+          {loadingRelatives ? (
+            <div className="flex justify-center items-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          ) : relatedPerson ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div className="border-b pb-2">
                 <span className="text-sm font-medium text-gray-500">Họ và tên:</span>
-                <p className="mt-1 font-medium">{relatedPerson.fullName}</p>
+                <p className="mt-1 font-medium">{relatedPerson.fullname}</p>
               </div>
               
               <div className="border-b pb-2">
                 <span className="text-sm font-medium text-gray-500">Số điện thoại:</span>
-                <p className="mt-1 font-medium">{relatedPerson.phoneNumber}</p>
+                <p className="mt-1 font-medium">{relatedPerson.phone}</p>
               </div>
               
               <div className="border-b pb-2">
                 <span className="text-sm font-medium text-gray-500">Ngày sinh:</span>
                 <p className="mt-1 font-medium">
-                  {new Date(relatedPerson.dateOfBirth).toLocaleDateString('vi-VN', {
+                  {relatedPerson.birthdate ? new Date(relatedPerson.birthdate).toLocaleDateString('vi-VN', {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric'
-                  })}
+                  }) : 'Không có thông tin'}
                 </p>
               </div>
               
@@ -995,13 +1043,23 @@ export default function AppointmentDetailPage() {
                 <p className="mt-1 font-medium">{relatedPerson.gender}</p>
               </div>
               
-              <div className="md:col-span-2 border-b pb-2">
-                <span className="text-sm font-medium text-gray-500">Vai trò:</span>
-                <p className="mt-1 font-medium">{relatedPerson.role}</p>
+              <div className="border-b pb-2">
+                <span className="text-sm font-medium text-gray-500">Địa chỉ:</span>
+                <p className="mt-1 font-medium">{relatedPerson.address || 'Không có thông tin'}</p>
+              </div>
+              
+              <div className="border-b pb-2">
+                <span className="text-sm font-medium text-gray-500">Mối quan hệ:</span>
+                <p className="mt-1 font-medium">{relatedPerson.relationship}</p>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="py-8 text-center text-gray-500">
+              Không tìm thấy thông tin người xét nghiệm cùng
+            </div>
+          )}
         </div>
+      </div>
         
       {/* Kết quả xét nghiệm */}
         {status === 'completed' && (

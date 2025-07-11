@@ -30,37 +30,9 @@ export const getUserById = async (userId: string): Promise<User | null> => {
     // Thử nhiều phương pháp khác nhau
     let user: User | null = null;
     
-    // Phương pháp 1: GET trực tiếp
+    // Phương pháp 1: GET với query params - Thử phương pháp này trước vì ít gây lỗi nhất
     try {
-      console.log(`🔍 Method 1: Direct GET to /api/User/${userId}`);
-      const response = await axios.get(`${API_BASE_URL}/api/User/${userId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': '*/*'
-        }
-      });
-      
-      if (response.data) {
-        console.log(`✅ Method 1 success:`, response.data);
-        return {
-          id: response.data.id || response.data.userID || userId,
-          username: response.data.username || userId,
-          fullname: response.data.fullname || response.data.username || userId,
-          email: response.data.email || '',
-          phone: response.data.phone || '',
-          address: response.data.address || '',
-          role: response.data.role || response.data.roleID || '',
-          status: response.data.status || ''
-        };
-      }
-    } catch (error1: any) {
-      console.log(`❌ Method 1 failed:`, error1.message || error1);
-    }
-    
-    // Phương pháp 2: GET với query params
-    try {
-      console.log(`🔍 Method 2: GET with query params to /api/User?id=${userId}`);
+      console.log(`🔍 Method 1: GET with query params to /api/User?id=${userId}`);
       const response = await axios.get(`${API_BASE_URL}/api/User`, {
         params: { id: userId },
         headers: {
@@ -72,7 +44,7 @@ export const getUserById = async (userId: string): Promise<User | null> => {
       
       if (response.data) {
         if (Array.isArray(response.data) && response.data.length > 0) {
-          console.log(`✅ Method 2 success (array):`, response.data[0]);
+          console.log(`✅ Method 1 success (array):`, response.data[0]);
           const userData = response.data[0];
           return {
             id: userData.id || userData.userID || userId,
@@ -85,7 +57,7 @@ export const getUserById = async (userId: string): Promise<User | null> => {
             status: userData.status || ''
           };
         } else if (response.data.id || response.data.userID) {
-          console.log(`✅ Method 2 success (object):`, response.data);
+          console.log(`✅ Method 1 success (object):`, response.data);
           const userData = response.data;
           return {
             id: userData.id || userData.userID || userId,
@@ -99,13 +71,13 @@ export const getUserById = async (userId: string): Promise<User | null> => {
           };
         }
       }
-    } catch (error2: any) {
-      console.log(`❌ Method 2 failed:`, error2.message || error2);
+    } catch (error1: any) {
+      console.log(`❌ Method 1 failed:`, error1.message || error1);
     }
     
-    // Phương pháp 3: Lấy tất cả users và lọc
+    // Phương pháp 2: Lấy tất cả users và lọc - phương pháp này chậm nhưng đáng tin cậy
     try {
-      console.log(`🔍 Method 3: Fetching all users and filtering`);
+      console.log(`🔍 Method 2: Fetching all users and filtering`);
       const allUsers = await getAllUsers();
       console.log(`Got ${allUsers.length} users, searching for ID: ${userId}`);
       
@@ -116,8 +88,39 @@ export const getUserById = async (userId: string): Promise<User | null> => {
       ) || null;
       
       if (user) {
-        console.log(`✅ Method 3 success:`, user);
+        console.log(`✅ Method 2 success:`, user);
         return user;
+      }
+    } catch (error2: any) {
+      console.log(`❌ Method 2 failed:`, error2.message || error2);
+    }
+    
+    // Phương pháp 3: POST method với ID trong body - thử khi các phương pháp khác thất bại
+    try {
+      console.log(`🔍 Method 3: POST to /api/User/get with ID in body`);
+      const response = await axios.post(`${API_BASE_URL}/api/User/get`, 
+        { id: userId },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': '*/*'
+          }
+        }
+      );
+      
+      if (response.data) {
+        console.log(`✅ Method 3 success:`, response.data);
+        return {
+          id: response.data.id || response.data.userID || userId,
+          username: response.data.username || userId,
+          fullname: response.data.fullname || response.data.username || userId,
+          email: response.data.email || '',
+          phone: response.data.phone || '',
+          address: response.data.address || '',
+          role: response.data.role || response.data.roleID || '',
+          status: response.data.status || ''
+        };
       }
     } catch (error3: any) {
       console.log(`❌ Method 3 failed:`, error3.message || error3);
@@ -296,9 +299,9 @@ const mapStatusFromBackend = (backendStatus: string): Kit['status'] => {
   // Xử lý các trường hợp không lỗi encoding
   if (normalizedStatus === 'đã vận chuyển' || normalizedStatus === 'da van chuyen') return 'available';
   if (normalizedStatus === 'đã lấy mẫu' || normalizedStatus === 'da lay mau') return 'completed';
-  if (normalizedStatus === 'đã tới kho' || normalizedStatus === 'da toi kho') return 'expired';
-  if (normalizedStatus === 'đang vận chuyển' || normalizedStatus === 'dang van chuyen') return 'in-use';
-  if (normalizedStatus === 'đang vận chuyển mẫu' || normalizedStatus === 'dang van chuyen mau') return 'in-use';
+  if (normalizedStatus === 'đã tới kho' || normalizedStatus.includes('da toi kho')) return 'expired';
+  if (normalizedStatus === 'đang vận chuyển' || normalizedStatus.includes('dang van chuyen')) return 'in-use';
+  if (normalizedStatus === 'đang vận chuyển mẫu' || normalizedStatus.includes('dang van chuyen mau')) return 'in-use';
   
   // Xử lý các trường hợp có lỗi encoding với dấu "?"
   if (normalizedStatus.includes('đã') || normalizedStatus.includes('da') || normalizedStatus.includes('đa')) {
@@ -1600,6 +1603,68 @@ export const updateAppointmentStatusSafe = async (token: string, id: string, sta
   }
 };
 
+// Interface cho thông tin người thân (relative)
+export interface Relative {
+  relativeID?: string;
+  userID?: string;
+  fullname: string;
+  relationship: string;
+  gender: string;
+  birthdate: string;
+  phone: string;
+  address?: string;
+  bookingID?: string;
+}
+
+// Hàm lấy danh sách người thân theo bookingId
+export const getRelativesByBookingId = async (token: string, bookingId: string): Promise<Relative[]> => {
+  try {
+    console.log(`Fetching relatives for booking ID: ${bookingId}`);
+    
+    const response = await axios.get(`${API_BASE_URL}/api/Relatives/by-booking/${bookingId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': '*/*'
+      }
+    });
+    
+    if (response.data) {
+      // Xử lý các định dạng phản hồi khác nhau
+      let relatives: any[] = [];
+      
+      if ('$values' in response.data && Array.isArray(response.data.$values)) {
+        relatives = response.data.$values;
+      } else if (Array.isArray(response.data)) {
+        relatives = response.data;
+      } else if (response.data.relativeID || response.data.userID) {
+        // Trường hợp API trả về một đối tượng duy nhất
+        relatives = [response.data];
+      } else {
+        relatives = Array.isArray(response.data) ? response.data : [response.data];
+      }
+      
+      console.log(`Success: Fetched ${relatives.length} relatives for booking`);
+      return relatives.map(relative => ({
+        relativeID: relative.relativeID || '',
+        userID: relative.userID || '',
+        fullname: relative.fullname || '',
+        relationship: relative.relationship || '',
+        gender: relative.gender || '',
+        birthdate: relative.birthdate || '',
+        phone: relative.phone || '',
+        address: relative.address || '',
+        bookingID: relative.bookingID || bookingId
+      }));
+    }
+    
+    return [];
+  } catch (error: any) {
+    console.error(`Error fetching relatives for booking ID ${bookingId}:`, error.message || error);
+    return [];
+  }
+};
+
 // Interface cho Staff Profile
 export interface StaffProfile {
   id: string;
@@ -1821,4 +1886,6 @@ export const staffProfileAPI = {
     }
   }
 };
+
+
 
