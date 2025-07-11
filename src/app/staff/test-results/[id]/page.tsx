@@ -487,18 +487,25 @@ export default function AppointmentDetailPage() {
     });
   };
 
-  const getStatusText = (statusValue: AppointmentStatus) => {
+  // Chuyển đổi trạng thái sang dạng hiển thị
+  const getStatusText = (statusValue: AppointmentStatus): string => {
+    // Sử dụng phương thức nếu đang ở trạng thái chờ
+    if (statusValue === 'pending' && appointment && appointment.method) {
+      // Nếu phương thức là "Tại cơ sở y tế" thì hiển thị "Đang chờ checkin"
+      if (appointment.method.toLowerCase().includes('tại cơ sở')) {
+        return 'Đang chờ checkin';
+      }
+      // Mặc định trả về "Đang chờ mẫu" cho các phương thức khác
+      return 'Đang chờ mẫu';
+    }
+    
+    // Các trạng thái khác giữ nguyên
     switch (statusValue) {
-      case 'pending':
-        return 'Đã xác nhận';
-      case 'in-progress':
-        return 'Đang thực hiện';
-      case 'completed':
-        return 'Hoàn thành';
-      case 'cancelled':
-        return 'Hủy';
-      default:
-        return 'Không xác định';
+      case 'pending': return 'Đang chờ mẫu';
+      case 'in-progress': return 'Đang thực hiện';
+      case 'completed': return 'Hoàn thành';
+      case 'cancelled': return 'Đã hủy';
+      default: return statusValue;
     }
   };
 
@@ -700,6 +707,38 @@ export default function AppointmentDetailPage() {
     // Đã bỏ chức năng này vì form chỉ để xem
   };
 
+  // Hàm xác định văn bản trạng thái đầu tiên dựa trên phương thức booking
+  const getInitialStatusText = (method: string): string => {
+    // Nếu phương thức là "Tại cơ sở y tế" thì hiển thị "Đang chờ checkin"
+    if (method?.toLowerCase().includes('tại cơ sở')) {
+      return "Đang chờ Checkin";
+    }
+    
+    // Mặc định là "Đang chờ mẫu" cho "Tự thu mẫu" hoặc các trường hợp khác
+    return "Đang chờ mẫu";
+  };
+  
+  // Hàm xác định điều kiện chuyển trạng thái dựa trên phương thức booking
+  const getStatusRequirements = (method: string): React.ReactNode => {
+    // Nếu phương thức là "Tại cơ sở y tế"
+    if (method?.toLowerCase().includes('tại cơ sở')) {
+      return (
+        <ul className="list-disc ml-5 text-sm text-yellow-700 space-y-1">
+          <li>Khách hàng đã checkin tại cơ sở</li>
+          <li>Có thể bắt đầu thực hiện xét nghiệm</li>
+        </ul>
+      );
+    }
+    
+    // Mặc định cho "Tự thu mẫu" và các trường hợp khác
+    return (
+      <ul className="list-disc ml-5 text-sm text-yellow-700 space-y-1">
+        <li>Booking phải có kit đã được tạo</li>
+        <li>Kit phải ở trạng thái "Đã tới kho"</li>
+      </ul>
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-96">
@@ -791,7 +830,7 @@ export default function AppointmentDetailPage() {
                   </svg>
                 </div>
                 <div className="ml-3">
-                  <p className="font-medium">Đang chờ mẫu</p>
+                  <p className="font-medium">{getInitialStatusText(appointment.method)}</p>
                   <p className="text-sm text-gray-500">{formatDate(appointment.date)}</p>
                 </div>
               </div>
@@ -824,19 +863,23 @@ export default function AppointmentDetailPage() {
           <div className="flex flex-wrap gap-2 mt-4">
                 <button 
                   onClick={() => handleUpdateStatus('in-progress')}
-                  disabled={updating || status === 'in-progress' || status === 'completed' || status === 'cancelled'}
+                  disabled={updating || status === 'in-progress' || status === 'completed' || status === 'cancelled' || 
+                    (appointment.method?.toLowerCase().includes('tự thu mẫu') && (!(!!kitExists) || (!!kitInfo && kitInfo.status !== 'expired')))}
                   className={`px-4 py-2 rounded ${
-                    updating || status === 'in-progress' || status === 'completed' || status === 'cancelled'
+                    updating || status === 'in-progress' || status === 'completed' || status === 'cancelled' ||
+                    (appointment.method?.toLowerCase().includes('tự thu mẫu') && (!(!!kitExists) || (!!kitInfo && kitInfo.status !== 'expired')))
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : 'bg-blue-500 text-white hover:bg-blue-600'
                   }`}
                   title={
                     status === 'pending' 
-                      ? kitExists 
-                        ? kitInfo?.status === 'expired' 
-                          ? 'Chuyển sang trạng thái đang thực hiện' 
-                          : `Kit phải ở trạng thái "Đã tới kho" trước khi chuyển sang thực hiện (hiện tại: ${kitInfo ? getKitStatusText(kitInfo.status) : 'N/A'})`
-                        : 'Booking này chưa có kit. Vui lòng tạo kit trước.'
+                      ? appointment.method?.toLowerCase().includes('tại cơ sở')
+                        ? 'Chuyển sang trạng thái đang thực hiện khi khách hàng đã checkin'
+                        : kitExists 
+                          ? kitInfo?.status === 'expired' 
+                            ? 'Chuyển sang trạng thái đang thực hiện' 
+                            : `Kit phải ở trạng thái "Đã tới kho" trước khi chuyển sang thực hiện (hiện tại: ${kitInfo ? getKitStatusText(kitInfo.status) : 'N/A'})`
+                          : 'Booking này chưa có kit. Vui lòng tạo kit trước.'
                       : ''
                   }
                 >
@@ -972,11 +1015,12 @@ export default function AppointmentDetailPage() {
                     <p className="text-sm text-yellow-700 mb-2">
                       <strong>Điều kiện để chuyển sang trạng thái "Đang thực hiện":</strong>
                     </p>
-                    <ul className="list-disc ml-5 text-sm text-yellow-700 space-y-1">
-                      <li>Booking phải có kit đã được tạo</li>
-                      <li>Kit phải ở trạng thái "Đã tới kho"</li>
-                    </ul>
-                    {checkingKit ? (
+                    {getStatusRequirements(appointment.method)}
+                    {appointment.method?.toLowerCase().includes('tại cơ sở') ? (
+                      <p className="mt-2 text-sm text-yellow-700">
+                        ⚠️ Hãy đảm bảo khách hàng đã checkin tại cơ sở trước khi chuyển trạng thái.
+                      </p>
+                    ) : checkingKit ? (
                       <div className="flex items-center space-x-2 mt-2 text-sm text-blue-600">
                         <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

@@ -164,7 +164,12 @@ export default function OrderManagement() {
     }
   };
 
-  const getStatusText = (status: Order['status']) => {
+  const getStatusText = (status: Order['status'], orderMethod?: Order['method']) => {
+    // Nếu trạng thái là pending và phương thức được chỉ định là tại cơ sở
+    if (status === 'pending' && orderMethod === 'facility-collection') {
+      return 'Đang chờ Checkin';
+    }
+    
     switch (status) {
       case 'pending':
         return 'Đã xác nhận';
@@ -324,7 +329,10 @@ export default function OrderManagement() {
               : order
           )
         );
-        toast.success(`Đã cập nhật trạng thái đơn hàng #${orderId} thành ${getStatusText(newStatus)}`);
+        
+        // Tìm order đã cập nhật để lấy phương thức
+        const updatedOrderWithMethod = orders.find(order => order.id === orderId);
+        toast.success(`Đã cập nhật trạng thái đơn hàng #${orderId} thành ${getStatusText(newStatus, updatedOrderWithMethod?.method)}`);
         return true;
       } else {
         toast.error('Không thể cập nhật trạng thái đơn hàng');
@@ -358,7 +366,11 @@ export default function OrderManagement() {
     }
   };
 
-  const getNextStatusText = (currentStatus: Order['status']): string => {
+  const getNextStatusText = (currentStatus: Order['status'], orderMethod?: Order['method']): string => {
+    if (currentStatus === 'pending' && orderMethod === 'facility-collection') {
+      return 'Đang thực hiện';
+    }
+    
     switch (currentStatus) {
       case 'pending':
         return 'Đang thực hiện';
@@ -550,7 +562,7 @@ export default function OrderManagement() {
                       order.status
                     )}`}
                   >
-                    {getStatusText(order.status)}
+                    {getStatusText(order.status, order.method)}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
