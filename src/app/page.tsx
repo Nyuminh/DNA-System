@@ -164,10 +164,9 @@ export default function Home() {    const services = [
                   <Image 
                     src={service.imageUrl} 
                     alt={service.title}
-                    width={400}
-                    height={192}
-                    className="w-full h-full object-cover"
-                    style={{ width: 'auto', height: 'auto' }}
+                    fill
+                    className="object-cover w-full h-full"
+                    style={{ objectFit: 'cover' }}
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.src = '/images/lab-equipment.svg';
@@ -264,10 +263,9 @@ export default function Home() {    const services = [
                     <Image 
                       src={testimonial.imageUrl} 
                       alt={testimonial.name}
-                      width={64}
-                      height={64}
-                      className="w-full h-full object-cover"
-                      style={{ width: 'auto', height: 'auto' }}
+                      fill
+                      className="object-cover w-full h-full"
+                      style={{ objectFit: 'cover' }}
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.src = '/images/lab-equipment.svg';

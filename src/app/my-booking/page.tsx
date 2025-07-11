@@ -4,14 +4,16 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { jwtDecode } from "jwt-decode";
+import { deleteBooking } from "@/lib/api/bookings";
 
 interface Booking {
   id: string;
   bookingId: string;
-  serviceId: string;      // thêm dòng này để lưu serviceId
-  serviceName: string;    // tên dịch vụ sẽ lấy từ API Services
-  staffName: string;      // nếu cần hiện tên nhân viên
+  serviceId: string;
+  serviceName: string;
+  staffName: string;
   date: string;
+  time: string;     
   status: string;
   address: string;
   method: string;
@@ -138,11 +140,17 @@ export default function MyBookingPage() {
 
           return {
             id: item.id || '',
-            bookingId: item.bookingId || item.bookingID || '', // phòng trường hợp trả về bookingID
+            bookingId: item.bookingId || item.bookingID || '',
             serviceId: String(serviceId),
             serviceName: service ? service.name : '',
-            staffName: staff?.name || '', // name đã là fullName hoặc name
-            date: item.date ? item.date.slice(0, 10) : '',
+            staffName: staff?.name || '',
+            
+            // Tách riêng ngày và giờ từ trường date
+            date: item.date ? item.date.split('T')[0] : '',
+            time: item.date && item.date.includes('T') ? 
+              item.date.split('T')[1].substring(0, 5) : // Lấy phần giờ:phút
+              item.time || '',
+              
             status: item.status || 'Chờ xác nhận',
             address: item.address || '',
             method: item.method || '',
@@ -179,6 +187,34 @@ export default function MyBookingPage() {
     if (bookings.length > 0) fetchKitStatuses();
   }, [bookings]);
 
+  // Add this function inside the MyBookingPage component
+  async function handleCancelBooking(bookingId: string) {
+    if (!confirm('Bạn có chắc chắn muốn hủy đặt lịch này không?')) {
+      return;
+    }
+    
+    try {
+      const result = await deleteBooking(bookingId);
+      
+      if (result.success) {
+        // Update local state to reflect cancellation
+        setBookings(prevBookings => 
+          prevBookings.map(booking => 
+            booking.bookingId === bookingId 
+              ? { ...booking, status: 'Hủy' } 
+              : booking
+          )
+        );
+        alert('Đã hủy đặt lịch thành công.');
+      } else {
+        alert(result.message || 'Không thể hủy đặt lịch. Vui lòng thử lại sau.');
+      }
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      alert('Có lỗi xảy ra khi hủy đặt lịch. Vui lòng thử lại sau.');
+    }
+  }
+
   return (
     <MainLayout>
       <div className="bg-gray-50 min-h-screen py-10">
@@ -200,11 +236,11 @@ export default function MyBookingPage() {
                 <div className="col-span-2">TÊN DỊCH VỤ</div>
                 <div className="col-span-2">NHÂN VIÊN</div>
                 <div className="col-span-2">ĐỊA CHỈ</div>
-                <div className="col-span-1 text-center">NGÀY HẸN</div>
+                <div className="col-span-1 text-center">NGÀY ĐẶT</div>
                 <div className="col-span-1">PHƯƠNG THỨC</div>
                 <div className="col-span-1 text-center">TRẠNG THÁI</div>
                 <div className="col-span-1 text-center">TRẠNG THÁI KIT</div>
-                <div className="col-span-1 text-center">KẾT QUẢ</div>
+                <div className="col-span-1 text-center">THAO TÁC</div>
               </div>
               {/* Body */}
               {bookings.map((booking, idx) => (
@@ -220,7 +256,16 @@ export default function MyBookingPage() {
                     {booking.staffName || <span className="italic text-gray-400">---</span>}
                   </div>
                   <div className="col-span-2 text-gray-900 break-words">{booking.address || <span className="italic text-gray-400">---</span>}</div>
-                  <div className="col-span-1 text-gray-900 text-center">{booking.date || <span className="italic text-gray-400">---</span>}</div>
+                  <div className="col-span-1 text-center">
+                    <div className="text-gray-900">
+                      {booking.date || <span className="italic text-gray-400">---</span>}
+                      {booking.time && (
+                        <div className="mt-1 text-xs text-blue-600 font-medium">
+                          {booking.time}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   <div className="col-span-1">
                     <span className="inline-block bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium w-full text-center">
                       {booking.method || <span className="italic text-gray-400">---</span>}
@@ -228,7 +273,7 @@ export default function MyBookingPage() {
                   </div>
                   <div className="col-span-1 text-center">
                     <span
-                      className={`inline-block px-2 py-[2px] rounded-full font-bold uppercase text-center w-full text-[11px] ${
+                      className={`inline-block px-2 py-1 rounded-full font-medium text-center w-full ${
                         booking.status === 'Hoàn thành'
                           ? 'bg-green-100 text-green-800'
                           : booking.status === 'Đang thực hiện'
@@ -246,38 +291,40 @@ export default function MyBookingPage() {
                   </div>
                   <div className="col-span-1 text-center">
                     <span
-                      className={`inline-block px-2 py-[2px] rounded-full font-bold uppercase text-center w-full text-[11px] ${
-                        kitStatuses[booking.bookingId] === 'Đã nhận'
-                          ? 'bg-emerald-100 text-emerald-700'
-                          : kitStatuses[booking.bookingId] === 'Đang giao'
-                          ? 'bg-yellow-200 text-yellow-900'
-                          : kitStatuses[booking.bookingId] === 'Chưa nhận'
-                          ? 'bg-gray-200 text-gray-700'
-                          : kitStatuses[booking.bookingId] === 'Đang vận chuyển'
-                          ? 'bg-blue-200 text-blue-900'
-                          : kitStatuses[booking.bookingId] === 'Đã vận chuyển'
-                          ? 'bg-indigo-200 text-indigo-900'
-                          : kitStatuses[booking.bookingId] === 'Đang vận chuyển mẫu'
-                          ? 'bg-orange-200 text-orange-900'
-                          : kitStatuses[booking.bookingId] === 'Đã lấy mẫu'
-                          ? 'bg-teal-200 text-teal-900'
-                          : kitStatuses[booking.bookingId] === 'Đã tới kho'
-                          ? 'bg-purple-200 text-purple-900'
-                          : 'bg-gray-50 text-gray-400'
+                      className={`inline-block px-2 py-1 rounded-full font-medium text-center w-full ${
+                        // XANH - Các trạng thái hoàn thành
+                        ['Đã nhận', 'Đã vận chuyển', 'Đã lấy mẫu', 'Đã tới kho'].includes(kitStatuses[booking.bookingId])
+                          ? 'bg-green-100 text-green-800'
+                        // VÀNG - Các trạng thái đang tiến hành
+                        : ['Đang giao', 'Đang vận chuyển', 'Đang vận chuyển mẫu', 'Đang xử lý', 'Đang lấy mẫu'].includes(kitStatuses[booking.bookingId])
+                          ? 'bg-yellow-100 text-yellow-800'
+                        // ĐỎ - Các trạng thái có vấn đề
+                        : ['Chưa nhận', 'Bị từ chối', 'Lỗi mẫu', 'Thất lạc'].includes(kitStatuses[booking.bookingId])
+                          ? 'bg-red-100 text-red-800'
+                        // XÁM - Mặc định cho các trạng thái khác
+                          : 'bg-gray-100 text-gray-800'
                       }`}
                       style={{ letterSpacing: 1 }}
                     >
                       {kitStatuses[booking.bookingId] || <span className="italic text-gray-400">---</span>}
                     </span>
                   </div>
-                  <div className="col-span-1 text-center">
+                  <div className="col-span-1 flex flex-col space-y-2 justify-center items-center">
                     {booking.status === 'Hoàn thành' ? (
                       <Link
                         href={`/my-booking/result/${booking.bookingId}`}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs inline-block text-center"
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs inline-block text-center w-full"
                       >
                         Xem kết quả
                       </Link>
+                    ) : booking.status !== 'Hủy' ? (
+                      <button
+                        onClick={() => handleCancelBooking(booking.bookingId)}
+                        className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs inline-block text-center w-full"
+                        disabled={booking.status === 'Hoàn thành'}
+                      >
+                        Hủy đặt lịch
+                      </button>
                     ) : (
                       <span className="text-gray-400 italic">---</span>
                     )}
@@ -311,10 +358,10 @@ async function getStaffNameById(staffId: string): Promise<string | null> {
         return null;
       }
     }
-    // Resolve $ref nếu có
-    const idMap: Record<string, any> = {};
-    users.forEach((u: any) => { if (u.$id) idMap[u.$id] = u; });
-    users = users.map((u: any) => (u.$ref ? idMap[u.$ref] : u));
+    // // Resolve $ref nếu có
+    // const idMap: Record<string, any> = {};
+    // users.forEach((u: any) => { if (u.$id) idMap[u.$id] = u; });
+    // users = users.map((u: any) => (u.$ref ? idMap[u.$ref] : u));
 
     // Tìm user theo staffId (có thể là userID, id, userId)
     const found = users.find((u: any) =>

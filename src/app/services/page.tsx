@@ -253,7 +253,7 @@ export default function ServicesPage() {
                         {service.image && (
                           <div className="h-48 w-full bg-gray-200">
                             <img 
-                              src={service.image} 
+                              src={`/images/${service.image.split('/').pop()}`}
                               alt={service.name} 
                               className="w-full h-full object-cover"
                             />
@@ -261,9 +261,15 @@ export default function ServicesPage() {
                         )}
                         <div className="p-6">
                           <h4 className="text-xl font-bold text-gray-900 mb-2">{service.name}</h4>
-                          <p className="text-gray-600 mb-4 line-clamp-3">{service.description}</p>
+                          <div className="h-20 mb-4 overflow-hidden">
+                            <p className="text-gray-600 line-clamp-3">{service.description}</p>
+                          </div>
                           <div className="flex justify-between items-center">
-                            <p className="text-lg font-bold text-blue-600">{service.price+" VND"}</p>
+                            <p className="text-lg font-bold text-blue-600">
+                              {new Intl.NumberFormat('vi-VN', { 
+                                maximumFractionDigits: 0 
+                              }).format(Number(service.price))} ₫
+                            </p>
                             <Link 
                               href={`/services/book?serviceId=${encodeURIComponent(String(service.id))}`}
                               className="inline-block bg-blue-600 text-white text-sm px-4 py-2 rounded hover:bg-blue-700"

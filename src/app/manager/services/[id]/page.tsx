@@ -16,6 +16,10 @@ import {
   ChartBarIcon
 } from "@heroicons/react/24/outline";
 import axios from 'axios';
+import { getAppointmentsByServiceId } from '@/lib/api/services'; // Thêm nếu đã tạo hàm này
+import { getUserById, getUsers } from '@/lib/api/users'; // Đảm bảo đã import
+import { getFeedbacksByServiceId } from "@/lib/api/feedback";
+
 
 interface Service {
   id: string;
@@ -32,20 +36,28 @@ interface Service {
   sampleTypes: string[];
   turnaroundTime: string;
   accuracy: string;
-  image?: string; // Thêm thuộc tính hình ảnh
+  image?: string; 
 }
 
 interface Booking {
-  id: string;
+  bookingId: string;
   customerName: string;
-  customerEmail: string;
-  bookingDate: string;
-  status: "pending" | "confirmed" | "completed" | "cancelled";
+  date: string;
+  staffName: string;
+  serviceId: string;
+  status: string;
   totalAmount: number;
 }
 
 interface Review {
   id: string;
+  customerName: string;
+  rating: number;
+  comment: string;
+  date: string;
+}
+interface Feedback {
+  feedbackId: string;
   customerName: string;
   rating: number;
   comment: string;
@@ -103,7 +115,7 @@ export default function ServiceDetailPage() {
 
   const [service, setService] = useState<Service | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviews, setReviews] = useState<Feedback[]>([]);
   const [activeTab, setActiveTab] = useState("overview");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -176,66 +188,12 @@ export default function ServiceDetailPage() {
           ]),
           turnaroundTime: serviceData.turnaroundTime || '5-7 ngày làm việc',
           accuracy: serviceData.accuracy || '99.99%',
-          image: serviceData.image || serviceData.imageUrl || '', // Lấy ảnh từ API
+          image: serviceData.image || serviceData.imageUrl || '', 
         };
 
         setService(formattedService);
-        
-        // For now, keep using mock data for bookings and reviews
-        // In a real implementation, you would have separate API calls for these
-        const mockBookings: Booking[] = [
-          {
-            id: "1",
-            customerName: "Nguyễn Văn A",
-            customerEmail: "nguyenvana@email.com",
-            bookingDate: "2024-03-15",
-            status: "completed",
-            totalAmount: 4500000
-          },
-          {
-            id: "2",
-            customerName: "Trần Thị B",
-            customerEmail: "tranthib@email.com",
-            bookingDate: "2024-03-14",
-            status: "confirmed",
-            totalAmount: 4500000
-          },
-          {
-            id: "3",
-            customerName: "Lê Văn C",
-            customerEmail: "levanc@email.com",
-            bookingDate: "2024-03-13",
-            status: "pending",
-            totalAmount: 4500000
-          }
-        ];
-
-        const mockReviews: Review[] = [
-          {
-            id: "1",
-            customerName: "Nguyễn Văn A",
-            rating: 5,
-            comment: "Dịch vụ tuyệt vời, nhân viên tư vấn rất nhiệt tình và chuyên nghiệp.",
-            date: "2024-03-20"
-          },
-          {
-            id: "2",
-            customerName: "Trần Thị B",
-            rating: 5,
-            comment: "Quy trình rõ ràng, kết quả đáng tin cậy. Sẽ giới thiệu cho bạn bè.",
-            date: "2024-03-18"
-          },
-          {
-            id: "3",
-            customerName: "Lê Văn D",
-            rating: 4,
-            comment: "Tốt, chỉ hơi chậm một chút so với dự kiến.",
-            date: "2024-03-16"
-          }
-        ];
-
-        setBookings(mockBookings);
-        setReviews(mockReviews);
+      
+   
         
       } catch (error: any) { // Thêm kiểu dữ liệu cho error
         console.error('Error fetching service details:', error);
@@ -277,7 +235,8 @@ export default function ServiceDetailPage() {
         
         // Call API to delete service
         await axios.delete(`http://localhost:5198/api/Services/${serviceId}`, {
-          headers: {
+          headers:
+           {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
@@ -358,7 +317,90 @@ export default function ServiceDetailPage() {
     }
   };
 
- 
+  // Khi vào tab bookings hoặc khi serviceId thay đổi, call API lấy lịch hẹn
+  useEffect(() => {
+    if (activeTab === 'bookings' && serviceId) {
+      (async () => {
+        try {
+          const res = await getAppointmentsByServiceId(serviceId);
+          if (res.success && Array.isArray(res.appointments)) {
+            // Gọi API lấy danh sách user
+            const userRes = await axios.get('http://localhost:5198/api/User');
+            const users = Array.isArray(userRes.data) ? userRes.data : (userRes.data?.$values || []);
+            console.log('Users:', users.map((u: any) => u.userID));
+// console.log('Bookings customerId:', res.appointments.map(b => b.customerId || b.customerID));
+// console.log('Bookings staffId:', res.appointments.map(b => b.staffId || b.staffID));
+
+            // Tạo userMap: userID -> fullname
+const userMap: Record<string, string> = {};
+users.forEach((u: any) => {
+  userMap[String(u.userID).trim()] = u.fullname;
+});
+
+// Map lại bookings để lấy tên khách hàng và nhân viên
+const bookingsWithNames = res.appointments.map((b: any) => {
+  const customerId = String(b.customerId || b.customerID || '').trim();
+  const staffId = String(b.staffId || b.staffID || '').trim();
+
+  // Tìm user theo customerId
+  const customer = users.find((u: any) =>
+    String(u.userID || u.id || u.userId).trim() === customerId
+  );
+  // Tìm user theo staffId
+  const staff = users.find((u: any) =>
+    String(u.userID || u.id || u.userId).trim() === staffId
+  );
+
+  return {
+    bookingId: b.bookingId || b.id,
+    customerName: customer?.fullname || customer?.fullName || customer?.name || customer?.username || customer?.userName || 'Ẩn danh',
+    date: b.date,
+    staffName: staff?.fullname || staff?.fullName || staff?.name || staff?.username || staff?.userName || 'Chưa phân công',
+    serviceId: b.serviceId || b.serviceID,
+    status: b.status,
+    totalAmount: b.totalAmount,
+  };
+});
+setBookings(bookingsWithNames);
+          } else {
+            setBookings([]);
+          }
+        } catch (err) {
+          setBookings([]);
+          console.error('Error fetching bookings or users:', err);
+        }
+      })();
+    }
+  }, [activeTab, serviceId]);
+
+  // Khi vào tab reviews, gọi API lấy đánh giá
+  useEffect(() => {
+    if (activeTab === "reviews" && serviceId) {
+      (async () => {
+        const feedbacks = await getFeedbacksByServiceId(serviceId);
+        // Lấy danh sách users
+        const userRes = await axios.get('http://localhost:5198/api/User');
+        const users = Array.isArray(userRes.data) ? userRes.data : (userRes.data?.$values || []);
+        // Map lại feedbacks để lấy tên khách hàng từ customerId
+        const feedbacksWithNames = Array.isArray(feedbacks)
+          ? feedbacks.map((fb: any, idx: number) => {
+              const customerId = String(fb.customerId || fb.customerID || '').trim();
+              const customer = users.find((u: any) =>
+                String(u.userID || u.id || u.userId).trim() === customerId
+              );
+              return {
+                feedbackId: String(fb.feedbackId || fb.id || idx),
+                customerName: customer?.fullname || customer?.fullName || customer?.name || customer?.username || customer?.userName || "Ẩn danh",
+                rating: fb.rating || 0,
+                comment: fb.comment || "",
+                date: fb.date || "",
+              };
+            })
+          : [];
+        setReviews(feedbacksWithNames);
+      })();
+    }
+  }, [activeTab, serviceId]);
 
   if (loading) {
     return (
@@ -461,7 +503,7 @@ export default function ServiceDetailPage() {
             {service.image && (
               <div className="ml-6">
                 <img
-                  src={service.image}
+                  src={`/images/${service.image.split('/').pop()}`}
                   alt={service.name}
                   className="w-40 h-40 object-cover rounded-lg shadow"
                 />
@@ -469,9 +511,9 @@ export default function ServiceDetailPage() {
             )}
             <div className="ml-6 text-right">
               <div className="text-3xl font-bold text-blue-600 mb-2">
-                {service?.price !== undefined 
-                  ? service.price.toLocaleString() 
-                  : '0'} VNĐ
+                {typeof service?.price === 'number'
+                  ? service.price.toLocaleString()
+                  : Number(service?.price || 0).toLocaleString()} VNĐ
               </div>
               <div className="flex items-center text-sm text-gray-500">
                 <StarIcon className="h-4 w-4 text-yellow-400 mr-1" />
@@ -538,8 +580,8 @@ export default function ServiceDetailPage() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Yêu cầu</h3>
                   <ul className="space-y-2">
                     {Array.isArray(service.requirements) ? (
-                      service.requirements.map((req, index) => (
-                        <li key={index} className="flex items-start">
+                      service.requirements.map((req, idx) => (
+                        <li key={String(req) + '-' + idx} className="flex items-start">
                           <span className="flex-shrink-0 h-5 w-5 text-green-500 mr-2">✓</span>
                           <span className="text-gray-600">{String(req)}</span>
                         </li>
@@ -555,8 +597,8 @@ export default function ServiceDetailPage() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Lợi ích</h3>
                   <ul className="space-y-2">
                     {Array.isArray(service.benefits) ? 
-                      service.benefits.map((benefit, index) => (
-                        <li key={index} className="flex items-start">
+                      service.benefits.map((benefit, idx) => (
+                        <li key={String(benefit) + '-' + idx} className="flex items-start">
                           <span className="flex-shrink-0 h-5 w-5 text-blue-500 mr-2">★</span>
                           <span className="text-gray-600">{benefit}</span>
                         </li>
@@ -571,10 +613,10 @@ export default function ServiceDetailPage() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Quy trình</h3>
                   <div className="space-y-3">
                     {Array.isArray(service.process) && service.process.length > 0 ? 
-                      service.process.map((step, index) => (
-                        <div key={index} className="flex items-start">
+                      service.process.map((step, idx) => (
+                        <div key={String(step) + '-' + idx} className="flex items-start">
                           <div className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-medium mr-3">
-                            {index + 1}
+                            {idx + 1}
                           </div>
                           <span className="text-gray-600 pt-1">{String(step || '')}</span>
                         </div>
@@ -589,8 +631,8 @@ export default function ServiceDetailPage() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Loại mẫu</h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {Array.isArray(service.sampleTypes) ? 
-                      service.sampleTypes.map((type, index) => (
-                        <div key={index} className="bg-gray-50 rounded-lg p-3 text-center">
+                      service.sampleTypes.map((type, idx) => (
+                        <div key={String(type) + '-' + idx} className="bg-gray-50 rounded-lg p-3 text-center">
                           <span className="text-sm text-gray-700">{String(type)}</span>
                         </div>
                       )) :
@@ -624,25 +666,30 @@ export default function ServiceDetailPage() {
                           Trạng thái
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Số tiền
+                          Nhân viên
                         </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {bookings.map((booking) => (
-                        <tr key={booking.id}>
+                      {bookings.map((booking, idx) => (
+                        <tr key={booking.bookingId || idx}>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div>
-                              <div className="text-sm font-medium text-gray-900">{booking.customerName}</div>
-                              <div className="text-sm text-gray-500">{booking.customerEmail}</div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {booking.customerName || 'Ẩn danh'}
+                              </div>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {new Date(booking.bookingDate).toLocaleDateString('vi-VN')}
+                            {booking.date
+                              ? new Date(booking.date).toLocaleDateString('vi-VN')
+                              : ''}
                           </td>
-                          
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {booking.totalAmount.toLocaleString()} VNĐ
+                            {booking.status}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {booking.staffName || 'Chưa phân công'}
                           </td>
                         </tr>
                       ))}
@@ -664,29 +711,34 @@ export default function ServiceDetailPage() {
                 </div>
 
                 <div className="space-y-4">
-                  {reviews.map((review) => (
-                    <div key={review.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h4 className="font-medium text-gray-900">{review.customerName}</h4>
-                          <div className="flex items-center mt-1">
-                            {[...Array(5)].map((_, i) => (
-                              <StarIcon
-                                key={i}
-                                className={`h-4 w-4 ${
-                                  i < review.rating ? 'text-yellow-400' : 'text-gray-300'
-                                }`}
-                                fill="currentColor"
-                              />
-                            ))}
-                            <span className="ml-2 text-sm text-gray-500">
-                              {new Date(review.date).toLocaleDateString('vi-VN')}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-gray-600">{review.comment}</p>
-                    </div>
+                  {reviews.map((review, idx) => (
+                    <div
+          key={review.feedbackId || idx}
+          className="border border-gray-200 rounded-xl p-5 bg-gradient-to-br from-white to-blue-50 shadow-sm hover:shadow-lg transition-shadow duration-200"
+        >
+          <div className="flex items-center mb-2">
+            {/* Avatar icon */}
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+              <UserGroupIcon className="h-6 w-6 text-blue-500" />
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900">{review.customerName}</h4>
+              {/* Nếu muốn hiển thị ngày, thêm dòng dưới */}
+              {/* <span className="text-xs text-gray-400">{review.date && new Date(review.date).toLocaleDateString('vi-VN')}</span> */}
+            </div>
+          </div>
+          <div className="flex items-center mb-2">
+            {[...Array(5)].map((_, i) => (
+              <StarIcon
+                key={i}
+                className={`h-5 w-5 ${i < review.rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                fill="currentColor"
+              />
+            ))}
+            <span className="ml-2 text-sm text-yellow-600 font-medium">{review.rating}/5</span>
+          </div>
+          <p className="text-gray-700 italic">{review.comment}</p>
+        </div>
                   ))}
                 </div>
               </div>
