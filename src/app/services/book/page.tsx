@@ -331,23 +331,36 @@ function BookServiceContent() {
           serviceId: serviceId ?? "",
           address,
           method,
-          status: "Đã xác nhận", // Thêm dòng này để gửi status lên API
+          status: "Đã xác nhận",
         });
 
         console.log('Dữ liệu gửi lên API:', {
           customerId,
           date,
-          staffId: "",
+          staffId,
           serviceId: serviceId ?? "",
           address,
           method,
         });
-        console.log('Kết quả trả về:', result);
+
+        // Log toàn bộ response để kiểm tra cấu trúc
+        console.log('Toàn bộ kết quả trả về:', JSON.stringify(result, null, 2));
 
         if (result.success) {
-          // Nếu đặt lịch thành công, lưu người tham gia như là người thân
+          // Trích xuất bookingId từ kết quả trả về (kiểm tra nhiều vị trí có thể chứa ID)
+          const bookingId = result.bookingId  || 
+                           (result.booking && (result.booking.bookingId || result.booking.id));
+          
+
+          
+          // Nếu đặt lịch thành công và có lưu người tham gia
           if (saveAsRelatives) {
-            await saveParticipantsAsRelatives(customerId);
+            try {
+              // Truyền bookingId vào hàm saveParticipantsAsRelatives
+              await saveParticipantsAsRelatives(customerId, bookingId);
+            } catch (error) {
+              console.error('Lỗi khi lưu người thân:', error);
+            }
           }
           
           alert(`Đặt xét nghiệm thành công! Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.`);
@@ -501,7 +514,7 @@ function BookServiceContent() {
   const [saveAsRelatives, setSaveAsRelatives] = useState<boolean>(true);
 
   // Hàm để lưu người tham gia như là người thân
-  const saveParticipantsAsRelatives = async (userId: string) => {
+  const saveParticipantsAsRelatives = async (userId: string, bookingId?: string) => {
     try {
       // Filter ra những người tham gia thực sự (có đầy đủ thông tin)
       const validParticipants = formData.participants.filter(
@@ -511,20 +524,24 @@ function BookServiceContent() {
       // Nếu không có người tham gia hợp lệ, không làm gì cả
       if (validParticipants.length === 0) return;
       
+
+      
       // Lưu từng người tham gia như là người thân
       const savePromises = validParticipants.map(async (participant) => {
         // Tạo object dữ liệu người thân ĐÚNG với cấu trúc API yêu cầu
         const relativeData = {
           userId: userId,
-          fullname: participant.name,  // Sửa từ name thành fullname
+          fullname: participant.name,
           relationship: participant.role,
           gender: participant.gender === 'male' ? 'Nam' : 'Nữ',
-          birthdate: participant.dob,  // Sửa từ dob thành birthdate
+          birthdate: participant.dob,
           phone: participant.phone,
-          address: participant.address || formData.address || ''
+          address: participant.address || formData.address || '',
+          // Thêm bookingId nếu có
+          bookingId: bookingId
         };
         
-        console.log('Đang lưu người thân:', relativeData);
+
         
         // Gọi API để lưu người thân
         const result = await createRelative(relativeData);
@@ -533,9 +550,11 @@ function BookServiceContent() {
       
       // Chờ tất cả các request hoàn thành
       const results = await Promise.all(savePromises);
-      console.log('Kết quả lưu người thân:', results);
+
+      return results;
     } catch (error) {
       console.error('Lỗi khi lưu người thân:', error);
+      return null;
     }
   };
 
@@ -1201,13 +1220,13 @@ async function getRandomStaffId(): Promise<string | null> {
       }
     }
     // Lấy tất cả phần tử, không phân biệt gì cả
-    console.log('Tất cả phần tử trong danh sách user:', users);
+
     // Ví dụ: random bất kỳ user nào
     if (users.length === 0) return null;
     const realUsers = users.filter((u: any) => u.userID);
-    console.log('Danh sách tài khoản thực:', realUsers);
+
     const randomUser = realUsers[Math.floor(Math.random() * realUsers.length)];
-    console.log('User random được chọn:', randomUser);
+
     return randomUser.userID || null;
   } catch (e) {
     console.error('Lỗi lấy user:', e);
@@ -1232,14 +1251,13 @@ async function getUserIdByUsername(username: string): Promise<string | null> {
     users = users.map((u: any) => (u.$ref ? idMap[u.$ref] : u));
 
     // Log để kiểm tra dữ liệu thực tế
-    console.log('Username cần tìm:', username);
-    console.log('Danh sách user:', users);
+
 
     // So sánh không phân biệt hoa thường và trim
     const found = users.find((u: any) =>
       (u.username || u.userName || u.UserName)?.toLowerCase().trim() === username.toLowerCase().trim()
     );
-    console.log('User tìm được:', found);
+
     return found?.userID || found?.id || found?.userId || null;
   } catch (e) {
     return null;

@@ -9,6 +9,7 @@ interface Relative {
   birthdate: string;
   phone: string;
   address?: string;
+  bookingId?: string; 
 }
 
 /**
@@ -18,10 +19,15 @@ interface Relative {
  */
 export async function createRelative(relativeData: Relative): Promise<Relative | null> {
   try {
+    console.log("Sending relative data to API:", relativeData);
     const res = await axios.post('http://localhost:5198/api/Relatives', relativeData);
+    console.log("API response for create relative:", res.data);
     return res.data;
   } catch (error) {
     console.error("Error creating relative:", error);
+    if (axios.isAxiosError(error)) {
+      console.error("API error details:", error.response?.data);
+    }
     return null;
   }
 }

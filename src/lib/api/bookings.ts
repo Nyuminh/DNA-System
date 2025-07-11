@@ -13,15 +13,12 @@ export interface BookingRequest {
   status?: string; // optional, nếu không truyền thì backend sẽ tự xử lý
 }
 
-// Interface cho booking response
+// Cập nhật interface BookingResponse
 export interface BookingResponse {
   success: boolean;
   message: string;
-  booking?: {
-    id: string;
-    status: string;
-    createdAt: string;
-  };
+  bookingId?: string; // Thêm trường này để dễ dàng truy cập
+  booking?: any; // Dữ liệu đầy đủ từ API
 }
 
 // Tạo booking mới
@@ -39,13 +36,34 @@ export async function createBooking(data: BookingRequest): Promise<BookingRespon
       status: data.status ?? "", // Thêm dòng này để gửi status lên API
     };
 
+
     const response = await apiClient.post('/api/Appointments', payload);
+
+
+    // Trích xuất bookingId từ response theo đúng cấu trúc
+    const responseData = response.data;
+    let bookingId = null;
+
+    // Kiểm tra xem bookingId nằm ở đâu trong response
+    if (responseData.data && responseData.data.bookingId) {
+      bookingId = responseData.data.bookingId;
+    } else if (responseData.bookingId) {
+      bookingId = responseData.bookingId;
+    } else if (responseData.data && responseData.data.id) {
+      bookingId = responseData.data.id;
+    }
+
+
+
+    // Cập nhật BookingResponse interface để bao gồm bookingId ở cấp cao nhất
     return {
       success: true,
       message: 'Đặt lịch thành công',
+      bookingId: bookingId, // Thêm bookingId ở cấp cao nhất
       booking: response.data,
     };
   } catch (error: any) {
+    console.error('Lỗi khi tạo booking:', error);
     return {
       success: false,
       message: error?.response?.data?.message || 'Đặt lịch thất bại',
