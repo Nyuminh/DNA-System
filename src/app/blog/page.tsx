@@ -31,7 +31,7 @@ export default function BlogPage() {
           title: item.title || item.name || 'Không có tiêu đề',
           date: item.createdAt || item.date || '01/01/2025',
           imageUrl: item.image
-            ? `http://localhost:5198/${item.image.replace(/^\/+/, '')}`
+            ? `http://localhost:5198/${item.image}`
             : '/images/blog/blog-1.jpg',
           featured: idx < 2,
           content: item.content || '',
@@ -96,15 +96,16 @@ export default function BlogPage() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-12">
                 {featuredPosts.map((post) => (
                   <div key={post.id} className="group relative">
-                    <div className="relative h-80 w-full overflow-hidden rounded-lg bg-gray-200 group-hover:opacity-90 sm:aspect-w-2 sm:aspect-h-1 sm:h-64 lg:aspect-w-1 lg:aspect-h-1">
-                      <Image
-                        src={post.imageUrl}
-                        alt={post.title}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      />
-                    </div>
+                    {post.imageUrl && (
+                      <div className="h-48 w-full bg-gray-200 rounded-lg overflow-hidden group-hover:opacity-90">
+                        <img
+                          src={post.imageUrl}
+                          alt={post.title}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
                     <div className="mt-4 flex items-center space-x-2 text-sm text-gray-500">
                       <span>
                         {post.date && !isNaN(Date.parse(post.date))
@@ -171,12 +172,11 @@ export default function BlogPage() {
               {filteredPosts.map((post) => (
                 <div key={post.id} className="group relative">
                   <div className="relative h-60 w-full overflow-hidden rounded-lg bg-gray-200 group-hover:opacity-90">
-                    <Image
+                    <img
                       src={post.imageUrl}
                       alt={post.title}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className="object-cover w-full h-full"
+                      loading="lazy"
                     />
                   </div>
                   <div className="mt-4 flex items-center space-x-2 text-sm text-gray-500">

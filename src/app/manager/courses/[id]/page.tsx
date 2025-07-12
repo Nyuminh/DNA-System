@@ -195,18 +195,41 @@ export default function CourseDetailPage() {
       return;
     }
     try {
-      await updateCourse(courseId, {
-        managerId: "", // Lấy từ token nếu backend yêu cầu
-        title: editData.title,
-        date: editData.createdAt,
-        description: editData.description,
-        image: editData.image || "",
-      }, token);
+      // Lấy file ảnh từ input
+      const fileInput = document.getElementById("course-image-upload") as HTMLInputElement;
+      const file = fileInput?.files?.[0];
+
+      // Tạo FormData và append các trường
+      const formDataToSend = new FormData();
+      formDataToSend.append("Title", editData.title);
+      formDataToSend.append("Description", editData.description);
+      formDataToSend.append("Date", editData.createdAt);
+      formDataToSend.append("Image", file ? file.name : (editData.image || ""));
+      if (file) {
+        formDataToSend.append("picture", file);
+      }
+
+      // Hiển thị các giá trị đã đưa vào payload (FormData)
+      for (const pair of formDataToSend.entries()) {
+        console.log(`[FormData] ${pair[0]}:`, pair[1]);
+      }
+
+      // Gửi dữ liệu lên API bằng axios PUT
+      await axios.put(
+        `http://localhost:5198/api/Course/${courseId}`,
+        formDataToSend,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
       alert("Cập nhật bài viết thành công!");
       setIsEditMode(false);
       fetchCourseDetail(courseId).then(setCourse);
-    } catch (err) {
-      alert("Cập nhật thất bại!");
+    } catch (err: any) {
+      if (err.response) {
+        alert("Cập nhật thất bại!\n" + JSON.stringify(err.response.data));
+      } else {
+        alert("Cập nhật thất bại!");
+      }
     }
   };
 
@@ -419,7 +442,7 @@ export default function CourseDetailPage() {
               <div className="flex-shrink-0 flex items-center justify-center mt-6 md:mt-0 md:ml-8">
                 <div className="rounded-xl overflow-hidden shadow-lg border border-gray-200 bg-white p-2">
                   <img
-                    src={`/images/${course.image}`}
+                    src={`http://localhost:5198/${course.image}`}
                     alt={course.title}
                     className="w-48 h-48 object-cover rounded-lg"
                     onError={e => { e.currentTarget.src = "/images/default-avatar.jpg"; }}

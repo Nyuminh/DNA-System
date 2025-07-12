@@ -60,28 +60,70 @@ export async function deleteCourse(id: string, token: string) {
 }
 
 export async function createCourse(
-  course: { courseId?: string; managerId: string; title: string; date: string; description: string; image: string },
-  token: string
+  course: { managerId: string; title: string; date: string; description: string; image: string },
+  token: string,
+  file?: File
 ) {
-  await axios.post(
-    "http://localhost:5198/api/Course",
-    course,
-    {
-      headers: { Authorization: `Bearer ${token}` },
-    }
-  );
+  let payload: any;
+  let headers: any;
+
+  if (file) {
+    payload = new FormData();
+    payload.append("ManagerId", course.managerId);
+    payload.append("Title", course.title);
+    payload.append("Date", course.date);
+    payload.append("Description", course.description);
+    payload.append("Image", file.name);
+    payload.append("picture", file);
+    headers = { Authorization: `Bearer ${token}` };
+  } else {
+    payload = {
+      ManagerId: course.managerId,
+      Title: course.title,
+      Date: course.date,
+      Description: course.description,
+      Image: course.image,
+    };
+    headers = {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    };
+  }
+
+  await axios.post("http://localhost:5198/api/Course", payload, { headers });
 }
 
 export async function updateCourse(
   id: string,
   course: { managerId: string; title: string; date: string; description: string; image: string },
-  token: string
+  token: string,
+  file?: File
 ) {
-  await axios.put(
-    `http://localhost:5198/api/Course/${id}`,
-    course,
-    {
-      headers: { Authorization: `Bearer ${token}` },
-    }
-  );
+  let payload: any;
+  let headers: any;
+
+  if (file) {
+    payload = new FormData();
+    payload.append("ManagerId", course.managerId);
+    payload.append("Title", course.title);
+    payload.append("Date", course.date);
+    payload.append("Description", course.description);
+    payload.append("Image", file.name);
+    payload.append("picture", file);
+    headers = { Authorization: `Bearer ${token}` };
+  } else {
+    payload = {
+      ManagerId: course.managerId,
+      Title: course.title,
+      Date: course.date,
+      Description: course.description,
+      Image: course.image,
+    };
+    headers = {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    };
+  }
+
+  await axios.put(`http://localhost:5198/api/Course/${id}`, payload, { headers });
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { PlusIcon, ArrowLeftIcon, EyeIcon, PencilSquareIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { fetchCourses, Course, fetchCourseById, deleteCourse, createCourse, updateCourse } from "@/lib/api/course";
+import axios from "axios";
 
 import { jwtDecode } from "jwt-decode";
 
@@ -226,7 +227,7 @@ export default function CoursesList() {
                       alert("Không lấy được managerId từ token!");
                       return;
                     }
-                    // Kiểm tra trùng tiêu đề (không phân biệt hoa thường)
+                    // Kiểm tra trùng tiêu đề
                     const isDuplicate = courses.some(
                       c =>
                         c.title.trim().toLowerCase() === editingCourse.title.trim().toLowerCase() &&
@@ -236,26 +237,59 @@ export default function CoursesList() {
                       alert("Tiêu đề bài viết đã tồn tại. Vui lòng chọn tiêu đề khác!");
                       return;
                     }
+                    // Lấy file ảnh từ input
+                    const fileInput = document.getElementById("course-image-upload") as HTMLInputElement;
+                    const file = fileInput?.files?.[0];
+
+                    // Tạo FormData và append các trường
+                    const formDataToSend = new FormData();
+                    formDataToSend.append("ManagerId", managerId);
+                    formDataToSend.append("Title", editingCourse.title);
+                    formDataToSend.append("Date", editingCourse.date);
+                    formDataToSend.append("Description", editingCourse.description);
+                    formDataToSend.append("Image", file ? file.name : (editingCourse.image || ""));
+                    if (file) {
+                      formDataToSend.append("picture", file);
+                    }
+
+                    // Hiển thị các giá trị đã đưa vào payload (FormData)
+                    for (const pair of formDataToSend.entries()) {
+                      console.log(`[FormData] ${pair[0]}:`, pair[1]);
+                    }
+
                     if (isAddMode) {
-                      await createCourse({
-                        courseId: editingCourse.id || "",
-                        managerId,
-                        title: editingCourse.title,
-                        date: editingCourse.date,
-                        description: editingCourse.description,
-                        image: editingCourse.image || "",
-                      }, token);
+                      await createCourse(
+                        {
+                          managerId,
+                          title: editingCourse.title,
+                          date: editingCourse.date,
+                          description: editingCourse.description,
+                          image: file ? file.name : (editingCourse.image || ""),
+                        },
+                        token,
+                        file
+                      );
                       const res = await fetchCourses();
                       setCourses(Array.isArray(res) ? res : []);
                       alert("Thêm bài viết thành công!");
                     } else {
-                      await updateCourse(editingCourse.id, {
-                        managerId,
-                        title: editingCourse.title,
-                        date: editingCourse.date,
-                        description: editingCourse.description,
-                        image: editingCourse.image || "",
-                      }, token);
+                      await updateCourse(
+                        editingCourse.id,
+                        {
+                          managerId,
+                          title: editingCourse.title,
+                          date: editingCourse.date,
+                          description: editingCourse.description,
+                          image: file ? file.name : (editingCourse.image || ""),
+                        },
+                        token,
+                        file
+                      );
+                      await axios.put(
+                        `http://localhost:5198/api/Course/${editingCourse.id}`,
+                        formDataToSend,
+                        { headers: { Authorization: `Bearer ${token}` } }
+                      );
                       const res = await fetchCourses();
                       setCourses(Array.isArray(res) ? res : []);
                       alert("Cập nhật bài viết thành công!");
@@ -340,7 +374,7 @@ export default function CoursesList() {
                     </label>
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    Kéo & thả hoặc chọn file ảnh. 
+                    Kéo & thả hoặc chọn file ảnh.
                   </p>
                 </div>
                 <div className="flex justify-end space-x-4 pt-4">
