@@ -230,53 +230,39 @@ export default function ServicesManagement() {
         return;
       }
 
-      const payload = {
-        serviceId: formData.id || "",
-        type: formData.category,
-        name: formData.name,
-        price: Number(formData.price) || 0,
-        description: formData.description,
-        image: formData.image || "",
-        status: formData.status || "active",      
-        duration: formData.duration || "",        
-      };
+      // Lấy file ảnh từ input
+      const fileInput = document.getElementById("image-upload") as HTMLInputElement;
+      const file = fileInput?.files?.[0];
 
-      if (modalType === 'edit' && formData.id) {
-        // Gọi API PUT để cập nhật dịch vụ
-        await axios.put(
-          `http://localhost:5198/api/Services/${formData.id}`,
-          payload,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        closeModal();
-        alert("✅ Cập nhật dịch vụ thành công!");
-        window.location.reload();
-      } else {
-        // Gọi API POST để tạo mới dịch vụ
-        await axios.post(
-          "http://localhost:5198/api/Services",
-          payload,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        closeModal();
-        alert("✅ Thêm dịch vụ thành công!");
-        window.location.reload();
-      }    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định.";
-      alert(
-        `❌ ${modalType === 'edit' ? 'Cập nhật' : 'Thêm'} dịch vụ thất bại!\n` +
-        errorMessage
+      // Luôn dùng FormData cho cập nhật
+      const formDataToSend = new FormData();
+      formDataToSend.append("Type", formData.category || "");
+      formDataToSend.append("Name", formData.name || "");
+      formDataToSend.append("Price", String(Number(formData.price) || 0));
+      formDataToSend.append("Description", formData.description || "");
+      formDataToSend.append("Image", file ? file.name : (formData.image || ""));
+      if (file) {
+        formDataToSend.append("picture", file);
+      }
+      formDataToSend.append("Status", formData.status || "active");
+      formDataToSend.append("Duration", formData.duration || "");
+
+      // Hiển thị các giá trị đã đưa vào payload (FormData)
+      for (const pair of formDataToSend.entries()) {
+        console.log(`[FormData] ${pair[0]}:`, pair[1]);
+      }
+
+      await axios.put(
+        `http://localhost:5198/api/Services/${formData.id}`,
+        formDataToSend,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
+      closeModal();
+      alert("✅ Cập nhật dịch vụ thành công!");
+      window.location.reload();
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định.";
+      alert("❌ Cập nhật dịch vụ thất bại!\n" + errorMessage);
     } finally {
       setLoading(false);
     }
@@ -521,7 +507,56 @@ export default function ServicesManagement() {
                   </div>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={async (e) => {
+  e.preventDefault();
+  setError(null);
+  setLoading(true);
+
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setError("Bạn cần đăng nhập để thực hiện chức năng này.");
+      setLoading(false);
+      return;
+    }
+
+    // Lấy file ảnh từ input
+    const fileInput = document.getElementById("image-upload") as HTMLInputElement;
+    const file = fileInput?.files?.[0];
+
+    // Luôn dùng FormData cho cập nhật
+    const formDataToSend = new FormData();
+    formDataToSend.append("Type", formData.category || "");
+    formDataToSend.append("Name", formData.name || "");
+    formDataToSend.append("Price", String(Number(formData.price) || 0));
+    formDataToSend.append("Description", formData.description || "");
+    formDataToSend.append("Image", file ? file.name : (formData.image || ""));
+    if (file) {
+      formDataToSend.append("picture", file);
+    }
+    formDataToSend.append("Status", formData.status || "active");
+    formDataToSend.append("Duration", formData.duration || "");
+
+    // Hiển thị các giá trị đã đưa vào payload (FormData)
+    for (const pair of formDataToSend.entries()) {
+      console.log(`[FormData] ${pair[0]}:`, pair[1]);
+    }
+
+    await axios.put(
+      `http://localhost:5198/api/Services/${formData.id}`,
+      formDataToSend,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    closeModal();
+    alert("✅ Cập nhật dịch vụ thành công!");
+    window.location.reload();
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định.";
+    alert("❌ Cập nhật dịch vụ thất bại!\n" + errorMessage);
+  } finally {
+    setLoading(false);
+  }
+}} className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Tên dịch vụ</label>
                     <input
@@ -548,16 +583,7 @@ export default function ServicesManagement() {
                       autoCorrect="on"
                     />
                   </div>
-                  {/* <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Link hình ảnh</label>
-                    <input
-                      type="text"
-                      value={formData.image || ''}
-                      onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                      placeholder="https://example.com/image.jpg"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div> */}
+                
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Giá (VNĐ)</label>

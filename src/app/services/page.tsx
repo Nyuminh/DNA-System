@@ -252,10 +252,11 @@ export default function ServicesPage() {
                         {/* Keep existing content */}
                         {service.image && (
                           <div className="h-48 w-full bg-gray-200">
-                            <img 
-                              src={`/images/${service.image.split('/').pop()}`}
-                              alt={service.name} 
+                            <img
+                              src={`http://localhost:5198/${service.image}`}
+                              alt={service.name}
                               className="w-full h-full object-cover"
+                              loading="lazy"
                             />
                           </div>
                         )}

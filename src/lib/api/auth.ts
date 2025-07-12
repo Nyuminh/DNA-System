@@ -30,7 +30,7 @@ export interface User {
   roleID: string;
   email: string;
   phone: string;
-  birthdate: string; // ISO date string
+  birthdate: string; 
   image: string;
   address: string;
 }

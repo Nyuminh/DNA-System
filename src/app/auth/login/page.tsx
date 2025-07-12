@@ -9,6 +9,63 @@ import { loginUser, debugToken } from '@/lib/api/auth';
 import { useAuth } from '@/contexts/AuthContext';
 import toast from 'react-hot-toast';
 
+// Interface cho dữ liệu người dùng (đầy đủ các trường, đồng bộ với backend)
+export interface User {
+  userID: string;
+  username: string;
+  fullname: string;
+  gender: string;
+  roleID: string;
+  email: string;
+  phone: string;
+  birthdate: string;
+  image: string;
+  address: string;
+}
+
+// Interface cho kết quả từ API
+interface ApiResponse {
+  success: boolean;
+  message?: string;
+  token?: string;
+  user?: User;
+  roleID?: string;
+  redirectPath?: string;
+}
+
+// Interface cho token JWT
+interface JwtPayload {
+  nameid?: string;
+  sub?: string;
+  userId?: string;
+  id?: string;
+  name?: string;
+  preferred_username?: string;
+  unique_name?: string;
+  email?: string;
+  mail?: string;
+  emailaddress?: string;
+  role?: string;
+  roleId?: string;
+  username?: string;
+  gender?: string;
+  phone?: string;
+  birthdate?: string;
+  image?: string;
+  address?: string;
+  exp?: number;
+  [key: string]: any;
+}
+
+// Interface cho kết quả của hàm fetchUserInfoFromToken
+interface FetchUserResult {
+  id: string;
+  name: string;
+  email: string;
+  roleID: string;
+  username?: string;
+}
+
 type LoginFormInputs = {
   username: string;
   password: string;
@@ -168,12 +225,17 @@ export default function LoginPage() {
               console.log("User data from API:", userData);
               
               // Định dạng lại dữ liệu user từ API để phù hợp với cấu trúc ứng dụng
-              const user = {
-                id: userData.userID || userData.id,
-                name: userData.fullname || userData.name,
-                email: userData.email,
-                roleID: userData.roleID,
-                username: userData.username
+              const user: User = {
+                userID: userData.userID || userData.id || '',
+                username: userData.username || '',
+                fullname: userData.fullname || userData.name || '',
+                gender: userData.gender || '',
+                roleID: userData.roleID || '',
+                email: userData.email || '',
+                phone: userData.phone || '',
+                birthdate: userData.birthdate || '',
+                image: userData.image || '',
+                address: userData.address || '',
               };
               
               console.log("Formatted user data:", user);
@@ -185,7 +247,7 @@ export default function LoginPage() {
               localStorage.setItem('user', JSON.stringify(user));
               
               // Sử dụng AuthContext để lưu trạng thái
-              await login(token, user);
+              login(token, user);
               
               // Đóng popup
               if (popup && !popup.closed) {
@@ -252,7 +314,7 @@ export default function LoginPage() {
                 localStorage.setItem('user', JSON.stringify(user));
                 
                 // Sử dụng AuthContext để lưu trạng thái
-                await login(token, user);
+
                 
                 // Đóng popup
                 if (popup && !popup.closed) {
@@ -306,21 +368,7 @@ export default function LoginPage() {
         }
       }, 1000);
       
-      // Đặt timeout để hủy quá trình nếu mất quá nhiều thời gian
-      setTimeout(() => {
-        window.removeEventListener('message', messageListener);
-        clearInterval(checkPopupClosed);
-        
-        if (popup && !popup.closed) {
-          popup.close();
-        }
-        
-        toast.dismiss(loadingToast);
-        toast.error('Thời gian đăng nhập đã hết. Vui lòng thử lại', {
-          duration: 3000,
-          position: 'top-right',
-        });
-      }, 60000); // 60 giây timeout
+      
     
     } catch (error) {
       console.error('Google login error:', error);
@@ -337,7 +385,8 @@ export default function LoginPage() {
     debugToken(token);
   }
 
-  function logToken(token) {
+  // Cập nhật hàm logToken
+  function logToken(token: string): JwtPayload | null {
     try {
       // Phân tách token
       const parts = token.split('.');
@@ -355,7 +404,7 @@ export default function LoginPage() {
       
       // Decode payload
       const payloadStr = atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/'));
-      const payload = JSON.parse(payloadStr);
+      const payload = JSON.parse(payloadStr) as JwtPayload;
       
       // Log thông tin chi tiết
       console.group("======= JWT TOKEN DETAILS =======");
@@ -384,8 +433,8 @@ export default function LoginPage() {
     }
   }
 
-  // Thêm hàm mới để lấy thông tin người dùng từ token
-  async function fetchUserInfoFromToken(token) {
+  // Cập nhật hàm fetchUserInfoFromToken
+  async function fetchUserInfoFromToken(token: string): Promise<FetchUserResult | null> {
     try {
       console.log("Fetching user info using token...");
       
@@ -408,7 +457,7 @@ export default function LoginPage() {
       console.log("User data from API:", userData);
       
       // Định dạng lại dữ liệu user từ API để phù hợp với cấu trúc ứng dụng
-      const user = {
+      const user: FetchUserResult = {
         id: userData.userID || userData.id,
         name: userData.fullname || userData.name,
         email: userData.email,
@@ -424,7 +473,7 @@ export default function LoginPage() {
     }
   }
 
-  // Hàm điều hướng dựa trên vai trò
+  // Cập nhật hàm navigateByRole
   function navigateByRole(roleID: string): void {
     if (roleID === 'R01' || roleID === 'Admin') { // Admin
       router.push('/admin');

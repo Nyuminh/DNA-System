@@ -82,12 +82,17 @@ export default function BlogDetailPage() {
           </span>
         </div>
         <div className="mb-8">
-          <Image
-            src={post.image ? `/images/${post.image.split('/').pop()}` : '/images/blog/blog-1.jpg'}
+          <img
+            src={
+              post.image
+                ? `http://localhost:5198/${post.image.replace(/^\/+/, '')}`
+                : '/images/blog/blog-1.jpg'
+            }
             alt={post.title || 'Ảnh'}
+            className="rounded-lg object-cover w-full h-64"
+            loading="lazy"
             width={800}
             height={400}
-            className="rounded-lg object-cover w-full h-64"
           />
         </div>
         <div className="prose max-w-none text-gray-800">

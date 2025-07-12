@@ -273,32 +273,41 @@ export default function ServiceDetailPage() {
     e.preventDefault();
     if (!editData) return;
     try {
-      // Lấy token từ localStorage
       const token = localStorage.getItem('token');
       if (!token) {
         alert("Bạn cần đăng nhập để thực hiện chức năng này.");
         return;
       }
-      // Gọi API cập nhật dịch vụ với header Authorization
+
+      const fileInput = document.getElementById("edit-image-upload") as HTMLInputElement;
+      const file = fileInput?.files?.[0];
+
+
+      const formData = new FormData();
+      formData.append("Type", editData.category);
+      formData.append("Name", editData.name);
+      formData.append("Price", editData.price.toString());
+      formData.append("Description", editData.description);
+      formData.append("Image", file ? file.name : (editData.image || service?.image || ""));
+      if (file) {
+        formData.append("picture", file);
+      }
+
+      // Hiển thị dữ liệu nhập vào (FormData)
+      for (const pair of formData.entries()) {
+        console.log(`[FormData] ${pair[0]}:`, pair[1]);
+      }
+
       await axios.put(
-        `http://localhost:5198/api/Services/${serviceId}`,
-        editData,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
+        `http://localhost:5198/api/Services/${editData.id}`,
+        formData,
+        { headers: { 'Authorization': `Bearer ${token}` } }
       );
       setService(editData);
       setShowEditForm(false);
       alert("Cập nhật dịch vụ thành công!");
     } catch (err: any) {
-      if (axios.isAxiosError(err) && err.response?.status === 401) {
-        alert("Bạn không có quyền cập nhật. Vui lòng đăng nhập lại.");
-      } else {
-        alert("Cập nhật thất bại!");
-      }
+      alert("Cập nhật thất bại!");
     }
   };
 
@@ -328,10 +337,6 @@ export default function ServiceDetailPage() {
             const userRes = await axios.get('http://localhost:5198/api/User');
             const users = Array.isArray(userRes.data) ? userRes.data : (userRes.data?.$values || []);
             console.log('Users:', users.map((u: any) => u.userID));
-// console.log('Bookings customerId:', res.appointments.map(b => b.customerId || b.customerID));
-// console.log('Bookings staffId:', res.appointments.map(b => b.staffId || b.staffID));
-
-            // Tạo userMap: userID -> fullname
 const userMap: Record<string, string> = {};
 users.forEach((u: any) => {
   userMap[String(u.userID).trim()] = u.fullname;
@@ -503,7 +508,7 @@ setBookings(bookingsWithNames);
             {service.image && (
               <div className="ml-6">
                 <img
-                  src={`/images/${service.image.split('/').pop()}`}
+                  src={`http://localhost:5198/${service.image}`}
                   alt={service.name}
                   className="w-40 h-40 object-cover rounded-lg shadow"
                 />
@@ -749,127 +754,139 @@ setBookings(bookingsWithNames);
 
       {/* Form chỉnh sửa dịch vụ dạng popup/modal */}
       {showEditForm && editData && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <form
-            onSubmit={handleEditSubmit}
-            className="bg-white p-8 rounded-lg shadow-lg max-w-xl w-full space-y-6 relative"
-          >
-            <button
-              type="button"
-              onClick={() => setShowEditForm(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl"
-            >
-              ×
-            </button>
-            <h2 className="text-2xl font-bold mb-4">Chỉnh sửa Dịch vụ</h2>
-            {/* Tên dịch vụ */}
-            <div>
-              <label className="block text-sm font-medium mb-1">Tên dịch vụ</label>
-              <input
-                type="text"
-                className="w-full border rounded px-3 py-2"
-                value={editData.name}
-                onChange={e => setEditData({ ...editData, name: e.target.value })}
-                required
-              />
-            </div>
-            {/* Mô tả */}
-            <div>
-              <label className="block text-sm font-medium mb-1">Mô tả</label>
-              <textarea
-                className="w-full border rounded px-3 py-2"
-                value={editData.description}
-                onChange={e => setEditData({ ...editData, description: e.target.value })}
-                required
-              />
-            </div>
-            {/* Giá và Danh mục */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Giá (VNĐ)</label>
-                <input
-                  type="number"
-                  className="w-full border rounded px-3 py-2"
-                  value={editData.price}
-                  onChange={e => setEditData({ ...editData, price: Number(e.target.value) })}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Danh mục</label>
-                <select
-                  className="w-full border rounded px-3 py-2"
-                  value={editData.category}
-                  onChange={e => setEditData({ ...editData, category: e.target.value })}
-                >
-                  {categories.length > 0 ? (
-                    categories.map((cat) => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))
-                  ) : (
-                    <>
-                      <option value="Hành chính">Hành chính</option>
-                      <option value="Pháp lý">Pháp lý</option>
-                      <option value="Y tế">Y tế</option>
-                      <option value="Khác">Khác</option>
-                    </>
-                  )}
-                </select>
-              </div>
-            </div>
-            {/* Ảnh dịch vụ */}
-            <div>
-              <label className="block text-sm font-medium mb-1">Ảnh dịch vụ</label>
-              <div className="border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center">
-                {editData.image && (
-                  <div className="mb-2 text-green-600 font-medium">
-                    {typeof editData.image === "string" && editData.image.startsWith("data:")
-                      ? "Đã chọn ảnh mới"
-                      : editData.image.split("/").pop()}
-                  </div>
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  id="service-image-upload"
-                  className="hidden"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      // Đọc file thành base64 để preview hoặc gửi lên API
-                      const reader = new FileReader();
-                      reader.onload = (ev) => {
-                        setEditData({ ...editData, image: ev.target?.result as string });
-                      };
-                      reader.readAsDataURL(file);
-                    }
-                  }}
-                />
-                <label
-                  htmlFor="service-image-upload"
-                  className="text-blue-600 cursor-pointer underline"
-                >
-                  Chọn ảnh
-                </label>
-              </div>
-            </div>
-            {/* Nút hành động */}
-            <div className="flex justify-end space-x-2">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center p-6 border-b">
+              <h3 className="text-lg font-semibold text-gray-900">Chỉnh sửa Dịch vụ</h3>
               <button
-                type="button"
                 onClick={() => setShowEditForm(false)}
-                className="px-4 py-2 rounded bg-gray-200 text-gray-700"
+                className="text-gray-400 hover:text-gray-600"
               >
-                Hủy
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 rounded bg-blue-600 text-white"
-              >
-                Cập nhật
+                ×
               </button>
             </div>
-          </form>
+            <div className="p-6">
+              <form onSubmit={handleEditSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tên dịch vụ</label>
+                  <input
+                    type="text"
+                    value={editData.name || ''}
+                    onChange={e => setEditData({ ...editData, name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                    lang="vi"
+                    autoComplete="off"
+                    autoCorrect="on"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
+                  <textarea
+                    value={editData.description || ''}
+                    onChange={e => setEditData({ ...editData, description: e.target.value })}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                    lang="vi"
+                    autoComplete="off"
+                    autoCorrect="on"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Giá (VNĐ)</label>
+                    <input
+                      type="number"
+                      value={editData.price || ''}
+                      onChange={e => setEditData({ ...editData, price: Number(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Danh mục</label>
+                    <select
+                      value={editData.category || ""}
+                      onChange={e =>
+                        setEditData({
+                          ...editData,
+                          category: e.target.value as string,
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    >
+                      <option value="" disabled hidden>
+                        -- Vui lòng chọn danh mục --
+                      </option>
+                      {categories.length > 0 ? (
+                        categories.map((cat) => (
+                          <option key={cat} value={cat}>{cat}</option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="Hành chính">Hành chính</option>
+                          <option value="Pháp lý">Pháp lý</option>
+                          <option value="Y tế">Y tế</option>
+                          <option value="Khác">Khác</option>
+                        </>
+                      )}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Ảnh dịch vụ</label>
+                  <div
+                    className="w-full px-3 py-6 border-2 border-dashed border-gray-300 rounded-lg text-center cursor-pointer bg-gray-50 hover:bg-gray-100"
+                    onDragOver={e => e.preventDefault()}
+                    onDrop={e => {
+                      e.preventDefault();
+                      const file = e.dataTransfer.files[0];
+                      if (file) {
+                        setEditData({ ...editData, image: file.name });
+                      }
+                    }}
+                  >
+                    {editData.image
+                      ? <span className="text-green-600 font-medium">{editData.image}</span>
+                      : <span className="text-gray-400">Kéo & thả ảnh vào đây hoặc click để chọn</span>
+                    }
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      id="edit-image-upload"
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setEditData({ ...editData, image: file.name });
+                        }
+                      }}
+                    />
+                    <label htmlFor="edit-image-upload" className="block mt-2 text-blue-600 underline cursor-pointer">
+                      Chọn ảnh
+                    </label>
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-4 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditForm(false)}
+                    className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Cập nhật
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
       )}
     </div>

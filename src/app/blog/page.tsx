@@ -30,9 +30,13 @@ export default function BlogPage() {
           id: item.courseId?.toString() || item.id?.toString() || `course-${idx}`,
           title: item.title || item.name || 'Không có tiêu đề',
           date: item.createdAt || item.date || '01/01/2025',
-          imageUrl: item.image ? `/images/${item.image.split('/').pop()}` : '/images/blog/blog-1.jpg',
+          imageUrl: item.image
+            ? `http://localhost:5198/${item.image.replace(/^\/+/, '')}`
+            : '/images/blog/blog-1.jpg',
           featured: idx < 2,
           content: item.content || '',
+          excerpt: item.excerpt || '', // thêm nếu cần
+          author: item.author || '',   // thêm nếu cần
         }));
         setPosts(mapped);
 
