@@ -95,6 +95,348 @@ export default function LoginPage() {
     }
   };
 
+  // Cập nhật function xử lý Google Login để xử lý token tương tự như đăng nhập thông thường
+  const handleGoogleLogin = async () => {
+    try {
+      // Hiển thị thông báo đang xử lý
+      const loadingToast = toast.loading('Đang kết nối với Google...', {
+        position: 'top-right',
+      });
+      
+      // Tạo cửa sổ popup cho đăng nhập Google
+      const width = 500;
+      const height = 600;
+      const left = window.screen.width / 2 - width / 2;
+      const top = window.screen.height / 2 - height / 2;
+      
+      const popup = window.open(
+        'http://localhost:5198/api/AuthGoogle/signin-google',
+        'GoogleLogin',
+        `width=${width},height=${height},top=${top},left=${left}`
+      );
+      
+      if (!popup) {
+        toast.dismiss(loadingToast);
+        toast.error('Popup bị chặn. Vui lòng cho phép popup để tiếp tục.', {
+          duration: 3000,
+          position: 'top-right',
+        });
+        return;
+      }
+      
+      // Thiết lập hàm lắng nghe message từ popup
+      const messageListener = async (event: MessageEvent) => {
+        // Chỉ xử lý các message từ API server
+        if (event.origin !== 'http://localhost:5198') return;
+        
+        if (event.data?.type === 'GOOGLE_AUTH_SUCCESS') {
+          try {
+            // Xóa listener để tránh xử lý trùng lặp
+            window.removeEventListener('message', messageListener);
+            
+            const token = event.data.token;
+            if (!token) {
+              throw new Error('Token không hợp lệ');
+            }
+            
+            console.log("TOKEN nhận được:", token);
+            
+            // Log thông tin token để debug
+            logToken(token);
+            
+            // Sử dụng token để lấy thông tin người dùng
+            try {
+              const userResponse = await fetch('http://localhost:5198/api/User/me', {
+                method: 'GET',
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+              
+              if (!userResponse.ok) {
+                console.error(`Không thể lấy thông tin người dùng (${userResponse.status})`);
+                
+                // Log response để debug
+                const responseText = await userResponse.text();
+                console.log("API Response Error:", responseText);
+                
+                throw new Error(`Không thể lấy thông tin người dùng (${userResponse.status})`);
+              }
+              
+              const userData = await userResponse.json();
+              console.log("User data from API:", userData);
+              
+              // Định dạng lại dữ liệu user từ API để phù hợp với cấu trúc ứng dụng
+              const user = {
+                id: userData.userID || userData.id,
+                name: userData.fullname || userData.name,
+                email: userData.email,
+                roleID: userData.roleID,
+                username: userData.username
+              };
+              
+              console.log("Formatted user data:", user);
+              
+              // Lưu token vào localStorage
+              localStorage.setItem('token', token);
+              
+              // Lưu thông tin user
+              localStorage.setItem('user', JSON.stringify(user));
+              
+              // Sử dụng AuthContext để lưu trạng thái
+              await login(token, user);
+              
+              // Đóng popup
+              if (popup && !popup.closed) {
+                popup.close();
+              }
+              
+              // Hiển thị thông báo thành công
+              toast.dismiss(loadingToast);
+              toast.success('Đăng nhập với Google thành công!', {
+                duration: 3000,
+                position: 'top-right',
+                icon: '✅',
+              });
+              
+              console.log('Google login successful:');
+              console.log('- User:', user);
+              console.log('- Role ID:', user.roleID);
+              
+              // Chuyển hướng dựa trên vai trò
+              navigateByRole(user.roleID);
+              
+            } catch (apiError) {
+              console.error('API error:', apiError);
+              
+              // Kết hợp xử lý backup khi API lỗi - dùng thông tin từ token JWT
+              try {
+                // Giải mã token để lấy thông tin người dùng
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(
+                  atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                  }).join('')
+                );
+                
+                console.log("JSON Payload:", jsonPayload);
+                const jwtData = JSON.parse(jsonPayload);
+                
+                // Thêm xử lý để log tất cả các trường trong payload
+                console.log("JWT Data Fields:", Object.keys(jwtData));
+                
+                // Tìm kiếm trường chứa email trong payload (có thể khác trong mỗi provider)
+                const email = jwtData.email || jwtData.mail || jwtData.emailaddress || 
+                             jwtData.preferred_username || jwtData.unique_name || '';
+                
+                // Tạo một username dự phòng nếu không có email
+                const fallbackUsername = email ? 
+                  `google_${email.split('@')[0]}` : 
+                  `google_${Math.random().toString(36).substring(2, 10)}`;
+                
+                // Tạo user object với cấu trúc giống như kết quả từ loginUser
+                const user = {
+                  id: jwtData.nameid || jwtData.sub || jwtData.userId || jwtData.id || 'U003',
+                  name: jwtData.name || jwtData.preferred_username || jwtData.unique_name || 'Google User',
+                  email: email || 'user@example.com', // Đảm bảo email không trống
+                  roleID: jwtData.role || jwtData.roleId || 'R03', // R03 là Customer
+                  username: jwtData.username || fallbackUsername
+                };
+                
+                console.log("Constructed user from JWT:", user);
+                
+                // Lưu token và thông tin user vào local storage
+                localStorage.setItem('token', token);
+                localStorage.setItem('user', JSON.stringify(user));
+                
+                // Sử dụng AuthContext để lưu trạng thái
+                await login(token, user);
+                
+                // Đóng popup
+                if (popup && !popup.closed) {
+                  popup.close();
+                }
+                
+                // Hiển thị thông báo thành công
+                toast.dismiss(loadingToast);
+                toast.success('Đăng nhập với Google thành công!', {
+                  duration: 3000,
+                  position: 'top-right',
+                  icon: '✅',
+                });
+                
+                // Chuyển hướng dựa trên vai trò (giống đăng nhập thông thường)
+                if (user.roleID === 'R01') { // Admin
+                  router.push('/admin');
+                } else if (user.roleID === 'R04') { // Manager
+                  router.push('/manager');
+                } else if (user.roleID === 'R02') { // Staff
+                  router.push('/staff');
+                } else { // Customer hoặc vai trò khác
+                  router.push('/');
+                }
+              } catch (tokenError) {
+                console.error('Error decoding token:', tokenError);
+                throw new Error('Không thể xác minh thông tin người dùng');
+              }
+            }
+            
+          } catch (error) {
+            console.error('Error processing Google login token:', error);
+            toast.dismiss(loadingToast);
+            toast.error('Có lỗi khi xử lý đăng nhập Google', {
+              duration: 3000,
+              position: 'top-right',
+            });
+          }
+        }
+      };
+      
+      // Đăng ký lắng nghe message từ cửa sổ popup
+      window.addEventListener('message', messageListener);
+      
+      // Kiểm tra nếu popup bị đóng
+      const checkPopupClosed = setInterval(() => {
+        if (popup?.closed) {
+          clearInterval(checkPopupClosed);
+          window.removeEventListener('message', messageListener);
+          toast.dismiss(loadingToast);
+        }
+      }, 1000);
+      
+      // Đặt timeout để hủy quá trình nếu mất quá nhiều thời gian
+      setTimeout(() => {
+        window.removeEventListener('message', messageListener);
+        clearInterval(checkPopupClosed);
+        
+        if (popup && !popup.closed) {
+          popup.close();
+        }
+        
+        toast.dismiss(loadingToast);
+        toast.error('Thời gian đăng nhập đã hết. Vui lòng thử lại', {
+          duration: 3000,
+          position: 'top-right',
+        });
+      }, 60000); // 60 giây timeout
+    
+    } catch (error) {
+      console.error('Google login error:', error);
+      toast.error('Có lỗi khi kết nối với Google', {
+        duration: 3000,
+        position: 'top-right',
+      });
+    }
+  };
+
+  // Nơi bạn cần kiểm tra token
+  const token = localStorage.getItem('token');
+  if (token) {
+    debugToken(token);
+  }
+
+  function logToken(token) {
+    try {
+      // Phân tách token
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        console.warn("Token không có định dạng JWT chuẩn");
+        return null;
+      }
+      
+      // Phân tách header, payload, signature
+      const [headerB64, payloadB64, signature] = parts;
+      
+      // Decode header
+      const headerStr = atob(headerB64.replace(/-/g, '+').replace(/_/g, '/'));
+      const header = JSON.parse(headerStr);
+      
+      // Decode payload
+      const payloadStr = atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/'));
+      const payload = JSON.parse(payloadStr);
+      
+      // Log thông tin chi tiết
+      console.group("======= JWT TOKEN DETAILS =======");
+      console.log("Header:", header);
+      console.log("Payload:", payload);
+      console.log("All Payload Fields:", Object.keys(payload));
+      
+      // Tìm kiếm trường email
+      const possibleEmailFields = ['email', 'mail', 'emailaddress', 'preferred_username', 'unique_name', 'sub'];
+      console.log("Possible email values:");
+      possibleEmailFields.forEach(field => {
+        if (payload[field]) {
+          console.log(`- ${field}: ${payload[field]}`);
+        }
+      });
+      
+      console.groupEnd();
+      
+      // Lấy thông tin người dùng từ API
+      fetchUserInfoFromToken(token);
+      
+      return payload;
+    } catch (error) {
+      console.error("Error decoding token:", error);
+      return null;
+    }
+  }
+
+  // Thêm hàm mới để lấy thông tin người dùng từ token
+  async function fetchUserInfoFromToken(token) {
+    try {
+      console.log("Fetching user info using token...");
+      
+      const userResponse = await fetch('http://localhost:5198/api/User/me', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!userResponse.ok) {
+        console.error(`Không thể lấy thông tin người dùng (${userResponse.status})`);
+        const responseText = await userResponse.text();
+        console.log("API Response Error:", responseText);
+        return null;
+      }
+      
+      const userData = await userResponse.json();
+      console.log("User data from API:", userData);
+      
+      // Định dạng lại dữ liệu user từ API để phù hợp với cấu trúc ứng dụng
+      const user = {
+        id: userData.userID || userData.id,
+        name: userData.fullname || userData.name,
+        email: userData.email,
+        roleID: userData.roleID,
+        username: userData.username
+      };
+      
+      console.log("Formatted user data:", user);
+      return user;
+    } catch (error) {
+      console.error("Error fetching user info:", error);
+      return null;
+    }
+  }
+
+  // Hàm điều hướng dựa trên vai trò
+  function navigateByRole(roleID: string): void {
+    if (roleID === 'R01' || roleID === 'Admin') { // Admin
+      router.push('/admin');
+    } else if (roleID === 'R04' || roleID === 'Manager') { // Manager
+      router.push('/manager');
+    } else if (roleID === 'R02' || roleID === 'Staff') { // Staff
+      router.push('/staff');
+    } else { // Customer hoặc vai trò khác
+      router.push('/');
+    }
+  }
+
   return (
     <MainLayout>
       <div className="min-h-[calc(100vh-160px)] bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -290,6 +632,7 @@ export default function LoginPage() {
               <div className="mt-6 grid grid-cols-2 gap-3">
                 <button
                   type="button"
+                  onClick={handleGoogleLogin}
                   className="w-full inline-flex justify-center items-center py-3 px-4 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-[1.02]"
                 >
                   <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
