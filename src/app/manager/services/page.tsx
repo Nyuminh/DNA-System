@@ -252,14 +252,25 @@ export default function ServicesManagement() {
         console.log(`[FormData] ${pair[0]}:`, pair[1]);
       }
 
-      await axios.put(
-        `http://localhost:5198/api/Services/${formData.id}`,
-        formDataToSend,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      closeModal();
-      alert("✅ Cập nhật dịch vụ thành công!");
-      window.location.reload();
+      if (modalType === 'create') {
+        await axios.post(
+          "http://localhost:5198/api/Services",
+          formDataToSend,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        closeModal();
+        alert("✅ Thêm dịch vụ thành công!");
+        window.location.reload();
+      } else {
+        await axios.put(
+          `http://localhost:5198/api/Services/${formData.id}`,
+          formDataToSend,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        closeModal();
+        alert("✅ Cập nhật dịch vụ thành công!");
+        window.location.reload();
+      }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định.";
       alert("❌ Cập nhật dịch vụ thất bại!\n" + errorMessage);
@@ -542,14 +553,25 @@ export default function ServicesManagement() {
       console.log(`[FormData] ${pair[0]}:`, pair[1]);
     }
 
-    await axios.put(
-      `http://localhost:5198/api/Services/${formData.id}`,
-      formDataToSend,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    closeModal();
-    alert("✅ Cập nhật dịch vụ thành công!");
-    window.location.reload();
+    if (modalType === 'create') {
+      await axios.post(
+        "http://localhost:5198/api/Services",
+        formDataToSend,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      closeModal();
+      alert("✅ Thêm dịch vụ thành công!");
+      window.location.reload();
+    } else {
+      await axios.put(
+        `http://localhost:5198/api/Services/${formData.id}`,
+        formDataToSend,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      closeModal();
+      alert("✅ Cập nhật dịch vụ thành công!");
+      window.location.reload();
+    }
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định.";
     alert("❌ Cập nhật dịch vụ thất bại!\n" + errorMessage);
