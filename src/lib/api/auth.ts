@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { jwtDecode } from 'jwt-decode';
 import apiClient from './client';
 
@@ -9,6 +9,16 @@ export interface RegisterRequest {
   fullname: string;
   gender: 'Male' | 'Female' | 'Other';
   email: string;
+  phone: string;
+  birthdate: string;
+  address: string;
+}
+
+// Interface cho update profile request
+export interface UpdateProfileRequest {
+  username: string;
+  email: string;
+  fullname: string;
   phone: string;
   birthdate: string;
   address: string;
@@ -774,6 +784,106 @@ const handleRegisterResponse = (response: { status: number; data: RegisterApiRes
     return {
       success: false,
       message: 'Đăng ký thất bại!',
+    };
+  }
+};
+
+// API cập nhật thông tin cá nhân
+export const updateProfile = async (profileData: UpdateProfileRequest): Promise<{
+  success: boolean;
+  message: string;
+  user?: User;
+}> => {
+  try {
+    // Validate dữ liệu trước khi gửi
+    if (!profileData.username || !profileData.email || !profileData.fullname) {
+      return {
+        success: false,
+        message: 'Vui lòng điền đầy đủ thông tin bắt buộc (username, email, fullname)'
+      };
+    }
+
+    // Tạo bản copy của data để không modify original
+    const requestData = { ...profileData };
+
+   
+
+    const response = await apiClient.put('/api/User/profile', requestData);
+    
+    console.log('Update profile API response:', response);
+
+    if (response.status >= 200 && response.status < 300) {
+      const data = response.data;
+      
+      // Cập nhật user info trong localStorage nếu có
+      if (data.user) {
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+        const updatedUser = { ...currentUser, ...data.user };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+
+      return {
+        success: true,
+        message: data.message || 'Cập nhật thông tin thành công!',
+        user: data.user
+      };
+    } else {
+      return {
+        success: false,
+        message: 'Cập nhật thất bại!'
+      };
+    }
+  } catch (error: unknown) {
+    console.error('Update profile error:', error);
+    
+    let errorMessage = 'Có lỗi xảy ra khi cập nhật thông tin';
+    
+    if (error instanceof AxiosError) {
+      // Log chi tiết lỗi để debug
+      console.error('AxiosError details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers,
+          data: error.config?.data
+        }
+      });
+      
+      if (error.response?.status === 400) {
+        // Lỗi 400 - Bad Request
+        if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response?.data?.errors) {
+          const errors = error.response.data.errors;
+          if (typeof errors === 'object') {
+            // Xử lý validation errors từ .NET
+            const errorMessages = Object.keys(errors).map(key => 
+              `${key}: ${Array.isArray(errors[key]) ? errors[key].join(', ') : errors[key]}`
+            ).join('; ');
+            errorMessage = errorMessages;
+          } else {
+            errorMessage = Object.values(errors).flat().join(', ');
+          }
+        } else {
+          errorMessage = 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại thông tin.';
+        }
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Không có quyền truy cập. Vui lòng đăng nhập lại.';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'API endpoint không tồn tại. Vui lòng liên hệ hỗ trợ.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+    } else if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+
+    return {
+      success: false,
+      message: errorMessage
     };
   }
 };
