@@ -158,17 +158,19 @@ function DashboardContent() {
     // If it's already a valid absolute URL, return as is
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) return imageUrl;
     
-    // If it starts with /, it's a valid relative path
-    if (imageUrl.startsWith('/')) return imageUrl;
+    // If it starts with /, it's a relative path from backend - convert to full URL
+    if (imageUrl.startsWith('/')) {
+      return `http://localhost:5198${imageUrl}`;
+    }
     
     // If it's just a filename without extension or path, add to images folder
     if (imageUrl && !imageUrl.includes('/') && !imageUrl.includes('.')) {
       return '/images/default-avatar.jpg'; // Return default for invalid filenames
     }
     
-    // If it's just a filename with extension, prepend /images/
+    // If it's just a filename with extension, prepend full backend URL
     if (imageUrl && !imageUrl.includes('/') && imageUrl.includes('.')) {
-      return `/images/${imageUrl}`;
+      return `http://localhost:5198/images/${imageUrl}`;
     }
     
     // Default fallback for any other case
