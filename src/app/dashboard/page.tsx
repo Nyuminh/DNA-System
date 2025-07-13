@@ -9,7 +9,7 @@ import {
 } from '@heroicons/react/24/outline';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/contexts/AuthContext';
-import { getDashboardData, updateProfile, type DashboardData, type UpdateProfileRequest } from '@/lib/api/auth';
+import { getDashboardData, updateProfile, updateUserImage, type DashboardData, type UpdateProfileRequest } from '@/lib/api/auth';
 
 const tabs = [
   { name: 'Hồ sơ cá nhân', icon: UserIcon, current: true },
@@ -27,10 +27,12 @@ function DashboardContent() {
   
   // States for avatar upload
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   
   // States for form submission
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // Fetch dashboard data on component mount
   useEffect(() => {
@@ -70,20 +72,73 @@ function DashboardContent() {
     setCurrentTab(tabName);
   };
 
-  // Handle image upload
+  // Handle image upload immediately when file is selected
+  const handleImageUpload = async (file: File) => {
+    setIsUploadingImage(true);
+    setSubmitMessage(null);
+
+    try {
+      console.log('Uploading image:', file.name);
+      const imageResult = await updateUserImage(file);
+      
+      if (imageResult.success) {
+        setSubmitMessage({ type: 'success', text: 'Cập nhật ảnh đại diện thành công!' });
+        
+        // Reset selected image sau khi upload thành công
+        setSelectedImage(null);
+        setSelectedImageFile(null);
+        
+        // Refresh dashboard data để hiển thị ảnh mới
+        const refreshedData = await getDashboardData();
+        if (refreshedData) {
+          setDashboardData(refreshedData);
+        }
+      } else {
+        setSubmitMessage({ type: 'error', text: `Upload ảnh thất bại: ${imageResult.message}` });
+      }
+    } catch (error) {
+      console.error('Image upload error:', error);
+      setSubmitMessage({ type: 'error', text: 'Có lỗi xảy ra khi upload ảnh' });
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  // Handle image change - now with immediate upload option
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // Validate file size (2MB)
+      const maxSize = 2 * 1024 * 1024; // 2MB
+      if (file.size > maxSize) {
+        setSubmitMessage({ type: 'error', text: 'Kích thước ảnh không được vượt quá 2MB.' });
+        return;
+      }
+
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+      if (!allowedTypes.includes(file.type)) {
+        setSubmitMessage({ type: 'error', text: 'Chỉ hỗ trợ file ảnh định dạng JPG, PNG, GIF.' });
+        return;
+      }
+
+      // Store both file object and preview URL
+      setSelectedImageFile(file);
+      
       const reader = new FileReader();
       reader.onload = (e) => {
         setSelectedImage(e.target?.result as string);
       };
       reader.readAsDataURL(file);
+
+      // Upload image immediately
+      handleImageUpload(file);
     }
   };
 
   const removeImage = () => {
     setSelectedImage(null);
+    setSelectedImageFile(null);
   };
 
   // Handle form submit
@@ -105,41 +160,29 @@ function DashboardContent() {
         address: formData.get('address') as string || '',
       };
 
-      // Chỉ thêm image nếu có và không quá lớn
-      if (selectedImage) {
-        // Kiểm tra kích thước trước khi gửi
-        const base64Size = (selectedImage.length * 3) / 4;
-        if (base64Size > 2 * 1024 * 1024) { // 2MB
-          setSubmitMessage({ type: 'error', text: 'Kích thước ảnh quá lớn. Vui lòng chọn ảnh nhỏ hơn 2MB.' });
-          setIsSubmitting(false);
-          return;
-        }
-      }
-
       console.log('Submitting profile data:', profileData);
 
-      // Call API cập nhật profile
-      const result = await updateProfile(profileData);
+      // Cập nhật thông tin profile
+      const profileResult = await updateProfile(profileData);
 
-      if (result.success) {
-        setSubmitMessage({ type: 'success', text: result.message });
-        
-        // Cập nhật dashboardData với user mới nếu có
-        if (result.user) {
-          setDashboardData(prev => prev ? { ...prev, user: result.user! } : null);
-        }
-        
-        // Reset selected image sau khi submit thành công
-        setSelectedImage(null);
-        
-        // Refresh dashboard data để đảm bảo sync
-        const refreshedData = await getDashboardData();
-        if (refreshedData) {
-          setDashboardData(refreshedData);
-        }
-      } else {
-        setSubmitMessage({ type: 'error', text: result.message });
+      if (!profileResult.success) {
+        setSubmitMessage({ type: 'error', text: profileResult.message });
+        setIsSubmitting(false);
+        return;
       }
+
+      // Hiển thị kết quả thành công
+      setSubmitMessage({ 
+        type: 'success', 
+        text: profileResult.message || 'Cập nhật thông tin thành công!'
+      });
+      
+      // Refresh dashboard data để đảm bảo sync
+      const refreshedData = await getDashboardData();
+      if (refreshedData) {
+        setDashboardData(refreshedData);
+      }
+
     } catch (error) {
       console.error('Form submission error:', error);
       setSubmitMessage({ type: 'error', text: 'Có lỗi xảy ra khi cập nhật thông tin' });
@@ -357,7 +400,7 @@ function DashboardContent() {
                                       <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                       </svg>
-                                      {selectedImage ? 'Thay đổi ảnh' : 'Tải ảnh lên'}
+                                      Chọn ảnh
                                     </label>
                                     <input
                                       id="avatar-upload"
@@ -366,6 +409,34 @@ function DashboardContent() {
                                       onChange={handleImageChange}
                                       className="hidden"
                                     />
+                                    {selectedImageFile && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleImageUpload(selectedImageFile)}
+                                        disabled={isUploadingImage}
+                                        className={`inline-flex items-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white shadow-sm transition-colors ${
+                                          isUploadingImage
+                                            ? 'bg-gray-400 cursor-not-allowed'
+                                            : 'bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500'
+                                        }`}
+                                      >
+                                        {isUploadingImage ? (
+                                          <>
+                                            <svg className="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                            </svg>
+                                            Đang tải...
+                                          </>
+                                        ) : (
+                                          <>
+                                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                            </svg>
+                                            Cập nhật ảnh
+                                          </>
+                                        )}
+                                      </button>
+                                    )}
                                     {(selectedImage || user?.image) && (
                                       <button
                                         type="button"
@@ -538,17 +609,7 @@ function DashboardContent() {
                           </div>
 
                           {/* Action Buttons */}
-                          <div className="flex items-center justify-between bg-gray-50 px-6 py-4 rounded-xl border border-gray-200">
-                            <div className="flex items-center">
-                              {selectedImage && (
-                                <div className="flex items-center text-sm text-green-600 bg-green-50 px-3 py-2 rounded-lg border border-green-200">
-                                  <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                  </svg>
-                                  <span className="font-medium">Có thay đổi ảnh mới</span>
-                                </div>
-                              )}
-                            </div>
+                          <div className="flex items-center justify-end bg-gray-50 px-6 py-4 rounded-xl border border-gray-200">
                             <div className="flex items-center space-x-4">
                               <button
                                 type="button"
@@ -562,9 +623,7 @@ function DashboardContent() {
                                 className={`px-6 py-2.5 text-sm font-semibold rounded-lg text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all ${
                                   isSubmitting
                                     ? 'bg-gray-400 cursor-not-allowed'
-                                    : selectedImage 
-                                      ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' 
-                                      : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
+                                    : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
                                 }`}
                               >
                                 {isSubmitting ? (
@@ -574,19 +633,12 @@ function DashboardContent() {
                                     </svg>
                                     Đang lưu...
                                   </span>
-                                ) : selectedImage ? (
-                                  <span className="flex items-center">
-                                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
-                                    Lưu ảnh & thông tin
-                                  </span>
                                 ) : (
                                   <span className="flex items-center">
                                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                     </svg>
-                                    Lưu thay đổi
+                                    Lưu thông tin
                                   </span>
                                 )}
                               </button>

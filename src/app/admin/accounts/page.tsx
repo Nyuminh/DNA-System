@@ -47,15 +47,8 @@ export default function AccountsPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
 
-  // Danh sách ảnh mặc định theo vai trò
-  const defaultImages = {
-    'R01': '/images/doctor1.jpg', // Admin
-    'R02': '/images/doctor3.jpg', // Nhân viên
-    'R03': '/images/customer-1.jpg', // Khách Hàng
-    'R04': '/images/doctor2.jpg', // Quản lí
-    'default': '/images/default-avatar.jpg'
-  };
-
+  // Danh sách ảnh mặc định theo vai trò - không sử dụng nữa, chuyển sang logic an toàn hơn
+  
   // Map roleID sang tên vai trò
   const roleNames = {
     'R01': 'Quản trị viên',
@@ -65,17 +58,42 @@ export default function AccountsPage() {
     'default': 'Không xác định'
   };
 
-  // Lấy tên vai trò từ roleID
-  const getRoleName = (roleID: string): string => {
+  // Lấy tên vai trò từ roleID (helper function - có thể sử dụng sau)
+  const _getRoleName = (roleID: string): string => {
     return roleNames[roleID as keyof typeof roleNames] || roleNames.default;
   };
 
-  // Lấy ảnh dựa theo roleID
+  // Lấy ảnh dựa theo roleID với xử lý URL an toàn
   const getUserImage = (user: AdminUser): string => {
+    // Nếu user có ảnh riêng, kiểm tra và xử lý URL
     if (user.image && user.image !== '') {
-      return user.image;
+      // If it's a data URL (base64), return as is
+      if (user.image.startsWith('data:')) return user.image;
+      
+      // If it's already a valid absolute URL, return as is
+      if (user.image.startsWith('http://') || user.image.startsWith('https://')) return user.image;
+      
+      // If it starts with /, it's a relative path from backend - convert to full URL
+      if (user.image.startsWith('/')) {
+        return `http://localhost:5198${user.image}`;
+      }
+      
+      // If it's just a filename with extension, prepend full backend URL
+      if (user.image.includes('.')) {
+        return `http://localhost:5198/images/${user.image}`;
+      }
     }
-    return defaultImages[user.roleID as keyof typeof defaultImages] || defaultImages.default;
+    
+    // Fallback to role-based default images (chỉ sử dụng ảnh có trong thư mục public)
+    const safeDefaultImages = {
+      'R01': '/images/default-avatar.jpg', // Admin
+      'R02': '/images/default-avatar.jpg', // Staff 
+      'R03': '/images/default-avatar.jpg', // Customer
+      'R04': '/images/default-avatar.jpg', // Manager
+      'default': '/images/default-avatar.jpg'
+    };
+    
+    return safeDefaultImages[user.roleID as keyof typeof safeDefaultImages] || safeDefaultImages.default;
   };
 
   useEffect(() => {
@@ -101,7 +119,7 @@ export default function AccountsPage() {
     fetchUsers();
   }, []);
 
-  const getStatusBadge = (status: string) => {
+  const _getStatusBadge = (status: string) => {
     const statusConfig = {
       active: { color: "bg-green-100 text-green-800", text: "Hoạt động" },
       inactive: { color: "bg-gray-100 text-gray-800", text: "Không hoạt động" },
@@ -497,6 +515,7 @@ export default function AccountsPage() {
                           className="h-full w-full object-cover"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
+                            // Fallback trực tiếp đến default avatar nếu ảnh không load được
                             target.src = "/images/default-avatar.jpg";
                           }}
                         />

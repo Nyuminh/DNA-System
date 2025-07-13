@@ -24,6 +24,18 @@ export interface UpdateProfileRequest {
   address: string;
 }
 
+// Interface cho update image request
+export interface UpdateImageRequest {
+  picture: File;
+}
+
+// Interface cho update image response
+export interface UpdateImageResponse {
+  success: boolean;
+  message: string;
+  imageUrl?: string;
+}
+
 // Interface cho login request
 export interface LoginRequest {
   username: string;
@@ -874,6 +886,146 @@ export const updateProfile = async (profileData: UpdateProfileRequest): Promise<
         errorMessage = 'Không có quyền truy cập. Vui lòng đăng nhập lại.';
       } else if (error.response?.status === 404) {
         errorMessage = 'API endpoint không tồn tại. Vui lòng liên hệ hỗ trợ.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+    } else if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+
+    return {
+      success: false,
+      message: errorMessage
+    };
+  }
+};
+
+// API cập nhật ảnh đại diện
+export const updateUserImage = async (imageFile: File): Promise<UpdateImageResponse> => {
+  try {
+    // Validate input
+    if (!imageFile) {
+      return {
+        success: false,
+        message: 'Vui lòng chọn ảnh để upload'
+      };
+    }
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    if (!allowedTypes.includes(imageFile.type)) {
+      return {
+        success: false,
+        message: 'Chỉ hỗ trợ file ảnh định dạng JPG, PNG, GIF'
+      };
+    }
+
+    // Validate file size (2MB)
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    if (imageFile.size > maxSize) {
+      return {
+        success: false,
+        message: 'Kích thước ảnh không được vượt quá 2MB'
+      };
+    }
+
+    // Lấy token từ localStorage
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return {
+        success: false,
+        message: 'Không tìm thấy token xác thực. Vui lòng đăng nhập lại.'
+      };
+    }
+
+    // Tạo FormData để gửi file
+    const formData = new FormData();
+    formData.append('picture', imageFile);
+
+    console.log('Uploading image:', {
+      fileName: imageFile.name,
+      fileSize: imageFile.size,
+      fileType: imageFile.type,
+      hasToken: !!token
+    });
+
+    // Gửi request đến API
+    const response = await apiClient.put('/api/User/update-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    console.log('Update image API response:', response);
+
+    if (response.status >= 200 && response.status < 300) {
+      const data = response.data;
+      
+      // Cập nhật user info trong localStorage nếu có
+      if (data.user || data.imageUrl) {
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+        const updatedUser = { 
+          ...currentUser, 
+          image: data.imageUrl || data.user?.image || currentUser.image
+        };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+
+      return {
+        success: true,
+        message: data.message || 'Cập nhật ảnh đại diện thành công!',
+        imageUrl: data.imageUrl || data.user?.image
+      };
+    } else {
+      return {
+        success: false,
+        message: 'Cập nhật ảnh thất bại!'
+      };
+    }
+  } catch (error: unknown) {
+    console.error('Update image error:', error);
+    
+    let errorMessage = 'Có lỗi xảy ra khi cập nhật ảnh đại diện';
+    
+    if (error instanceof AxiosError) {
+      // Log chi tiết lỗi để debug
+      console.error('AxiosError details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers
+        }
+      });
+      
+      if (error.response?.status === 400) {
+        // Lỗi 400 - Bad Request
+        if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response?.data?.errors) {
+          const errors = error.response.data.errors;
+          if (typeof errors === 'object') {
+            const errorMessages = Object.keys(errors).map(key => 
+              `${key}: ${Array.isArray(errors[key]) ? errors[key].join(', ') : errors[key]}`
+            ).join('; ');
+            errorMessage = errorMessages;
+          } else {
+            errorMessage = Object.values(errors).flat().join(', ');
+          }
+        } else {
+          errorMessage = 'File ảnh không hợp lệ hoặc vượt quá giới hạn cho phép';
+        }
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Không có quyền truy cập. Vui lòng đăng nhập lại.';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'API endpoint không tồn tại.';
+      } else if (error.response?.status === 413) {
+        errorMessage = 'File ảnh quá lớn. Vui lòng chọn ảnh nhỏ hơn 2MB.';
+      } else if (error.response?.status === 415) {
+        errorMessage = 'Định dạng file không được hỗ trợ. Vui lòng chọn file ảnh JPG, PNG hoặc GIF.';
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
