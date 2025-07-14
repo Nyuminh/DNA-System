@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import type { User } from '@/lib/api/auth';
-import { isTokenValid, getUserFromToken } from '@/lib/api/auth';
+import { isTokenValid, getUserFromToken, logoutUser } from '@/lib/api/auth';
 
 interface AuthContextType {
   user: User | null;
@@ -79,6 +79,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('userData');
     localStorage.removeItem('authToken');
     console.log('AuthContext logout - all data cleared');
+    
+    // Chuyển hướng về trang đăng nhập
+    if (typeof window !== 'undefined') {
+      window.location.href = '/auth/login';
+    }
   };  // Helper functions để kiểm tra quyền
   const isAdmin = () => user?.roleID === 'Admin';
   const isManager = () => user?.roleID === 'Manager';
