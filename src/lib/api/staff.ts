@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from 'axios';
 
-// Base API URL
-const API_BASE_URL = 'http://localhost:5198';
+// Cấu hình base URL cho API
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5198';
 
 // User interface
 export interface User {
@@ -1679,6 +1680,7 @@ export interface StaffProfile {
   joinDate: string;
   avatar?: string;
   status?: string;
+  birthdate?: string;
 }
 
 // API functions for staff profile management
@@ -1729,7 +1731,8 @@ export const staffProfileAPI = {
           employeeId: response.data.employeeId || response.data.staffCode || '',
           joinDate: response.data.joinDate || response.data.createdDate || new Date().toISOString(),
           avatar: response.data.image || response.data.avatar || response.data.profileImage || '',
-          status: response.data.status || response.data.isActive ? 'active' : 'inactive'
+          status: response.data.status || response.data.isActive ? 'active' : 'inactive',
+          birthdate: response.data.birthdate || ''
         };
         
         return {
@@ -1798,7 +1801,34 @@ export const staffProfileAPI = {
   // Cập nhật thông tin profile staff hiện tại
   updateProfile: async (profileData: Partial<StaffProfile>): Promise<{ success: boolean; profile?: StaffProfile; message?: string }> => {
     try {
-      const response = await apiClient.put('/api/User/me', profileData);
+      // Lấy token từ localStorage để đảm bảo xác thực
+      const token = localStorage.getItem('token');
+      if (!token) {
+        return {
+          success: false,
+          message: 'Không tìm thấy token xác thực. Vui lòng đăng nhập lại.'
+        };
+      }
+      
+      console.log('Updating staff profile with data:', profileData);
+      
+      // Tạo bản sao của data để không thay đổi dữ liệu gốc
+      const requestData = { ...profileData };
+      
+      // API yêu cầu các trường đúng định dạng camelCase
+      // Không cần chuyển đổi thêm vì API sẽ tự nhận diện các trường
+      
+      console.log('Formatted request data for API:', requestData);
+      
+      // Gửi request đến API
+      const response = await apiClient.put('/api/User/profile', requestData, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      console.log('Update profile API response:', response);
       
       if (response.status >= 200 && response.status < 300) {
         return {
@@ -1836,6 +1866,109 @@ export const staffProfileAPI = {
     }
   },
   
+  // Cập nhật ảnh đại diện
+  updateAvatar: async (imageFile: File): Promise<{ success: boolean; imageUrl?: string; message?: string }> => {
+    try {
+      // Validate input
+      if (!imageFile) {
+        return {
+          success: false,
+          message: 'Vui lòng chọn ảnh để upload'
+        };
+      }
+
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+      if (!allowedTypes.includes(imageFile.type)) {
+        return {
+          success: false,
+          message: 'Chỉ hỗ trợ file ảnh định dạng JPG, PNG, GIF'
+        };
+      }
+
+      // Validate file size (2MB)
+      const maxSize = 2 * 1024 * 1024; // 2MB
+      if (imageFile.size > maxSize) {
+        return {
+          success: false,
+          message: 'Kích thước ảnh không được vượt quá 2MB'
+        };
+      }
+
+      // Lấy token từ localStorage
+      const token = localStorage.getItem('token');
+      if (!token) {
+        return {
+          success: false,
+          message: 'Không tìm thấy token xác thực. Vui lòng đăng nhập lại.'
+        };
+      }
+
+      // Tạo FormData để gửi file
+      const formData = new FormData();
+      formData.append('picture', imageFile);
+
+      console.log('Uploading staff image:', {
+        fileName: imageFile.name,
+        fileSize: imageFile.size,
+        fileType: imageFile.type,
+        hasToken: !!token
+      });
+
+      // Gửi request đến API
+      const response = await apiClient.put('/api/User/update-image', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`,
+        }
+      });
+
+      console.log('Update staff avatar API response:', response);
+
+      if (response.status >= 200 && response.status < 300) {
+        const data = response.data;
+        return {
+          success: true,
+          message: data.message || 'Cập nhật ảnh đại diện thành công!',
+          imageUrl: data.imageUrl || data.image || ''
+        };
+      } else {
+        return {
+          success: false,
+          message: 'Cập nhật ảnh thất bại!'
+        };
+      }
+    } catch (error) {
+      console.error('Update staff avatar error:', error);
+      
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          return {
+            success: false,
+            message: 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.'
+          };
+        }
+        
+        if (error.response?.status === 400) {
+          return {
+            success: false,
+            message: error.response?.data?.message || 'File ảnh không hợp lệ hoặc vượt quá giới hạn cho phép'
+          };
+        }
+        
+        return {
+          success: false,
+          message: `Lỗi: ${error.response?.status} - ${error.response?.data?.message || error.message}`
+        };
+      }
+      
+      return {
+        success: false,
+        message: 'Có lỗi xảy ra khi cập nhật ảnh đại diện'
+      };
+    }
+  },
+  
   // Cập nhật mật khẩu staff
   changePassword: async (currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
     try {
@@ -1856,7 +1989,7 @@ export const staffProfileAPI = {
         message: response.data?.message || 'Không thể đổi mật khẩu'
       };
     } catch (error) {
-      console.error('Error changing password:', error);
+      console.error('Change staff password error:', error);
       
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 401) {
@@ -1869,7 +2002,7 @@ export const staffProfileAPI = {
         if (error.response?.status === 400) {
           return {
             success: false,
-            message: error.response.data?.message || 'Mật khẩu hiện tại không đúng'
+            message: error.response?.data?.message || 'Mật khẩu hiện tại không chính xác'
           };
         }
         
