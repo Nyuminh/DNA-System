@@ -71,95 +71,79 @@ export default function CoursesList() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50">
+    <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white">
-        <div className="container mx-auto px-6 py-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/manager"
-                className="p-2 hover:bg-white/10 rounded-lg transition-all duration-200 backdrop-blur-sm"
-              >
-                <ArrowLeftIcon className="w-6 h-6" />
-              </Link>
-              <div>
-                <h1 className="text-3xl font-bold">Quản lý bài viết</h1>
-                <p className="text-purple-100 mt-2">
-                  Danh sách tất cả bài viết đào tạo
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleAddCourse} 
-              className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition-all duration-200 backdrop-blur-sm flex items-center space-x-2"
-            >
-              <PlusIcon className="w-5 h-5" />
-              <span>Thêm bài viết</span>
-            </button>
-          </div>
-          {/* Search box */}
-          <div className="mt-6 flex justify-end">
-            <input
-              type="text"
-              placeholder="Tìm kiếm theo tên bài viết..."
-              className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 w-full max-w-xs focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 px-4 md:px-8 py-6 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-emerald-700 mb-1">Quản lý bài viết</h1>
+          <p className="text-slate-500 text-sm">Danh sách tất cả bài viết đào tạo</p>
+        </div>
+        <div className="flex gap-2">
+          {/* <Link
+            href="/manager"
+            className="inline-flex items-center px-3 py-2 bg-white text-emerald-700 border border-emerald-100 rounded-lg hover:bg-emerald-50 transition shadow-sm"
+          >
+            <ArrowLeftIcon className="h-5 w-5 mr-2" />
+            Về Dashboard
+          </Link> */}
+          <button
+            type="button"
+            onClick={handleAddCourse}
+            className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition shadow-sm"
+          >
+            <PlusIcon className="h-5 w-5 mr-2" />
+            Thêm bài viết
+          </button>
         </div>
       </div>
-      <div className="container mx-auto px-6 py-8">
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gradient-to-r from-purple-500 to-indigo-500">
+      {/* Search */}
+      <div className="bg-white rounded-lg shadow p-4 mb-6 flex justify-end">
+        <input
+          type="text"
+          placeholder="Tìm kiếm theo tên bài viết..."
+          className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 w-full max-w-xs focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+      {/* Main Content */}
+      <div className="container mx-auto px-4 md:px-8 py-4">
+        <div className="bg-white rounded-xl shadow overflow-hidden border border-slate-100">
+          <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <thead className="bg-slate-50">
               <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider">
-                  Tên bài viết
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider">
-                  Ngày tạo
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider">
-                  Thao tác
-                </th>
+                <th className="px-6 py-3 text-left font-semibold text-slate-500 uppercase">Tên bài viết</th>
+                <th className="px-6 py-3 text-left font-semibold text-slate-500 uppercase">Ngày tạo</th>
+                <th className="px-6 py-3 text-left font-semibold text-slate-500 uppercase">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-slate-100">
               {filteredCourses.map((course) => (
-                <tr key={course.id} className="hover:bg-purple-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="text-sm font-semibold text-gray-900">
-                      {course.title}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <tr key={course.id} className="hover:bg-slate-50 transition">
+                  <td className="px-6 py-4 font-medium text-slate-900">{course.title}</td>
+                  <td className="px-6 py-4 text-slate-700">
                     {course.date && !isNaN(Date.parse(course.date))
                       ? new Date(course.date).toLocaleDateString("vi-VN")
                       : "—"}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-3">
+                  <td className="px-6 py-4">
+                    <div className="flex gap-2">
                       <Link
                         href={`/manager/courses/${course.id}`}
-                        className="text-blue-600 hover:text-blue-900"
+                        className="inline-flex items-center px-2 py-1 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition"
                         title="Chi tiết"
                       >
-                        <EyeIcon className="w-5 h-5" />
+                        <EyeIcon className="w-4 h-4 mr-1" />
+                        Xem
                       </Link>
-                      <Link
-                        href="#"
-                        onClick={e => {
-                          e.preventDefault();
-                          handleEditCourse(course);
-                        }}
-                        className="text-indigo-600 hover:text-indigo-900"
+                      <button
+                        onClick={() => handleEditCourse(course)}
+                        className="inline-flex items-center px-2 py-1 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 transition"
                         title="Sửa"
                       >
-                        <PencilSquareIcon className="w-5 h-5" />
-                      </Link>
+                        <PencilSquareIcon className="w-4 h-4 mr-1" />
+                        Sửa
+                      </button>
                       <button
                         onClick={async () => {
                           if (confirm("Bạn có chắc chắn muốn xóa bài viết này?")) {
@@ -177,10 +161,11 @@ export default function CoursesList() {
                             }
                           }
                         }}
-                        className="text-red-600 hover:text-red-900"
+                        className="inline-flex items-center px-2 py-1 rounded bg-red-50 text-red-700 hover:bg-red-100 transition"
                         title="Xóa"
                       >
-                        <TrashIcon className="w-5 h-5" />
+                        <TrashIcon className="w-4 h-4 mr-1" />
+                        Xóa
                       </button>
                     </div>
                   </td>
@@ -188,7 +173,7 @@ export default function CoursesList() {
               ))}
               {filteredCourses.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="py-8 text-center text-gray-400 italic">
+                  <td colSpan={3} className="py-8 text-center text-slate-400 italic">
                     Không tìm thấy bài viết phù hợp.
                   </td>
                 </tr>
@@ -197,6 +182,7 @@ export default function CoursesList() {
           </table>
         </div>
       </div>
+      {/* Modal giữ nguyên */}
       {showEditForm && editingCourse && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -307,7 +293,7 @@ export default function CoursesList() {
                     type="text"
                     value={editingCourse.title}
                     onChange={e => setEditingCourse({ ...editingCourse, title: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                     required
                     lang="vi"
                     autoComplete="off"
@@ -320,30 +306,17 @@ export default function CoursesList() {
                     value={editingCourse.description}
                     onChange={e => setEditingCourse({ ...editingCourse, description: e.target.value })}
                     rows={10}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                     required
                     lang="vi"
                     autoComplete="off"
                     autoCorrect="on"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  {/* <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Ngày tạo</label>
-                    <input
-                      type="date"
-                      value={editingCourse.date?.slice(0, 10) || ""}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
-                      disabled
-                      readOnly
-                    />
-                  </div> */}
-                  {/* Có thể thêm các trường khác nếu cần */}
-                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Ảnh bài viết</label>
                   <div
-                    className="w-full px-3 py-6 border-2 border-dashed border-gray-300 rounded-lg text-center cursor-pointer bg-gray-50 hover:bg-gray-100"
+                    className="w-full px-3 py-6 border-2 border-dashed border-slate-300 rounded-lg text-center cursor-pointer bg-slate-50 hover:bg-slate-100"
                     onDragOver={e => e.preventDefault()}
                     onDrop={e => {
                       e.preventDefault();
@@ -355,7 +328,7 @@ export default function CoursesList() {
                   >
                     {editingCourse?.image
                       ? <span className="text-green-600 font-medium">{editingCourse.image}</span>
-                      : <span className="text-gray-400">Kéo & thả ảnh vào đây hoặc click để chọn</span>
+                      : <span className="text-slate-400">Kéo & thả ảnh vào đây hoặc click để chọn</span>
                     }
                     <input
                       type="file"
@@ -369,11 +342,11 @@ export default function CoursesList() {
                         }
                       }}
                     />
-                    <label htmlFor="course-image-upload" className="block mt-2 text-indigo-600 underline cursor-pointer">
+                    <label htmlFor="course-image-upload" className="block mt-2 text-emerald-600 underline cursor-pointer">
                       Chọn ảnh
                     </label>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-slate-500 mt-1">
                     Kéo & thả hoặc chọn file ảnh.
                   </p>
                 </div>
@@ -381,13 +354,13 @@ export default function CoursesList() {
                   <button
                     type="button"
                     onClick={() => setShowEditForm(false)}
-                    className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                    className="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50"
                   >
                     Hủy
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                    className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
                   >
                     {isAddMode ? "Thêm" : "Cập nhật"}
                   </button>
