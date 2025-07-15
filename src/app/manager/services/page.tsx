@@ -296,58 +296,53 @@ export default function ServicesManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 shadow-lg">
-        <div className="container mx-auto px-6 py-8">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-white mb-2">Quản lý Dịch vụ</h1>
-              <p className="text-blue-100">Quản lý toàn bộ dịch vụ xét nghiệm ADN</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <Link
-                href="/manager"
-                className="flex items-center px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-gray-50 transition-all duration-200 shadow-md hover:shadow-lg"
-              >
-                {/* Home/Dashboard icon */}
-                <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l9-9 9 9M4 10v10a1 1 0 001 1h3m10-11v10a1 1 0 01-1 1h-3m-6 0h6" />
-                </svg>
-                Về Dashboard
-              </Link>
-              <button
-                onClick={() => openModal('create')}
-                className="flex items-center px-6 py-3 bg-white text-blue-600 rounded-lg hover:bg-gray-50 transition-all duration-200 shadow-md hover:shadow-lg"
-              >
-                <PlusIcon className="h-5 w-5 mr-2" />
-                Thêm Dịch vụ Mới
-              </button>
-            </div>
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      <div className="flex-1 flex flex-col px-4 md:px-8 py-6">
+        {/* Header & Actions */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-emerald-700 mb-1">Quản lý Dịch vụ</h1>
+            <p className="text-slate-500 text-sm">Quản lý toàn bộ dịch vụ xét nghiệm ADN</p>
+          </div>
+          <div className="flex gap-2">
+            {/* <Link
+              href="/manager"
+              className="inline-flex items-center px-3 py-2 bg-white text-emerald-700 border border-emerald-100 rounded-lg hover:bg-emerald-50 transition shadow-sm"
+            >
+              <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l9-9 9 9M4 10v10a1 1 0 001 1h3m10-11v10a1 1 0 01-1 1h-3m-6 0h6" />
+              </svg>
+              Về Dashboard
+            </Link> */}
+            <button
+              onClick={() => openModal('create')}
+              className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition shadow-sm"
+            >
+              <PlusIcon className="h-5 w-5 mr-2" />
+              Thêm Dịch vụ
+            </button>
           </div>
         </div>
-      </div>
 
-      <div className="container mx-auto px-6 py-8">
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-500 flex items-center justify-between">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="bg-white rounded-lg shadow p-4 flex items-center justify-between border-l-4 border-emerald-500">
             <div>
-              <p className="text-sm font-medium text-gray-600">Tổng Dịch vụ</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+              <p className="text-xs text-slate-500">Tổng dịch vụ</p>
+              <p className="text-xl font-bold text-slate-900">{stats.total}</p>
             </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+              <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-yellow-500 flex items-center justify-between">
+          <div className="bg-white rounded-lg shadow p-4 flex items-center justify-between border-l-4 border-yellow-500">
             <div>
-              <p className="text-sm font-medium text-gray-600">Tổng Giá trị</p>
-              <p className="text-2xl font-bold text-gray-900">{(stats.totalRevenue / 1000000).toFixed(1)}M</p>
+              <p className="text-xs text-slate-500">Tổng giá trị</p>
+              <p className="text-xl font-bold text-slate-900">{(stats.totalRevenue / 1000000).toFixed(1)}M</p>
             </div>
-            <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
               <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
               </svg>
@@ -355,78 +350,61 @@ export default function ServicesManagement() {
           </div>
         </div>
 
-        {/* Search and Filter */}
-        <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-3 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Tìm kiếm dịch vụ..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            
-            <div className="flex gap-4">
-              <div className="flex items-center gap-2">
-                <FunnelIcon className="h-5 w-5 text-gray-400" />
-                <select
-                  value={categoryFilter}
-                  onChange={(e) =>
-                    setCategoryFilter(
-                      e.target.value as "all" | "paternity" | "forensic" | "ancestry" | "health"
-                    )
-                  }
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="all">Tất cả danh mục</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.value}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+        {/* Search & Filter */}
+        <div className="bg-white rounded-lg shadow p-4 mb-6 flex flex-col md:flex-row gap-4">
+          <div className="flex-1 relative">
+            <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-3 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Tìm kiếm dịch vụ..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <FunnelIcon className="h-5 w-5 text-slate-400" />
+            <select
+              value={categoryFilter}
+              onChange={(e) =>
+                setCategoryFilter(
+                  e.target.value as "all" | "paternity" | "forensic" | "ancestry" | "health"
+                )
+              }
+              className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+            >
+              <option value="all">Tất cả danh mục</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.value}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
         {/* Services Table */}
-        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+        <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-slate-200 text-sm">
+              <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Dịch vụ
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Danh mục
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Giá & Thời gian
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Thao tác
-                  </th>
+                  <th className="px-6 py-3 text-left font-semibold text-slate-500 uppercase">Dịch vụ</th>
+                  <th className="px-6 py-3 text-left font-semibold text-slate-500 uppercase">Danh mục</th>
+                  <th className="px-6 py-3 text-left font-semibold text-slate-500 uppercase">Giá & Thời gian</th>
+                  <th className="px-6 py-3 text-left font-semibold text-slate-500 uppercase">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-slate-100">
                 {filteredServices.map((service) => (
-                  <tr key={service.id} className="hover:bg-gray-50">
+                  <tr key={service.id} className="hover:bg-slate-50 transition">
                     <td className="px-6 py-4">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {service.name}
-                        </div>
-                        <div className="text-sm text-gray-500 mt-1">
-                          {service.description}
-                        </div>
+                        <div className="font-medium text-slate-900">{service.name}</div>
+                        <div className="text-slate-500 text-xs mt-1">{service.description}</div>
                         <div className="flex flex-wrap gap-1 mt-2">
                           {service.sampleTypes.map((type, index) => (
-                            <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
                               {type}
                             </span>
                           ))}
@@ -434,50 +412,58 @@ export default function ServicesManagement() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         {categories.find(cat => cat.value === service.category)?.name || service.category}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {service.price.toLocaleString()} VNĐ
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {service.duration}
-                      </div>
+                      <div className="text-slate-900">{service.price.toLocaleString()} VNĐ</div>
+                      <div className="text-slate-500 text-xs">{service.duration}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2 justify-center">
-                        <button
-
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex gap-2 justify-center">
+                        <Link
+                          href={`/manager/services/${service.id}`}
+                          className="inline-flex items-center px-2 py-1 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition"
+                          title="Xem chi tiết"
                         >
-                          <Link href={`/manager/services/${service.id}`} className="text-blue-600">
-                                <EyeIcon className="w-5 h-5" />
-                          </Link>
-                        </button>
+                          <EyeIcon className="w-4 h-4 mr-1" />
+                          Xem
+                        </Link>
                         <button
                           onClick={() => openModal('edit', service)}
-                          className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-100"
+                          className="inline-flex items-center px-2 py-1 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 transition"
+                          title="Chỉnh sửa"
                         >
-                          <PencilIcon className="h-4 w-4" />
+                          <PencilIcon className="h-4 w-4 mr-1" />
+                          Sửa
                         </button>
                         <button
                           onClick={() => openModal('delete', service)}
-                          className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-100"
+                          className="inline-flex items-center px-2 py-1 rounded bg-red-50 text-red-700 hover:bg-red-100 transition"
+                          title="Xóa dịch vụ"
                         >
-                          <TrashIcon className="h-4 w-4" />
+                          <TrashIcon className="h-4 w-4 mr-1" />
+                          Xóa
                         </button>
                       </div>
                     </td>
                   </tr>
                 ))}
+                {filteredServices.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-8 text-center text-slate-400">
+                      Không có dịch vụ nào được tìm thấy
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Modal giữ nguyên */}
       {modalType && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
