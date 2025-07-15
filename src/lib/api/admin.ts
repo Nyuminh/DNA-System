@@ -463,11 +463,14 @@ export const adminProfileAPI = {  // Lấy thông tin profile admin hiện tại
       }
 
       // Validate file type
-      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+
+
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif','image/webp'];
+
       if (!allowedTypes.includes(file.type)) {
         return {
           success: false,
-          message: 'Chỉ hỗ trợ file ảnh định dạng JPG, PNG, GIF'
+          message: 'Chỉ hỗ trợ file ảnh định dạng JPG, PNG, GIF,webp'
         };
       }
 
