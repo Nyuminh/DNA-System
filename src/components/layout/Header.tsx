@@ -188,11 +188,11 @@ export default function Header() {
                           Quản lý tài khoản
                         </Link>
                         <Link
-                          href="/admin/services"
+                          href="/admin/profile"
                           className="block px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-100 transition-colors duration-200"
                           onClick={() => setShowUserMenu(false)}
                         >
-                          Quản lý dịch vụ
+                          Xem hồ sơ cá nhân
                         </Link>
                       </>
                     )}
@@ -357,11 +357,11 @@ export default function Header() {
                             Quản lý tài khoản
                           </Link>
                           <Link
-                            href="/admin/services"
+                            href="/admin/profile"
                             className="block rounded-lg px-4 py-3 text-base font-medium text-secondary-700 hover:bg-secondary-100 hover:text-primary-600 transition-colors duration-200"
                             onClick={() => setMobileMenuOpen(false)}
                           >
-                            Quản lý dịch vụ
+                            Xem hồ sơ cá nhân
                           </Link>
                         </>
                       )}

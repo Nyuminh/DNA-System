@@ -498,7 +498,6 @@ export default function OrderManagement() {
                 <option value="all">Tất cả phương thức</option>
                 <option value="self-collection">Tự lấy mẫu</option>
                 <option value="facility-collection">Lấy tại cơ sở</option>
-                <option value="home-collection">Lấy tại nhà</option>
               </select>
             </div>
           </div>

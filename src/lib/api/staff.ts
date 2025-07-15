@@ -1622,147 +1622,46 @@ export const getRelativesByBookingId = async (token: string, bookingId: string):
   try {
     console.log(`Fetching relatives for booking ID: ${bookingId}`);
     
-    // Phương pháp 1: Sử dụng query parameter bookingID
-    try {
-      const response = await axios.get(`${API_BASE_URL}/api/Relatives`, {
-        params: { bookingID: bookingId },
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': '*/*'
-        }
-      });
-      
-      if (response.data) {
-        // Xử lý các định dạng phản hồi khác nhau
-        let relatives: any[] = [];
-        
-        if ('$values' in response.data && Array.isArray(response.data.$values)) {
-          relatives = response.data.$values;
-        } else if (Array.isArray(response.data)) {
-          relatives = response.data;
-        } else if (response.data.relativeID || response.data.userID) {
-          // Trường hợp API trả về một đối tượng duy nhất
-          relatives = [response.data];
-        } else {
-          relatives = Array.isArray(response.data) ? response.data : [response.data];
-        }
-        
-        console.log(`Success: Fetched ${relatives.length} relatives for booking using Method 1`);
-        if (relatives.length > 0) {
-          return relatives.map(relative => ({
-            relativeID: relative.relativeID || '',
-            userID: relative.userID || '',
-            fullname: relative.fullname || '',
-            relationship: relative.relationship || '',
-            gender: relative.gender || '',
-            birthdate: relative.birthdate || '',
-            phone: relative.phone || '',
-            address: relative.address || '',
-            bookingID: relative.bookingID || bookingId
-          }));
-        }
+    const response = await axios.get(`${API_BASE_URL}/api/Relatives/by-booking/${bookingId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': '*/*'
       }
-    } catch (error1) {
-      console.log('Method 1 failed:', error1);
-      // Không return ở đây để thử phương pháp 2
+    });
+    
+    if (response.data) {
+      // Xử lý các định dạng phản hồi khác nhau
+      let relatives: any[] = [];
+      
+      if ('$values' in response.data && Array.isArray(response.data.$values)) {
+        relatives = response.data.$values;
+      } else if (Array.isArray(response.data)) {
+        relatives = response.data;
+      } else if (response.data.relativeID || response.data.userID) {
+        // Trường hợp API trả về một đối tượng duy nhất
+        relatives = [response.data];
+      } else {
+        relatives = Array.isArray(response.data) ? response.data : [response.data];
+      }
+      
+      console.log(`Success: Fetched ${relatives.length} relatives for booking`);
+      return relatives.map(relative => ({
+        relativeID: relative.relativeID || '',
+        userID: relative.userID || '',
+        fullname: relative.fullname || '',
+        relationship: relative.relationship || '',
+        gender: relative.gender || '',
+        birthdate: relative.birthdate || '',
+        phone: relative.phone || '',
+        address: relative.address || '',
+        bookingID: relative.bookingID || bookingId
+      }));
     }
     
-    // Phương pháp 2: Thử endpoint khác
-    try {
-      const response = await axios.get(`${API_BASE_URL}/api/Relatives/booking/${bookingId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': '*/*'
-        }
-      });
-      
-      if (response.data) {
-        // Xử lý các định dạng phản hồi khác nhau
-        let relatives: any[] = [];
-        
-        if ('$values' in response.data && Array.isArray(response.data.$values)) {
-          relatives = response.data.$values;
-        } else if (Array.isArray(response.data)) {
-          relatives = response.data;
-        } else if (response.data.relativeID || response.data.userID) {
-          // Trường hợp API trả về một đối tượng duy nhất
-          relatives = [response.data];
-        } else {
-          relatives = Array.isArray(response.data) ? response.data : [response.data];
-        }
-        
-        console.log(`Success: Fetched ${relatives.length} relatives for booking using Method 2`);
-        return relatives.map(relative => ({
-          relativeID: relative.relativeID || '',
-          userID: relative.userID || '',
-          fullname: relative.fullname || '',
-          relationship: relative.relationship || '',
-          gender: relative.gender || '',
-          birthdate: relative.birthdate || '',
-          phone: relative.phone || '',
-          address: relative.address || '',
-          bookingID: relative.bookingID || bookingId
-        }));
-      }
-    } catch (error2) {
-      console.log('Method 2 failed:', error2);
-      // Tiếp tục thử phương pháp 3
-    }
-    
-    // Phương pháp 3: Thử sử dụng POST với bookingID trong body
-    try {
-      const currentBookingId = bookingId; // Store in local variable to avoid TypeScript error
-      const response = await axios.post(`${API_BASE_URL}/api/Relatives/search`, 
-        { bookingID: currentBookingId },
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            'Accept': '*/*'
-          }
-        }
-      );
-      
-      if (response.data) {
-        // Xử lý các định dạng phản hồi khác nhau
-        let relatives: any[] = [];
-        
-        if ('$values' in response.data && Array.isArray(response.data.$values)) {
-          relatives = response.data.$values;
-        } else if (Array.isArray(response.data)) {
-          relatives = response.data;
-        } else if (response.data.relativeID || response.data.userID) {
-          // Trường hợp API trả về một đối tượng duy nhất
-          relatives = [response.data];
-        } else {
-          relatives = Array.isArray(response.data) ? response.data : [response.data];
-        }
-        
-        console.log(`Success: Fetched ${relatives.length} relatives for booking using Method 3`);
-        return relatives.map(relative => ({
-          relativeID: relative.relativeID || '',
-          userID: relative.userID || '',
-          fullname: relative.fullname || '',
-          relationship: relative.relationship || '',
-          gender: relative.gender || '',
-          birthdate: relative.birthdate || '',
-          phone: relative.phone || '',
-          address: relative.address || '',
-          bookingID: relative.bookingID || currentBookingId
-        }));
-      }
-    } catch (error3) {
-      console.log('Method 3 failed:', error3);
-    }
-    
-    // Nếu tất cả các phương pháp đều thất bại, trả về mảng trống
-    console.log('All methods failed to fetch relatives, returning empty array');
     return [];
   } catch (error: any) {
-    const currentBookingId = bookingId; // Store in local variable to avoid TypeScript error
-    console.error(`Error fetching relatives for booking ID ${currentBookingId}:`, error.message || error);
+    console.error(`Error fetching relatives for booking ID ${bookingId}:`, error.message || error);
     return [];
   }
 };
