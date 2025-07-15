@@ -67,32 +67,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Company */}
-          <div>
-            <h3 className="text-lg font-semibold text-white mb-6">Về chúng tôi</h3>
-            <ul className="space-y-3">
-              <li>
-                <Link href="/about" className="text-secondary-300 hover:text-white transition-colors duration-200">
-                  Giới thiệu
-                </Link>
-              </li>
-              <li>
-                <Link href="/blog" className="text-secondary-300 hover:text-white transition-colors duration-200">
-                  Tin tức & Blog
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="text-secondary-300 hover:text-white transition-colors duration-200">
-                  Liên hệ
-                </Link>
-              </li>
-              <li>
-                <Link href="/privacy" className="text-secondary-300 hover:text-white transition-colors duration-200">
-                  Chính sách bảo mật
-                </Link>
-              </li>
-            </ul>
-          </div>
+          
         </div>
 
         {/* Contact Info */}

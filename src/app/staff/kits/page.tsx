@@ -13,15 +13,17 @@ import {
   EyeIcon
 } from '@heroicons/react/24/outline';
 import { kitApi, Kit } from '@/lib/api/staff';
+import { updateKitById } from '@/lib/api/kit';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 
+// 1. Interface Kit và NewKitForm chỉ dùng status tiếng Việt:
 interface NewKitForm {
   customerID: string;
   staffID: string;
   bookingId: string;
   description: string;
-  status: 'available' | 'in-use' | 'completed' | 'expired';
+  status: 'Đã vận chuyển' | 'Đang giao' | 'Đã lấy mẫu' | 'Đang tới kho' | 'Đã tới kho';
   receivedate: string;
 }
 
@@ -39,7 +41,7 @@ export default function KitManagement() {
     staffID: '',
     bookingId: '',
     description: '',
-    status: 'available',
+    status: 'Đã vận chuyển',
     receivedate: new Date().toISOString().split('T')[0]
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -65,7 +67,7 @@ export default function KitManagement() {
         customerID: customerId || '',
         staffID: staffId || '',
         description: description || '',
-        status: 'available',
+        status: 'Đã vận chuyển',
         receivedate: new Date().toISOString().split('T')[0]
       }));
       setShowAddForm(true);
@@ -150,6 +152,7 @@ export default function KitManagement() {
       // Create kit data without kitID - let backend auto-generate it
       const kitDataToCreate = {
         ...formData,
+        status: formData.status, // luôn là tiếng Việt
         // Backend will auto-generate kitID
       };
       
@@ -165,7 +168,7 @@ export default function KitManagement() {
         staffID: '',
         bookingId: '',
         description: '',
-        status: 'available',
+        status: 'Đã vận chuyển',
         receivedate: new Date().toISOString().split('T')[0]
       });
       
@@ -193,7 +196,7 @@ export default function KitManagement() {
       staffID: '',
       bookingId: '',
       description: '',
-      status: 'available',
+      status: 'Đã vận chuyển',
       receivedate: new Date().toISOString().split('T')[0]
     });
     setFormErrors({});
@@ -201,115 +204,21 @@ export default function KitManagement() {
 
   const handleUpdateStatus = async (kitID: string, newStatus: Kit['status']) => {
     try {
-      console.log(`🔄 Updating status for kit ${kitID} to ${newStatus}`);
-      
-      // Find the kit object from current state
-      const kitToUpdate = kits.find(kit => kit.kitID === kitID);
-      if (!kitToUpdate) {
-        throw new Error(`Kit with ID ${kitID} not found in current state`);
-      }
-      
-      // Create updated kit object
-      const updatedKit = { ...kitToUpdate, status: newStatus };
-      console.log('📤 Sending updated kit to API:', JSON.stringify(updatedKit));
-      
-      try {
-        // Sử dụng hàm fixKitStatus mới
-        console.log('🔧 Using fixKitStatus to ensure proper status update...');
-        await kitApi.fixKitStatus(kitID, newStatus);
-        console.log('✅ Kit status fixed successfully');
-      } catch (error) {
-        console.error('❌ Fix kit status failed:', error);
-        
-        // Phương pháp dự phòng
-        console.log('🔄 Trying fallback methods...');
-        try {
-          await kitApi.updateKitStatusVietnamese(updatedKit);
-          console.log('✅ Vietnamese method succeeded');
-        } catch (fallbackError) {
-          console.error('❌ Vietnamese method failed:', fallbackError);
-          await kitApi.updateKitStatusMultiFormat(updatedKit);
-          console.log('✅ Multi-format method succeeded');
-        }
-      }
-      
-      // Update local state
-      setKits(prev => prev.map(kit => 
+      // Gọi API updateKitById để cập nhật trạng thái kit
+      await updateKitById(kitID, { status: newStatus });
+
+      // Cập nhật lại state sau khi update thành công
+      setKits(prev => prev.map(kit =>
         kit.kitID === kitID ? { ...kit, status: newStatus } : kit
       ));
-      
       setEditingStatus(null);
-      console.log('✅ Kit status updated successfully');
       toast.success('Cập nhật trạng thái kit thành công');
-      
-      // Refresh kit data from server to ensure we have the latest data
-      try {
-        console.log('🔄 Refreshing kit data from server...');
-        const refreshedKit = await kitApi.refreshKitData(kitID);
-        console.log('✅ Kit data refreshed:', refreshedKit);
-        
-        // Update the local state with the refreshed data
-        setKits(prev => prev.map(kit => 
-          kit.kitID === kitID ? refreshedKit : kit
-        ));
-      } catch (refreshError) {
-        console.error('❌ Error refreshing kit data:', refreshError);
-      }
-      
-      // Refresh the entire kit list after a delay
-      setTimeout(() => {
-        fetchKits();
-      }, 1000);
+      // Có thể gọi lại fetchKits() nếu muốn reload toàn bộ danh sách
     } catch (error) {
-      console.error('❌ Error updating kit status:', error);
-      setError('Không thể cập nhật trạng thái kit. Vui lòng thử lại.');
-      toast.error('Không thể cập nhật trạng thái kit: ' + (error instanceof Error ? error.message : 'Lỗi không xác định'));
+      toast.error('Không thể cập nhật trạng thái kit');
     }
   };
-  const getStatusIcon = (status: Kit['status']) => {
-    switch (status) {
-      case 'available':
-        return <CheckCircleIcon className="h-5 w-5 text-green-500" />;
-      case 'in-use':
-        return <CheckCircleIcon className="h-5 w-5 text-blue-500" />;
-      case 'completed':
-        return <CheckCircleIcon className="h-5 w-5 text-purple-500" />;
-      case 'expired':
-        return <ExclamationTriangleIcon className="h-5 w-5 text-orange-500" />;
-      default:
-        return null;
-    }
-  };
-
-  const getStatusText = (status: Kit['status']) => {
-    switch (status) {
-      case 'available':
-        return 'Đã vận chuyển';
-      case 'in-use':
-        return 'Đang vận chuyển';
-      case 'completed':
-        return 'Đã lấy mẫu';
-      case 'expired':
-        return 'Đã tới kho';
-      default:
-        return 'Không xác định';
-    }
-  };
-
-  const getStatusColor = (status: Kit['status']) => {
-    switch (status) {
-      case 'available':
-        return 'bg-green-100 text-green-800';
-      case 'in-use':
-        return 'bg-blue-100 text-blue-800';
-      case 'completed':
-        return 'bg-purple-100 text-purple-800';
-      case 'expired':
-        return 'bg-orange-100 text-orange-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };  const filteredKits = kits.filter(kit => {
+  const filteredKits = kits.filter(kit => {
     const matchesSearch = kit.kitID.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (kit.description && kit.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
                          (kit.customerID && kit.customerID.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -323,12 +232,13 @@ export default function KitManagement() {
     return matchesSearch && matchesStatus;
   });
 
+  // Thay thế hàm thống kê stats để dùng trạng thái tiếng Việt
   const stats = {
     total: kits.length,
-    available: kits.filter(k => k.status === 'available').length,
-    inUse: kits.filter(k => k.status === 'in-use').length,
-    completed: kits.filter(k => k.status === 'completed').length,
-    expired: kits.filter(k => k.status === 'expired').length
+    available: kits.filter(k => k.status === 'Đã vận chuyển').length,
+    inUse: kits.filter(k => k.status === 'Đang vận chuyển').length,
+    completed: kits.filter(k => k.status === 'Đã lấy mẫu').length,
+    expired: kits.filter(k => k.status === 'Đã tới kho').length
   };
 
   // Hàm để hiển thị modal chi tiết kit
@@ -391,13 +301,14 @@ export default function KitManagement() {
                   <div className="border-b pb-2">
                     <span className="font-medium text-gray-500">Mã Kit:</span>
                     <p className="mt-1">{selectedKit.kitID}</p>
+
                   </div>
                   
                   <div className="border-b pb-2">
                     <span className="font-medium text-gray-500">Trạng thái:</span>
                     <div className="mt-1">
                       <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedKit.status)}`}>
-                        {getStatusText(selectedKit.status)}
+                        {selectedKit.status}
                       </span>
                     </div>
                   </div>
@@ -442,10 +353,10 @@ export default function KitManagement() {
                           })}
                           className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
-                          <option value="available">Đã vận chuyển</option>
-                          <option value="in-use">Đang vận chuyển</option>
-                          <option value="completed">Đã lấy mẫu</option>
-                          <option value="expired">Đã tới kho</option>
+                          <option value="Đã vận chuyển">Đã vận chuyển</option>
+                          <option value="Đang giao">Đang giao</option>
+                          <option value="Đã lấy mẫu">Đã lấy mẫu</option>
+                          <option value="Đã tới kho">Đã tới kho</option>
                         </select>
                         <button
                           onClick={() => {
@@ -492,6 +403,24 @@ export default function KitManagement() {
         </div>
       </div>
     );
+  };
+
+  // Thêm hàm này vào component của bạn
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Đã vận chuyển':
+        return 'bg-green-100 text-green-800';
+      case 'Đang vận chuyển':
+        return 'bg-blue-100 text-blue-800';
+      case 'Đang giao':
+        return 'bg-yellow-100 text-yellow-800'; // Thêm màu vàng cho "Đang giao"
+      case 'Đã lấy mẫu':
+        return 'bg-purple-100 text-purple-800';
+      case 'Đã tới kho':
+        return 'bg-orange-100 text-orange-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
   if (loading) {
@@ -614,10 +543,10 @@ export default function KitManagement() {
                 className="border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">Tất cả trạng thái</option>
-                <option value="available">Đã vận chuyển</option>
-                <option value="in-use">Đang vận chuyển</option>
-                <option value="completed">Đã lấy mẫu</option>
-                <option value="expired">Đã tới kho</option>
+                <option value="Đã vận chuyển">Đã vận chuyển</option>
+                <option value="Đang vận chuyển">Đang vận chuyển</option>
+                <option value="Đã lấy mẫu">Đã lấy mẫu</option>
+                <option value="Đã tới kho">Đã tới kho</option>
               </select>
             </div>
           </div>
@@ -684,26 +613,42 @@ export default function KitManagement() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center space-x-2">
-                      {getStatusIcon(kit.status)}
-                      {editingStatus && editingStatus.kitID === kit.kitID ? (
+                      {editingStatus?.kitID === kit.kitID ? (
                         <select
-                          value={kit.status}
-                          onChange={(e) => handleUpdateStatus(kit.kitID, e.target.value as Kit['status'])}
-                          onBlur={() => setEditingStatus(null)}
-                          className="text-xs font-semibold rounded-full px-2 py-1 border focus:ring-2 focus:ring-blue-500"
+                          value={editingStatus.currentStatus}
+                          onChange={e =>
+                            setEditingStatus({
+                              kitID: kit.kitID,
+                              currentStatus: e.target.value as Kit['status'],
+                            })
+                          }
+                          className="px-2 py-1 text-xs rounded border border-blue-400 focus:ring-2 focus:ring-blue-500"
+                          style={{ minWidth: 120 }}
                           autoFocus
                         >
-                          <option value="available">Đã vận chuyển</option>
-                          <option value="in-use">Đang vận chuyển</option>
-                          <option value="completed">Đã lấy mẫu</option>
-                          <option value="expired">Đã tới kho</option>
+                          <option value="Đã vận chuyển">Đã vận chuyển</option>
+                          <option value="Đang giao">Đang giao</option>
+                          <option value="Đã lấy mẫu">Đã lấy mẫu</option>
+                          <option value="Đã tới kho">Đã tới kho</option>
                         </select>
                       ) : (
                         <button
-                          onClick={() => setEditingStatus({kitID: kit.kitID, currentStatus: kit.status})}
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full hover:opacity-80 transition-opacity ${getStatusColor(kit.status)}`}
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full cursor-pointer border border-transparent ${getStatusColor(kit.status)}`}
+                          title="Nhấn để đổi trạng thái"
+                          onClick={() => setEditingStatus({ kitID: kit.kitID, currentStatus: kit.status })}
                         >
-                          {getStatusText(kit.status)}
+                          {kit.status}
+                        </button>
+                      )}
+                      {editingStatus?.kitID === kit.kitID && (
+                        <button
+                          className="ml-2 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                          onClick={async () => {
+                            await handleUpdateStatus(kit.kitID, editingStatus.currentStatus);
+                            setEditingStatus(null);
+                          }}
+                        >
+                          Lưu
                         </button>
                       )}
                     </div>
@@ -832,10 +777,10 @@ export default function KitManagement() {
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option value="available">Đã vận chuyển</option>
-                    <option value="in-use">Đang vận chuyển</option>
-                    <option value="completed">Đã lấy mẫu</option>
-                    <option value="expired">Đã tới kho</option>
+                    <option value="Đã vận chuyển">Đã vận chuyển</option>
+                    <option value="Đang giao">Đang giao</option>
+                    <option value="Đã lấy mẫu">Đã lấy mẫu</option>
+                    <option value="Đã tới kho">Đã tới kho</option>
                   </select>
                 </div>
 
@@ -902,7 +847,7 @@ export default function KitManagement() {
         </div>
       )}
 
-      <KitDetailModal />
+      <KitDetailModal />  
     </div>
   );
 }

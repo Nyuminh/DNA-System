@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 const navigation = [
   { name: 'Trang chủ', href: '/' },
   { name: 'Dịch vụ', href: '/services' },
-  { name: 'Về chúng tôi', href: '/about' },
+ 
   { name: 'Blog', href: '/blog' },
   { name: 'Liên hệ', href: '/contact' },
 ];
@@ -118,7 +118,7 @@ export default function Header() {
                           className="block px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-100 transition-colors duration-200"
                           onClick={() => setShowUserMenu(false)}
                         >
-                          Lịch Sử Đơn Hàng
+                          Lịch Sử Xét Nghiệm
                         </Link>
                         <Link
                           href="/dashboard?tab=Đổi mật khẩu"

@@ -283,83 +283,7 @@ const mapStatusToBackend = (status: Kit['status']): string => {
 };
 
 // Helper function to map backend status to frontend status
-const mapStatusFromBackend = (backendStatus: string): Kit['status'] => {
-  // Kiểm tra và log trạng thái ban đầu
-  console.log(`🔍 Mapping backend status: "${backendStatus}"`);
-  
-  // Nếu không có giá trị, trả về mặc định
-  if (!backendStatus) {
-    console.warn('Empty status received, defaulting to available');
-    return 'available';
-  }
-  
-  // Chuẩn hóa chuỗi trạng thái
-  const normalizedStatus = backendStatus.toLowerCase();
-  console.log(`🔍 Normalized status: "${normalizedStatus}"`);
-  
-  // Xử lý các trường hợp không lỗi encoding
-  if (normalizedStatus === 'đã vận chuyển' || normalizedStatus === 'da van chuyen') return 'available';
-  if (normalizedStatus === 'đã lấy mẫu' || normalizedStatus === 'da lay mau') return 'completed';
-  if (normalizedStatus === 'đã tới kho' || normalizedStatus.includes('da toi kho')) return 'expired';
-  if (normalizedStatus === 'đang vận chuyển' || normalizedStatus.includes('dang van chuyen')) return 'in-use';
-  if (normalizedStatus === 'đang vận chuyển mẫu' || normalizedStatus.includes('dang van chuyen mau')) return 'in-use';
-  
-  // Xử lý các trường hợp có lỗi encoding với dấu "?"
-  if (normalizedStatus.includes('đã') || normalizedStatus.includes('da') || normalizedStatus.includes('đa')) {
-    if (normalizedStatus.includes('vận chuyển') || normalizedStatus.includes('van chuyen') || 
-        normalizedStatus.includes('v?n chuy?n') || normalizedStatus.includes('v?n chuy') || 
-        normalizedStatus.includes('van chuy')) {
-      console.log('✅ Matched pattern: "đã vận chuyển" -> available');
-      return 'available';
-    }
-    
-    if (normalizedStatus.includes('lấy mẫu') || normalizedStatus.includes('lay mau') || 
-        normalizedStatus.includes('l?y m?u') || normalizedStatus.includes('l?y mau') || 
-        normalizedStatus.includes('lay m?u')) {
-      console.log('✅ Matched pattern: "đã lấy mẫu" -> completed');
-      return 'completed';
-    }
-    
-    if (normalizedStatus.includes('tới kho') || normalizedStatus.includes('toi kho') || 
-        normalizedStatus.includes('t?i kho') || normalizedStatus.includes('toi kho')) {
-      console.log('✅ Matched pattern: "đã tới kho" -> expired');
-      return 'expired';
-    }
-  }
-  
-  if (normalizedStatus.includes('đang') || normalizedStatus.includes('dang') || normalizedStatus.includes('?ang')) {
-    if (normalizedStatus.includes('vận chuyển') || normalizedStatus.includes('van chuyen') || 
-        normalizedStatus.includes('v?n chuy?n') || normalizedStatus.includes('v?n chuy') || 
-        normalizedStatus.includes('van chuy')) {
-      console.log('✅ Matched pattern: "đang vận chuyển" -> in-use');
-      return 'in-use';
-    }
-  }
-  
-  // Hỗ trợ các trường hợp có lỗi encoding khác
-  if (normalizedStatus.includes('lay mau') || normalizedStatus.includes('l?y m?u')) return 'completed';
-  if (normalizedStatus.includes('toi kho') || normalizedStatus.includes('t?i kho')) return 'expired';
-  if (normalizedStatus.includes('van chuyen') || normalizedStatus.includes('v?n chuy?n')) {
-    if (normalizedStatus.startsWith('da') || normalizedStatus.startsWith('đa') || normalizedStatus.startsWith('đã') || normalizedStatus.startsWith('?a')) {
-      return 'available';
-    }
-    return 'in-use';
-  }
-  
-  // Legacy mappings for backward compatibility
-  if (normalizedStatus === 'received') return 'available';
-  if (normalizedStatus === 'processing') return 'in-use';
-  if (normalizedStatus === 'pending') return 'completed';
-  
-  if (normalizedStatus.includes('available')) return 'available';
-  if (normalizedStatus.includes('inuse') || normalizedStatus.includes('in-use')) return 'in-use';
-  if (normalizedStatus.includes('completed')) return 'completed';
-  if (normalizedStatus.includes('expired')) return 'expired';
-  
-  // Default fallback for unknown statuses
-  console.warn(`Unknown backend status: ${backendStatus}, defaulting to 'available'`);
-  return 'available';
-};
+
 
 // Kit interface matching database fields
 export interface Kit {
@@ -368,7 +292,7 @@ export interface Kit {
   staffID?: string;
   bookingId?: string;
   description?: string;
-  status: 'available' | 'in-use' | 'completed' | 'expired';
+  status: string;
   receivedate?: string;
   // Additional display fields (not in database)
   customerName?: string;
@@ -423,7 +347,8 @@ apiClient.interceptors.request.use(
 );
 
 // Kit API functions
-export const kitApi = {  /**
+export const kitApi = {
+  /**
    * Fetch all kits from the system
    * @returns Promise<Kit[]>
    */
@@ -485,7 +410,7 @@ export const kitApi = {  /**
           staffID: kit.staffId?.toString() || '',
           bookingId: kit.bookingId?.toString(),
           description: kit.description || '',
-          status: mapStatusFromBackend(kit.status || ''),
+          status: kit.status || '', // Lấy status tiếng Việt trực tiếp
           receivedate: kit.receivedate || '',
           customerName: kit.customer?.fullname || '',
           staffName: kit.staff?.fullname || ''
@@ -564,44 +489,20 @@ export const kitApi = {  /**
       
       const kit = response.data;
       
-      // Map backend status to frontend status
-      let normalizedStatus: Kit['status'] = 'available';
-      if (kit.status) {
-        const statusLower = kit.status.toLowerCase();
-        if (statusLower.includes('received') || statusLower.includes('available')) {
-          normalizedStatus = 'available';
-        } else if (statusLower.includes('use') || statusLower.includes('processing')) {
-          normalizedStatus = 'in-use';
-        } else if (statusLower.includes('completed') || statusLower.includes('done')) {
-          normalizedStatus = 'completed';
-        } else if (statusLower.includes('expired')) {
-          normalizedStatus = 'expired';
-        }
-      }
-      
-      const normalizedKit = {
-        kitID: kit.kitId?.toString() || kitId,     // Read kitId from backend
-        customerID: kit.customerId?.toString() || '',  // Read customerId from backend
-        staffID: kit.staffId?.toString() || '',    // Read staffId from backend
+      // Lấy status tiếng Việt trực tiếp
+      return {
+        kitID: kit.kitId?.toString() || kitId,
+        customerID: kit.customerId?.toString() || '',
+        staffID: kit.staffId?.toString() || '',
         bookingId: kit.bookingId?.toString(),
         description: kit.description || '',
-        status: normalizedStatus,
+        status: kit.status || '', // Lấy status tiếng Việt trực tiếp
         receivedate: kit.receivedate || '',
         customerName: kit.customer?.fullname || '',
         staffName: kit.staff?.fullname || ''
       };
-      
-      console.log('Normalized kit details:', normalizedKit);
-      return normalizedKit;
     } catch (error) {
       console.error(`❌ Error fetching kit ${kitId}:`, error);
-      if (axios.isAxiosError(error)) {
-        if (error.response?.status === 404) {
-          throw new Error(`Kit với ID "${kitId}" không tồn tại`);
-        } else if (error.response?.status === 500) {
-          throw new Error('Lỗi server khi lấy thông tin kit');
-        }
-      }
       throw new Error(`Không thể tải thông tin kit ${kitId}`);
     }
   },
@@ -1007,18 +908,7 @@ export const kitApi = {  /**
         throw new Error(`Kit with ID ${kitId} not found in API response`);
       }
       
-      // Log the actual status value received
-      console.log(`🔍 Raw status from API: "${kitData.status}"`);
       
-      // Check if status has proper Vietnamese encoding
-      const hasProperVietnameseEncoding = 
-        kitData.status?.includes('ả') || 
-        kitData.status?.includes('ậ') || 
-        kitData.status?.includes('ấ') || 
-        kitData.status?.includes('ấ') || 
-        kitData.status?.includes('ầ');
-      
-      console.log(`📊 Status has proper Vietnamese encoding: ${hasProperVietnameseEncoding}`);
       
       // Convert to normalized Kit object
       const normalizedKit: Kit = {
@@ -1027,7 +917,7 @@ export const kitApi = {  /**
         staffID: kitData.staffId?.toString() || '',
         bookingId: kitData.bookingId?.toString() || '',
         description: kitData.description || '',
-        status: mapStatusFromBackend(kitData.status || ''),
+        status: kitData.status || '', // Lấy thẳng status từ database, không normalized
         receivedate: kitData.receivedate || '',
         customerName: kitData.customer?.fullname || '',
         staffName: kitData.staff?.fullname || ''

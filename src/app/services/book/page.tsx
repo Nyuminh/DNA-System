@@ -205,10 +205,18 @@ function BookServiceContent() {
   };
   const handleParticipantChange = (index: number, field: string, value: string) => {
     const updatedParticipants = [...formData.participants];
-    updatedParticipants[index] = {
-      ...updatedParticipants[index],
-      [field]: value
-    };
+    // Nếu sửa trường địa chỉ, luôn lấy theo userProfile.address nếu có
+    if (field === 'address') {
+      updatedParticipants[index] = {
+        ...updatedParticipants[index],
+        address: userProfile?.address || value || ''
+      };
+    } else {
+      updatedParticipants[index] = {
+        ...updatedParticipants[index],
+        [field]: value
+      };
+    }
     setFormData({ ...formData, participants: updatedParticipants });
   };
 
@@ -317,6 +325,13 @@ function BookServiceContent() {
               ? 'Tại cơ sở y tế'
               : formData.collectionMethod;
 
+        // Đặt trạng thái booking theo phương thức thu mẫu
+        const bookingStatus =
+          formData.collectionMethod === 'self'
+            ? 'Đang chờ mẫu'
+            : formData.collectionMethod === 'facility'
+              ? 'Đang chờ check-in'
+              : 'Đang chờ mẫu';
 
         const staffId = await getLeastLoadedStaffId();
         if (!staffId) {
@@ -331,7 +346,7 @@ function BookServiceContent() {
           serviceId: serviceId ?? "",
           address,
           method,
-          status: "Đã xác nhận",
+          status: bookingStatus // Sử dụng trạng thái động
         });
 
         console.log('Dữ liệu gửi lên API:', {
@@ -1088,7 +1103,7 @@ function BookServiceContent() {
                               required
                             >
                               <option value="">Chọn vai trò</option>
-                              <option value="Cha">Cha (giả định)</option>
+                              <option value="Cha">Cha</option>
                               <option value="Mẹ">Mẹ</option>
                               <option value="Con">Con</option>
                               <option value="Anh/Chị/Em">Anh/Chị/Em</option>
@@ -1099,21 +1114,7 @@ function BookServiceContent() {
                         </div>
                         
                         {/* Thêm trường địa chỉ */}
-                        <div className="sm:col-span-2">
-                          <label htmlFor={`address-${index}`} className="block text-sm font-medium text-gray-700">
-                            Địa chỉ
-                          </label>
-                          <div className="mt-1">
-                            <input
-                              type="text"
-                              id={`address-${index}`}
-                              value={participant.address || ''}
-                              onChange={(e) => handleParticipantChange(index, 'address', e.target.value)}
-                              className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
-                              placeholder="Nhập địa chỉ"
-                            />
-                          </div>
-                        </div>
+                        
                       </div>
                     </div>
                   ))}

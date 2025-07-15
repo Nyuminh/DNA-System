@@ -239,7 +239,7 @@ export default function StaffLayout({ children }: StaffLayoutProps) {
                   }`}
                 >
                   <BeakerIcon className="mr-3 h-5 w-5" />
-                  Quản lý kết quả
+                  Quản lý lịch xét nghiệm
                 </Link>
               </div>
 

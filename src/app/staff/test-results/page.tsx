@@ -7,15 +7,12 @@ import {
   AdjustmentsHorizontalIcon,
   ClockIcon,
   CheckCircleIcon,
-  PencilIcon,
   EyeIcon,
-  XMarkIcon,
   MapPinIcon,
   PlusIcon,
-  PencilSquareIcon,
-  ArrowPathIcon
+  XMarkIcon
 } from '@heroicons/react/24/outline';
-import { Appointment, getAppointments, updateAppointment, getUserById, getAllUsers, User } from '@/lib/api/staff';
+import { getAppointments, updateAppointment } from '@/lib/api/staff';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import toast from 'react-hot-toast';
@@ -28,10 +25,9 @@ interface Order {
   staffId: string;
   serviceId: string;
   address: string;
-  method: 'self-collection' | 'facility-collection' | 'home-collection';
-  status: 'pending' | 'in-progress' | 'completed' | 'cancelled';
-  priority: 'low' | 'normal' | 'high' | 'urgent';
-  notes?: string;
+  method: string;
+  status: string;
+  priority: string;
   customerName?: string;
   serviceName?: string;
   staffName?: string;
@@ -55,175 +51,58 @@ export default function OrderManagement() {
   const fetchOrders = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      console.log('Fetching appointments from API...');
       const apiAppointments = await getAppointments();
-      console.log('Appointments received:', apiAppointments);
-      
-      // Map API appointments to the Order structure expected by the UI
       const mappedOrders: Order[] = apiAppointments.map((appointment) => {
-        // Extract customer name from nested customer object if it exists
         const customerName = appointment.customer?.fullname || appointment.customerName || appointment.customerId;
         const staffName = appointment.staffName || appointment.staffId;
         const serviceName = appointment.service?.name || appointment.serviceName || appointment.serviceId;
-        
+
         return {
-          id: appointment.id || appointment.bookingId, // Fallback to bookingId if id is undefined
+          id: appointment.id || appointment.bookingId,
           bookingId: appointment.bookingId,
           customerId: appointment.customerId,
           date: appointment.date,
           staffId: appointment.staffId,
           serviceId: appointment.serviceId,
           address: appointment.address,
-          // Map method string to expected enum values
-          method: mapMethodToEnum(appointment.method),
-          // Map status string to expected enum values
-          status: mapStatusToEnum(appointment.status || 'pending'),
-          // Set a default priority based on status
-          priority: getPriorityFromStatus(appointment.status || 'pending'),
-          customerName: customerName,
-          serviceName: serviceName,
-          staffName: staffName
+          method: appointment.method,
+          status: appointment.status,
+          priority: 'Bình thường',
+          customerName,
+          serviceName,
+          staffName
         };
       });
-      
-      console.log('Mapped orders:', mappedOrders);
+
       setOrders(mappedOrders);
     } catch (error) {
-      console.error('Error fetching appointments:', error);
       setError('Không thể tải danh sách đơn đặt xét nghiệm. Vui lòng thử lại sau.');
     } finally {
       setLoading(false);
     }
   };
-  
-  // Helper function to map method string to enum
-  const mapMethodToEnum = (method: string): Order['method'] => {
-    if (!method) return 'facility-collection';
-    
-    // Với dữ liệu từ database là tiếng Việt
-    if (method === 'Tự thu mẫu') return 'self-collection';
-    if (method === 'Tại cơ sở') return 'facility-collection';
-    
-    // Giữ backward compatibility với các giá trị cũ
-    const lowerMethod = method.toLowerCase();
-    if (lowerMethod.includes('self')) return 'self-collection';
-    if (lowerMethod.includes('home')) return 'home-collection';
-    
-    return 'facility-collection';
-  };
-  
-  // Helper function to map status string to enum
-  const mapStatusToEnum = (status: string): Order['status'] => {
-    if (!status) return 'pending';
-    
-    // Xử lý các giá trị status từ database
-    if (status === 'Đã xác nhận') return 'pending';
-    if (status === 'Đang thực hiện') return 'in-progress';
-    if (status === 'Đã hoàn thành') return 'completed';
-    if (status === 'Hủy') return 'cancelled';
-    
-    // Giữ backward compatibility với các giá trị cũ
-    if (status === 'Pending') return 'pending';
-    if (status === 'Confirmed') return 'in-progress';
-    if (status === 'Completed') return 'completed';
-    if (status === 'Cancelled') return 'cancelled';
-    
-    // Xử lý các trường hợp khác
-    const lowerStatus = status.toLowerCase();
-    if (lowerStatus.includes('xác nhận')) return 'pending';
-    if (lowerStatus.includes('thực hiện')) return 'in-progress';
-    if (lowerStatus.includes('hoàn thành')) return 'completed';
-    if (lowerStatus.includes('hủy')) return 'cancelled';
-    
-    return 'pending';
-  };
-  
-  // Helper function to determine priority based on status
-  const getPriorityFromStatus = (status: string): Order['priority'] => {
-    if (!status) return 'normal';
-    const lowerStatus = status.toLowerCase();
-    if (lowerStatus.includes('pending')) return 'high';
-    if (lowerStatus.includes('progress')) return 'normal';
-    return 'normal';
+
+  const getStatusColor = (status: string) => {
+    if (status === 'Đã xác nhận') return 'bg-yellow-100 text-yellow-800';
+    if (status === 'Đang thực hiện') return 'bg-blue-100 text-blue-800';
+    if (status === 'Hoàn thành') return 'bg-green-100 text-green-800';
+    if (status === 'Hủy') return 'bg-red-100 text-red-800';
+    if (status === 'Đang chờ check-in') return 'bg-yellow-100 text-yellow-800';
+    if (status === 'Đã check-in') return 'bg-blue-100 text-blue-800';
+    if (status === 'Đang chờ mẫu') return 'bg-yellow-100 text-yellow-800';
+    return 'bg-gray-100 text-gray-800';
   };
 
-  const getStatusIcon = (status: Order['status']) => {
-    switch (status) {
-      case 'pending':
-        return <ClockIcon className="h-5 w-5 text-orange-500" />;
-      case 'in-progress':
-        return <ShoppingBagIcon className="h-5 w-5 text-blue-500" />;
-      case 'completed':
-        return <CheckCircleIcon className="h-5 w-5 text-green-500" />;
-      case 'cancelled':
-        return <XMarkIcon className="h-5 w-5 text-red-500" />;
-      default:
-        return null;
-    }
+  const getMethodColor = (method: string) => {
+    if (method === 'Tự thu mẫu') return 'bg-blue-100 text-blue-800';
+    if (method === 'Tại cơ sở') return 'bg-green-100 text-green-800';
+    if (method === 'Tại nhà') return 'bg-purple-100 text-purple-800';
+    return 'bg-gray-100 text-gray-800';
   };
 
-  const getStatusText = (status: Order['status'], orderMethod?: Order['method']) => {
-    // Nếu trạng thái là pending và phương thức được chỉ định là tại cơ sở
-    if (status === 'pending' && orderMethod === 'facility-collection') {
-      return 'Đang chờ Checkin';
-    }
-    
-    switch (status) {
-      case 'pending':
-        return 'Đã xác nhận';
-      case 'in-progress':
-        return 'Đang thực hiện';
-      case 'completed':
-        return 'Hoàn thành';
-      case 'cancelled':
-        return 'Hủy';
-      default:
-        return '';
-    }
-  };
-
-  const getStatusColor = (status: Order['status']) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-orange-100 text-orange-800';
-      case 'in-progress':
-        return 'bg-blue-100 text-blue-800';
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getMethodText = (method: Order['method']) => {
-    switch (method) {
-      case 'self-collection':
-        return 'Tự thu mẫu';
-      case 'facility-collection':
-        return 'Tại cơ sở';
-      case 'home-collection':
-        return 'Tại nhà';
-      default:
-        return 'Không xác định';
-    }
-  };
-
-  const getMethodColor = (method: Order['method']) => {
-    switch (method) {
-      case 'self-collection':
-        return 'bg-blue-100 text-blue-800';
-      case 'facility-collection':
-        return 'bg-green-100 text-green-800';
-      case 'home-collection':
-        return 'bg-purple-100 text-purple-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+  const getMethodText = (method: string) => method;
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
@@ -238,25 +117,25 @@ export default function OrderManagement() {
   };
 
   const filteredOrders = orders.filter(order => {
-    const matchesSearch = 
+    const matchesSearch =
       order.bookingId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (order.customerName && order.customerName.toLowerCase().includes(searchTerm.toLowerCase())) ||
       order.customerId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.staffId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.serviceId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.address.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesMethod = methodFilter === 'all' || order.method === methodFilter;
-    
+
     return matchesSearch && matchesMethod;
   });
 
   const stats = {
     total: orders.length,
-    pending: orders.filter(o => o.status === 'pending').length,
-    inProgress: orders.filter(o => o.status === 'in-progress').length,
-    completed: orders.filter(o => o.status === 'completed').length,
-    cancelled: orders.filter(o => o.status === 'cancelled').length
+    pending: orders.filter(o => o.status === 'Đã xác nhận').length,
+    inProgress: orders.filter(o => o.status === 'Đang thực hiện').length,
+    completed: orders.filter(o => o.status === 'Hoàn thành').length,
+    cancelled: orders.filter(o => o.status === 'Hủy').length
   };
 
   const handleViewOrder = (order: Order) => {
@@ -264,124 +143,44 @@ export default function OrderManagement() {
     setShowOrderModal(true);
   };
 
-  const handleEditOrder = (order: Order) => {
-    console.log('Edit order:', order);
-    // Implement edit functionality
-  };
-
-  const handleStatusChange = (orderId: string, newStatus: Order['status']) => {
-    console.log('Change status of order', orderId, 'to', newStatus);
-    updateOrderStatus(orderId, newStatus);
-  };
-
   const handleCreateOrder = () => {
     setShowCreateModal(true);
   };
 
-  const updateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
+  const updateOrderStatus = async (orderId: string, newStatus: string) => {
     if (!token) return false;
-    
     try {
-      // Tìm đơn hàng cần cập nhật
       const orderToUpdate = orders.find(order => order.id === orderId);
       if (!orderToUpdate) {
-        console.error(`Order with ID ${orderId} not found`);
         toast.error('Không tìm thấy đơn hàng cần cập nhật');
         return false;
       }
-      
-      // Chuyển đổi trạng thái thành giá trị thích hợp cho API
-      let apiStatus = '';
-      switch (newStatus) {
-        case 'pending':
-          apiStatus = 'Đã xác nhận';
-          break;
-        case 'in-progress':
-          apiStatus = 'Đang thực hiện';
-          break;
-        case 'completed':
-          apiStatus = 'Hoàn thành';
-          break;
-        case 'cancelled':
-          apiStatus = 'Hủy';
-          break;
-        default:
-          apiStatus = 'Đã xác nhận';
-      }
-      
-      // Chuẩn bị dữ liệu cập nhật
       const updateData = {
         ...orderToUpdate,
-        status: apiStatus
+        status: newStatus
       };
-      
-      console.log(`Updating order ${orderId} status to ${apiStatus}`);
-      
-      // Gọi API để cập nhật trạng thái
       const updatedOrder = await updateAppointment(token, orderId, updateData);
-      
       if (updatedOrder) {
-        // Cập nhật state nếu thành công
-        setOrders(prev => 
-          prev.map(order => 
-            order.id === orderId 
+        setOrders(prev =>
+          prev.map(order =>
+            order.id === orderId
               ? { ...order, status: newStatus }
               : order
           )
         );
-        
-        // Tìm order đã cập nhật để lấy phương thức
-        const updatedOrderWithMethod = orders.find(order => order.id === orderId);
-        toast.success(`Đã cập nhật trạng thái đơn hàng #${orderId} thành ${getStatusText(newStatus, updatedOrderWithMethod?.method)}`);
+        toast.success(`Đã cập nhật trạng thái đơn hàng #${orderId} thành ${newStatus}`);
         return true;
       } else {
         toast.error('Không thể cập nhật trạng thái đơn hàng');
         return false;
       }
     } catch (error: any) {
-      console.error('Error updating order status:', error);
       let errorMessage = 'Đã xảy ra lỗi khi cập nhật trạng thái';
-      
       if (error.response && error.response.data) {
         errorMessage += `: ${error.response.data.message || JSON.stringify(error.response.data)}`;
       }
-      
       toast.error(errorMessage);
       return false;
-    }
-  };
-
-  const getNextStatus = (currentStatus: Order['status']): Order['status'] => {
-    switch (currentStatus) {
-      case 'pending':
-        return 'in-progress';
-      case 'in-progress':
-        return 'completed';
-      case 'completed':
-        return 'completed';
-      case 'cancelled':
-        return 'cancelled';
-      default:
-        return 'pending';
-    }
-  };
-
-  const getNextStatusText = (currentStatus: Order['status'], orderMethod?: Order['method']): string => {
-    if (currentStatus === 'pending' && orderMethod === 'facility-collection') {
-      return 'Đang thực hiện';
-    }
-    
-    switch (currentStatus) {
-      case 'pending':
-        return 'Đang thực hiện';
-      case 'in-progress':
-        return 'Hoàn thành';
-      case 'completed':
-        return 'Đã hoàn thành';
-      case 'cancelled':
-        return 'Đã hủy';
-      default:
-        return 'Đã xác nhận';
     }
   };
 
@@ -414,7 +213,8 @@ export default function OrderManagement() {
   }
 
   return (
-    <div className="space-y-6">      {/* Header */}
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Danh sách Booking</h1>
@@ -441,7 +241,6 @@ export default function OrderManagement() {
             <ShoppingBagIcon className="h-8 w-8 text-slate-400" />
           </div>
         </div>
-        
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -451,7 +250,6 @@ export default function OrderManagement() {
             <ClockIcon className="h-8 w-8 text-orange-400" />
           </div>
         </div>
-        
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -461,7 +259,6 @@ export default function OrderManagement() {
             <ShoppingBagIcon className="h-8 w-8 text-blue-400" />
           </div>
         </div>
-        
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -471,7 +268,8 @@ export default function OrderManagement() {
             <CheckCircleIcon className="h-8 w-8 text-green-400" />
           </div>
         </div>
-      </div>      {/* Filters */}
+      </div>
+      {/* Filters */}
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0 md:space-x-4">
           {/* Search */}
@@ -485,7 +283,6 @@ export default function OrderManagement() {
               className="pl-10 pr-4 py-2 w-full border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
-
           {/* Filters */}
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
@@ -496,13 +293,15 @@ export default function OrderManagement() {
                 className="border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">Tất cả phương thức</option>
-                <option value="self-collection">Tự lấy mẫu</option>
-                <option value="facility-collection">Lấy tại cơ sở</option>
+                <option value="Tự thu mẫu">Tự thu mẫu</option>
+                <option value="Tại cơ sở">Tại cơ sở</option>
+                <option value="Tại nhà">Tại nhà</option>
               </select>
             </div>
           </div>
         </div>
-      </div>      {/* Orders List */}
+      </div>
+      {/* Orders List */}
       <div className="bg-white shadow-md rounded-lg overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -540,9 +339,9 @@ export default function OrderManagement() {
                   <div className="text-sm font-medium text-gray-900">
                     {order.customerName || order.customerId}
                   </div>
-                  {order.customerName && order.customerId && order.customerName !== order.customerId && (
+                  {/* {order.customerName && order.customerId && order.customerName !== order.customerId && (
                     <div className="text-xs text-gray-500">ID: {order.customerId}</div>
-                  )}
+                  )} */}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">{formatDate(order.date)}</div>
@@ -561,7 +360,7 @@ export default function OrderManagement() {
                       order.status
                     )}`}
                   >
-                    {getStatusText(order.status, order.method)}
+                    {order.status}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -576,7 +375,6 @@ export default function OrderManagement() {
           </tbody>
         </table>
       </div>
-
       {filteredOrders.length === 0 && (
         <div className="text-center py-12">
           <ShoppingBagIcon className="mx-auto h-12 w-12 text-slate-400" />
@@ -586,7 +384,6 @@ export default function OrderManagement() {
           </p>
         </div>
       )}
-
       {/* Order Detail Modal */}
       {showOrderModal && selectedOrder && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -603,7 +400,6 @@ export default function OrderManagement() {
                   <XMarkIcon className="h-6 w-6" />
                 </button>
               </div>
-
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -638,7 +434,6 @@ export default function OrderManagement() {
                     </span>
                   </div>
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-slate-700">Địa chỉ</label>
                   <div className="flex items-start space-x-2">
@@ -646,7 +441,6 @@ export default function OrderManagement() {
                     <p className="text-slate-900">{selectedOrder.address}</p>
                   </div>
                 </div>
-
                 <div className="flex justify-end space-x-3 pt-4 border-t">
                   <button
                     onClick={() => setShowOrderModal(false)}
@@ -660,7 +454,6 @@ export default function OrderManagement() {
           </div>
         </div>
       )}
-
       {/* Create Order Modal (placeholder) */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">

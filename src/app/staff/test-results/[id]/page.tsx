@@ -6,8 +6,34 @@ import { getAppointmentById, updateAppointment, updateAppointmentStatus, updateA
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 
-// Define AppointmentStatus type
-type AppointmentStatus = 'pending' | 'in-progress' | 'completed' | 'cancelled';
+// Định nghĩa lại type trạng thái tiếng Việt
+type AppointmentStatusVN = 'Đang chờ mẫu' | 'Đang thực hiện' | 'Hoàn thành' | 'Đã hủy';
+
+// Hàm chuyển đổi trạng thái từ database sang enum tiếng Việt
+const mapStatusToVN = (status: string): AppointmentStatusVN => {
+  if (!status) return 'Đang chờ mẫu';
+  if (status === 'Đang chờ mẫu' || status === 'Đã xác nhận' || status === 'pending') return 'Đang chờ mẫu';
+  if (status === 'Đang thực hiện' || status === 'in-progress') return 'Đang thực hiện';
+  if (status === 'Hoàn thành' || status === 'completed') return 'Hoàn thành';
+  if (status === 'Đã hủy' || status === 'Hủy' || status === 'cancelled') return 'Đã hủy';
+  return 'Đang chờ mẫu';
+};
+
+// Hàm lấy màu cho trạng thái tiếng Việt
+const getStatusColorVN = (status: AppointmentStatusVN) => {
+  switch (status) {
+    case 'Đang chờ mẫu':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'Đang thực hiện':
+      return 'bg-blue-100 text-blue-800';
+    case 'Hoàn thành':
+      return 'bg-green-100 text-green-800';
+    case 'Đã hủy':
+      return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
 
 export default function AppointmentDetailPage() {
   const { id } = useParams();
@@ -20,7 +46,7 @@ export default function AppointmentDetailPage() {
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [showKitModal, setShowKitModal] = useState<boolean>(false);
   const [showResultForm, setShowResultForm] = useState<boolean>(false);
-  const [status, setStatus] = useState<AppointmentStatus>('pending');
+  const [statusVN, setStatusVN] = useState<AppointmentStatusVN>('Đang chờ mẫu');
   const [updating, setUpdating] = useState<boolean>(false);
   const [customerInfo, setCustomerInfo] = useState<User | null>(null);
   
@@ -75,7 +101,7 @@ export default function AppointmentDetailPage() {
   // Component modal hiển thị chi tiết kit
   const KitDetailModal = () => {
     if (!showKitModal) return null;
-    
+
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -107,13 +133,9 @@ export default function AppointmentDetailPage() {
                   <div className="border-b pb-2">
                     <span className="font-medium text-gray-500">Trạng thái:</span>
                     <div className="mt-1">
-                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                        kitInfo.status === 'available' ? 'bg-green-100 text-green-800' : 
-                        kitInfo.status === 'in-use' ? 'bg-blue-100 text-blue-800' :
-                        kitInfo.status === 'completed' ? 'bg-purple-100 text-purple-800' :
-                        'bg-orange-100 text-orange-800'
-                      }`}>
-                        {getKitStatusText(kitInfo.status)}
+                      <span className="inline-block px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      {/* Lấy thẳng status từ database */}
+                      {kitInfo.status || 'Không xác định'}
                       </span>
                     </div>
                   </div>
@@ -187,7 +209,7 @@ export default function AppointmentDetailPage() {
         
         // Xác định trạng thái từ dữ liệu booking
         if (data.status) {
-          setStatus(mapStatusToEnum(data.status));
+          setStatusVN(mapStatusToVN(data.status));
         }
         
         // Fetch customer info if we have customerId
@@ -249,7 +271,7 @@ export default function AppointmentDetailPage() {
         }
         
         // Kiểm tra xem đã có kết quả xét nghiệm cho booking này chưa
-        if (data.bookingId && (data.status === 'Hoàn thành' || mapStatusToEnum(data.status) === 'completed')) {
+        if (data.bookingId && (data.status === 'Hoàn thành'  )) {
           fetchTestResults(data.bookingId);
         }
         
@@ -348,37 +370,14 @@ export default function AppointmentDetailPage() {
     }
   };
   
-  // Helper function to map status string to enum
-  const mapStatusToEnum = (status: string): AppointmentStatus => {
-    if (status === 'Đã xác nhận') return 'pending';
-    if (status === 'Đang thực hiện') return 'in-progress';
-    if (status === 'Hoàn thành') return 'completed';
-    if (status === 'Hủy') return 'cancelled';
-    
-    // Legacy mappings cho các giá trị cũ
-    if (status === 'Pending') return 'pending';
-    if (status === 'Confirmed') return 'in-progress';
-    if (status === 'Completed') return 'completed';
-    if (status === 'Cancelled') return 'cancelled';
-    
-    // Fallback for other values
-    const lowerStatus = status.toLowerCase();
-    if (lowerStatus.includes('xác nhận')) return 'pending';
-    if (lowerStatus.includes('thực hiện')) return 'in-progress';
-    if (lowerStatus.includes('hoàn thành')) return 'completed';
-    if (lowerStatus.includes('hủy')) return 'cancelled';
-    
-    return 'pending';
-  };
-
-  const handleUpdateStatus = async (newStatus: AppointmentStatus) => {
+  const handleUpdateStatus = async (newStatus: AppointmentStatusVN) => {
     if (!appointment || !token) return;
     
     try {
       setUpdating(true);
       
       // Nếu muốn chuyển sang "Đang thực hiện", kiểm tra điều kiện kit
-      if (newStatus === 'in-progress') {
+      if (newStatus === 'Đang thực hiện') {
         // Kiểm tra xem kit đã tồn tại chưa
         if (!kitExists || !kitInfo) {
           toast.error('Không thể chuyển trạng thái: Booking này chưa có kit!');
@@ -387,76 +386,44 @@ export default function AppointmentDetailPage() {
         }
         
         // Kiểm tra xem kit đã ở trạng thái "Đã tới kho" chưa
-        if (kitInfo.status !== 'expired') {
-          toast.error(`Không thể chuyển trạng thái: Kit phải ở trạng thái "Đã tới kho" (hiện tại: ${getKitStatusText(kitInfo.status)})`);
+        if (kitInfo.status !== 'Đã tới kho') {
+          toast.error(`Không thể chuyển trạng thái: Kit phải ở trạng thái "Đã tới kho" (hiện tại: ${kitInfo.status})`);
           setUpdating(false);
           return;
         }
       }
       
-      // Chuyển đổi trạng thái thành giá trị thích hợp cho API
-      let apiStatus = '';
-      switch (newStatus) {
-        case 'pending':
-          apiStatus = 'Đã xác nhận';
-          break;
-        case 'in-progress':
-          apiStatus = 'Đang thực hiện';
-          break;
-        case 'completed':
-          apiStatus = 'Hoàn thành';
-          break;
-        case 'cancelled':
-          apiStatus = 'Hủy';
-          break;
-        default:
-          apiStatus = 'Đã xác nhận';
-      }
-      
-      console.log(`Updating appointment ${id} status to ${apiStatus}`);
-      
-      // Sử dụng phương pháp an toàn để cập nhật trạng thái
-      // Cần token vì hàm này sẽ fetch dữ liệu hiện tại trước
-      const success = await updateAppointmentStatusSafe(token, id as string, apiStatus);
+      setStatusVN(newStatus);
+
+      // Gửi trạng thái tiếng Việt lên API (nếu backend chấp nhận), nếu không cần map lại tại đây
+      const success = await updateAppointmentStatusSafe(token, id as string, newStatus);
       
       if (success) {
-        console.log(`Status updated successfully to: ${apiStatus}`);
-        
-        // Cập nhật trạng thái trong state
         setAppointment(prevAppointment => {
           if (!prevAppointment) return null;
           return {
             ...prevAppointment,
-            status: apiStatus
+            status: newStatus
           };
         });
         
-        setStatus(newStatus);
-        toast.success(`Trạng thái đã được cập nhật thành ${getStatusText(newStatus)}`);
-        
-        // Luôn fetch lại dữ liệu để đảm bảo mọi thứ là mới nhất
+        toast.success(`Trạng thái đã được cập nhật thành ${newStatus}`);
         await refetchAppointment();
         
-        // Nếu trạng thái được cập nhật thành "completed", tự động lấy kết quả xét nghiệm
-        if (newStatus === 'completed' && appointment.bookingId) {
+        // Nếu trạng thái được cập nhật thành "Hoàn thành", tự động lấy kết quả xét nghiệm
+        if (newStatus === 'Hoàn thành' && appointment.bookingId) {
           fetchTestResults(appointment.bookingId);
         }
       } else {
-        console.error("Failed to update status");
         toast.error('Không thể cập nhật trạng thái');
-        // Nếu API không thành công, thử fetch lại dữ liệu để xem trạng thái hiện tại
         await refetchAppointment();
       }
     } catch (error: any) {
-      console.error('Error updating status:', error);
       let errorMessage = 'Đã xảy ra lỗi khi cập nhật trạng thái';
-      
       if (error.response && error.response.data) {
         errorMessage += `: ${error.response.data.message || JSON.stringify(error.response.data)}`;
       }
-      
       toast.error(errorMessage);
-      // Thử fetch lại dữ liệu
       await refetchAppointment();
     } finally {
       setUpdating(false);
@@ -488,41 +455,9 @@ export default function AppointmentDetailPage() {
   };
 
   // Chuyển đổi trạng thái sang dạng hiển thị
-  const getStatusText = (statusValue: AppointmentStatus): string => {
-    // Sử dụng phương thức nếu đang ở trạng thái chờ
-    if (statusValue === 'pending' && appointment && appointment.method) {
-      // Nếu phương thức là "Tại cơ sở y tế" thì hiển thị "Đang chờ checkin"
-      if (appointment.method.toLowerCase().includes('tại cơ sở')) {
-        return 'Đang chờ checkin';
-      }
-      // Mặc định trả về "Đang chờ mẫu" cho các phương thức khác
-      return 'Đang chờ mẫu';
-    }
-    
-    // Các trạng thái khác giữ nguyên
-    switch (statusValue) {
-      case 'pending': return 'Đang chờ mẫu';
-      case 'in-progress': return 'Đang thực hiện';
-      case 'completed': return 'Hoàn thành';
-      case 'cancelled': return 'Đã hủy';
-      default: return statusValue;
-    }
-  };
+ 
 
-  const getStatusColor = (statusValue: AppointmentStatus) => {
-    switch (statusValue) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'in-progress':
-        return 'bg-blue-100 text-blue-800';
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+ 
 
   // Hàm để tải lại dữ liệu booking khi cần thiết
   const refetchAppointment = async () => {
@@ -538,7 +473,7 @@ export default function AppointmentDetailPage() {
         
         // Determine status from appointment data
         if (data.status) {
-          setStatus(mapStatusToEnum(data.status));
+          setStatusVN(mapStatusToVN(data.status));
         }
         
         // Re-check kit status
@@ -658,7 +593,7 @@ export default function AppointmentDetailPage() {
         setExistingResults(prev => [result, ...prev]);
         
         // Cập nhật trạng thái booking thành Completed
-        await handleUpdateStatus('completed');
+        await handleUpdateStatus('Hoàn thành');
         
         // Ẩn form sau khi lưu thành công
         setShowResultForm(false);
@@ -813,7 +748,9 @@ export default function AppointmentDetailPage() {
               </div>
             <div className="flex justify-between border-b pb-2 items-center">
               <span className="font-medium text-gray-500">Trạng thái:</span>
-              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(status as AppointmentStatus)}`}>{getStatusText(status as AppointmentStatus)}</span>
+              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColorVN(statusVN)}`}>
+                {statusVN}
+              </span>
               </div>
             </div>
           </div>
@@ -836,49 +773,68 @@ export default function AppointmentDetailPage() {
               </div>
               
               <div className="flex items-center">
-                <div className={`w-8 h-8 rounded-full ${status === 'in-progress' || status === 'completed' ? 'bg-green-500' : 'bg-gray-300'} flex items-center justify-center text-white`}>
+                <div className={`w-8 h-8 rounded-full ${statusVN === 'Đang thực hiện' || statusVN === 'Hoàn thành' ? 'bg-green-500' : 'bg-gray-300'} flex items-center justify-center text-white`}>
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                 </div>
                 <div className="ml-3">
                   <p className="font-medium">Đang thực hiện</p>
-                  <p className="text-sm text-gray-500">{status === 'in-progress' || status === 'completed' ? 'Confirmed' : 'Not confirmed'}</p>
+                  <p className="text-sm text-gray-500">{statusVN === 'Đang thực hiện' || statusVN === 'Hoàn thành' ? 'Đã xác nhận' : 'Chưa xác nhận'}</p>
                 </div>
               </div>
               
               <div className="flex items-center">
-                <div className={`w-8 h-8 rounded-full ${status === 'completed' ? 'bg-green-500' : 'bg-gray-300'} flex items-center justify-center text-white`}>
+                <div className={`w-8 h-8 rounded-full ${statusVN === 'Hoàn thành' ? 'bg-green-500' : 'bg-gray-300'} flex items-center justify-center text-white`}>
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                 </div>
                 <div className="ml-3">
                   <p className="font-medium">Hoàn thành</p>
-                  <p className="text-sm text-gray-500">{status === 'completed' ? 'Completed' : 'Not completed'}</p>
+                  <p className="text-sm text-gray-500">{statusVN === 'Hoàn thành' ? 'Đã hoàn thành' : 'Chưa hoàn thành'}</p>
                 </div>
               </div>
             </div>
           {/* Các nút thao tác cập nhật trạng thái, nhập kết quả, tạo kit ... */}
           <div className="flex flex-wrap gap-2 mt-4">
                 <button 
-                  onClick={() => handleUpdateStatus('in-progress')}
-                  disabled={updating || status === 'in-progress' || status === 'completed' || status === 'cancelled' || 
-                    (appointment.method?.toLowerCase().includes('tự thu mẫu') && (!(!!kitExists) || (!!kitInfo && kitInfo.status !== 'expired')))}
+                  onClick={() => handleUpdateStatus('Đang thực hiện')}
+                  disabled={
+                    updating ||
+                    statusVN === 'Đang thực hiện' ||
+                    statusVN === 'Hoàn thành' ||
+                    statusVN === 'Đã hủy' ||
+                    (
+                      appointment.method?.toLowerCase().includes('tự thu mẫu') &&
+                      (
+                        !kitExists ||
+                        !kitInfo ||
+                        (kitInfo.status !== 'Đã tới kho')
+                      )
+                    )
+                  }
                   className={`px-4 py-2 rounded ${
-                    updating || status === 'in-progress' || status === 'completed' || status === 'cancelled' ||
-                    (appointment.method?.toLowerCase().includes('tự thu mẫu') && (!(!!kitExists) || (!!kitInfo && kitInfo.status !== 'expired')))
+                    updating || statusVN === 'Đang thực hiện' || statusVN === 'Hoàn thành' || statusVN === 'Đã hủy' ||
+                    (
+                      appointment.method?.toLowerCase().includes('tự thu mẫu') &&
+                      (
+                        !kitExists ||
+                        !kitInfo ||
+                        (kitInfo.status !== 'Đã tới kho')
+                      )
+                    )
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : 'bg-blue-500 text-white hover:bg-blue-600'
                   }`}
                   title={
-                    status === 'pending' 
+                    statusVN === 'Đang chờ mẫu'
                       ? appointment.method?.toLowerCase().includes('tại cơ sở')
-                        ? 'Chuyển sang trạng thái đang thực hiện khi khách hàng đã checkin'
+                        ? 'Chuyển sang trạng thái Đang thực hiện khi khách hàng đã checkin'
                         : kitExists 
-                          ? kitInfo?.status === 'expired' 
-                            ? 'Chuyển sang trạng thái đang thực hiện' 
-                            : `Kit phải ở trạng thái "Đã tới kho" trước khi chuyển sang thực hiện (hiện tại: ${kitInfo ? getKitStatusText(kitInfo.status) : 'N/A'})`
+                          ? kitInfo?.status === 'Đã tới kho'
+                            ? 'Chuyển sang trạng thái Đang thực hiện' 
+                            : `Kit phải ở trạng thái "Đã tới kho" trước khi chuyển sang thực hiện (hiện tại: ${kitInfo ? kitInfo.status : 'N/A'})`
                           : 'Booking này chưa có kit. Vui lòng tạo kit trước.'
                       : ''
                   }
@@ -888,22 +844,22 @@ export default function AppointmentDetailPage() {
                 
                 <button 
                   onClick={() => setShowResultForm(true)}
-                  disabled={updating || status === 'completed' || status === 'cancelled' || status !== 'in-progress'}
+                  disabled={updating || statusVN === 'Hoàn thành' || statusVN === 'Đã hủy' || statusVN !== 'Đang thực hiện'}
                   className={`px-4 py-2 rounded ${
-                    updating || status === 'completed' || status === 'cancelled' || status !== 'in-progress'
+                    updating || statusVN === 'Hoàn thành' || statusVN === 'Đã hủy' || statusVN !== 'Đang thực hiện'
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : 'bg-green-500 text-white hover:bg-green-600'
                   }`}
-                  title={status !== 'in-progress' ? 'Hãy chuyển sang trạng thái đang thực hiện trước khi nhập kết quả' : 'Nhập kết quả xét nghiệm'}
+                  title={statusVN !== 'Đang thực hiện' ? 'Hãy chuyển sang trạng thái đang thực hiện trước khi nhập kết quả' : 'Nhập kết quả xét nghiệm'}
                 >
                   {updating ? 'Đang xử lý...' : 'Nhập kết quả'}
                 </button>
                 
                 <button 
-                  onClick={() => handleUpdateStatus('cancelled')}
-                  disabled={updating || status === 'completed' || status === 'cancelled'}
+                  onClick={() => handleUpdateStatus('Đã hủy')}
+                  disabled={updating || statusVN === 'Hoàn thành' || statusVN === 'Đã hủy'}
                   className={`px-4 py-2 rounded ${
-                    updating || status === 'completed' || status === 'cancelled'
+                    updating || statusVN === 'Hoàn thành' || statusVN === 'Đã hủy'
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : 'bg-red-500 text-white hover:bg-red-600'
                   }`}
@@ -935,7 +891,7 @@ export default function AppointmentDetailPage() {
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-                      Kit: {kitInfo && getKitStatusText(kitInfo.status)}
+                      Kit: { kitInfo?.status}
                     </div>
                     <button
                       onClick={refreshKitStatus}
@@ -983,7 +939,7 @@ export default function AppointmentDetailPage() {
                 )}
               </div>
               
-              {status === 'in-progress' && !showResultForm && (
+              {statusVN === 'Đang thực hiện' && !showResultForm && (
                 <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
                   <p className="text-blue-700 flex items-center font-medium">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1008,7 +964,7 @@ export default function AppointmentDetailPage() {
                 </div>
               )}
               
-              {status === 'pending' && (
+              {statusVN === 'Đang chờ mẫu' && (
                 <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-100">
                   <p className="text-yellow-700 flex items-center font-medium">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1111,7 +1067,7 @@ export default function AppointmentDetailPage() {
       </div>
         
       {/* Kết quả xét nghiệm */}
-        {status === 'completed' && (
+        {statusVN === 'Hoàn thành' && (
         <div className="mt-8">
           <div className="bg-white rounded-lg shadow p-6 border border-gray-100">
             <h2 className="text-lg font-semibold mb-4 text-blue-700">Kết quả xét nghiệm</h2>
@@ -1254,4 +1210,4 @@ export default function AppointmentDetailPage() {
       <KitDetailModal />
     </div>
   );
-} 
+}

@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { jwtDecode } from "jwt-decode";
-import { deleteBooking } from "@/lib/api/bookings";
+import { deleteBooking, updateBooking } from "@/lib/api/bookings";
+import { updateKitById } from "@/lib/api/kit";
 
 interface Booking {
   id: string;
@@ -12,6 +13,7 @@ interface Booking {
   serviceId: string;
   serviceName: string;
   staffName: string;
+  staffId?: string; 
   date: string;
   time: string;     
   status: string;
@@ -24,12 +26,19 @@ interface Service {
   name: string;
 }
 
+interface KitInfo {
+  status: string;
+  kitId?: string;
+}
+
 export default function MyBookingPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [kitStatuses, setKitStatuses] = useState<Record<string, string>>({});
+  const [bookingResData, setBookingResData] = useState<any[]>([]); 
+  const [kitInfo, setKitInfo] = useState<Record<string, KitInfo>>({});
 
   useEffect(() => {
     async function fetchData() {
@@ -157,7 +166,18 @@ export default function MyBookingPage() {
           };
         });
 
+        // Sau khi map bookingsData, sort theo bookingId giảm dần (mới nhất lên đầu)
+        bookingsData.sort((a, b) => {
+          // Nếu bookingId là số, sort số; nếu là chuỗi, sort chuỗi
+          const idA = Number(a.bookingId) || a.bookingId;
+          const idB = Number(b.bookingId) || b.bookingId;
+          if (idA < idB) return 1;
+          if (idA > idB) return -1;
+          return 0;
+        });
+
         setBookings(bookingsData);
+        setBookingResData(bookingsArray); // <-- Lưu dữ liệu gốc vào state
       } catch (err: any) {
         setError(err.message || 'Không thể tải dữ liệu đặt lịch');
         setBookings([]);
@@ -171,25 +191,32 @@ export default function MyBookingPage() {
   useEffect(() => {
     async function fetchKitStatuses() {
       const statuses: Record<string, string> = {};
+      const kitInfoMap: Record<string, { status: string; kitId?: string }> = {};
       await Promise.all(
         bookings.map(async (booking) => {
           try {
             const res = await fetch(`http://localhost:5198/api/Kit/by-booking/${booking.bookingId}`);
             const data = await res.json();
             statuses[booking.bookingId] = data?.status || data?.kitStatus || "---";
+            kitInfoMap[booking.bookingId] = {
+              status: data?.status || data?.kitStatus || "---",
+              kitId: data?.kitId || data?.kitID || data?.KitId || undefined,
+            };
           } catch {
             statuses[booking.bookingId] = "---";
+            kitInfoMap[booking.bookingId] = { status: "---" };
           }
         })
       );
       setKitStatuses(statuses);
+      setKitInfo(kitInfoMap);
     }
     if (bookings.length > 0) fetchKitStatuses();
   }, [bookings]);
 
   // Add this function inside the MyBookingPage component
   async function handleCancelBooking(bookingId: string) {
-    if (!confirm('Bạn có chắc chắn muốn hủy đặt lịch này không?')) {
+    if (!confirm('Bạn có chắc chắn muốn hủy lịch xét nghiệm này không?')) {
       return;
     }
     
@@ -276,11 +303,15 @@ export default function MyBookingPage() {
                       className={`inline-block px-2 py-1 rounded-full font-medium text-center w-full ${
                         booking.status === 'Hoàn thành'
                           ? 'bg-green-100 text-green-800'
-                          : booking.status === 'Đang thực hiện'
+                        : booking.status === 'Đang thực hiện'
                           ? 'bg-blue-100 text-blue-800'
                           : booking.status === 'Hủy'
                           ? 'bg-red-100 text-red-700'
-                          : booking.status === 'Đã xác nhận'
+                          : booking.status === 'Đã check-in'
+                          ? 'bg-green-100 text-green-800 border border-green-400'
+                          : booking.status === 'Đang chờ check-in'
+                          ? 'bg-blue-100 text-blue-800 border border-blue-400'
+                          : (booking.status === 'Đã xác nhận' || booking.status === 'Đang chờ mẫu')
                           ? 'bg-yellow-300 text-yellow-900 border border-yellow-400'
                           : 'bg-gray-100 text-gray-800'
                       }`}
@@ -292,14 +323,17 @@ export default function MyBookingPage() {
                   <div className="col-span-1 text-center">
                     <span
                       className={`inline-block px-2 py-1 rounded-full font-medium text-center w-full ${
-                        // XANH - Các trạng thái hoàn thành
+                        // XANH LÁ - Các trạng thái hoàn thành
                         ['Đã nhận', 'Đã vận chuyển', 'Đã lấy mẫu', 'Đã tới kho'].includes(kitStatuses[booking.bookingId])
                           ? 'bg-green-100 text-green-800'
-                        // VÀNG - Các trạng thái đang tiến hành
-                        : ['Đang giao', 'Đang vận chuyển', 'Đang vận chuyển mẫu', 'Đang xử lý', 'Đang lấy mẫu'].includes(kitStatuses[booking.bookingId])
-                          ? 'bg-yellow-100 text-yellow-800'
+                        // XANH DƯƠNG - Các trạng thái đang tiến hành
+                        : ['Đang giao', 'Đang vận chuyển', 'Đang vận chuyển mẫu', 'Đang xử lý', 'Đang lấy mẫu', 'Đang chờ mẫu', 'Đang tới kho'].includes(kitStatuses[booking.bookingId])
+                          ? 'bg-blue-100 text-blue-800'
+                        // VÀNG - Các trạng thái chờ xác nhận, chờ mẫu
+                        : ['Chờ xác nhận', 'Đã xác nhận', 'Đang chờ mẫu'].includes(kitStatuses[booking.bookingId])
+                          ? 'bg-yellow-300 text-yellow-900 border border-yellow-400'
                         // ĐỎ - Các trạng thái có vấn đề
-                        : ['Chưa nhận', 'Bị từ chối', 'Lỗi mẫu', 'Thất lạc'].includes(kitStatuses[booking.bookingId])
+                        : ['Chưa nhận', 'Bị từ chối', 'Lỗi mẫu', 'Thất lạc', 'Hủy'].includes(kitStatuses[booking.bookingId])
                           ? 'bg-red-100 text-red-800'
                         // XÁM - Mặc định cho các trạng thái khác
                           : 'bg-gray-100 text-gray-800'
@@ -310,23 +344,152 @@ export default function MyBookingPage() {
                     </span>
                   </div>
                   <div className="col-span-1 flex flex-col space-y-2 justify-center items-center">
-                    {booking.status === 'Hoàn thành' ? (
-                      <Link
-                        href={`/my-booking/result/${booking.bookingId}`}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs inline-block text-center w-full"
-                      >
-                        Xem kết quả
-                      </Link>
-                    ) : booking.status !== 'Hủy' ? (
-                      <button
-                        onClick={() => handleCancelBooking(booking.bookingId)}
-                        className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs inline-block text-center w-full"
-                        disabled={booking.status === 'Hoàn thành'}
-                      >
-                        Hủy đặt lịch
-                      </button>
-                    ) : (
-                      <span className="text-gray-400 italic">---</span>
+                    {/* Nút Đã nhận Kit chỉ hiện khi tự thu mẫu và kit đang trên đường giao */}
+                    {booking.method === 'Tự thu mẫu' &&
+                      kitInfo[booking.bookingId]?.status === 'Đang giao' &&
+                      kitInfo[booking.bookingId]?.kitId &&
+                      booking.status !== 'Hủy' &&
+                      booking.status !== 'Đã check-in' && (
+                        <button
+                          onClick={async () => {
+                            try {
+                              await updateKitById(kitInfo[booking.bookingId]?.kitId as string, { status: 'Đã nhận' });
+                              setKitStatuses(prev => ({
+                                ...prev,
+                                [booking.bookingId]: 'Đã nhận'
+                              }));
+                              setKitInfo(prev => ({
+                                ...prev,
+                                [booking.bookingId]: {
+                                  ...prev[booking.bookingId],
+                                  status: 'Đã nhận'
+                                }
+                              }));
+                              alert('Bạn đã nhận kit!');
+                            } catch (e) {
+                              alert('Có lỗi khi cập nhật trạng thái kit!');
+                            }
+                          }}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded text-xs inline-block text-center w-full mb-1"
+                        >
+                          Đã nhận Kit
+                        </button>
+                      )}
+                    {/* Nút Gửi tới kho chỉ hiện khi đã nhận kit, và ẩn hoàn toàn các nút khác */}
+                    {booking.method === 'Tự thu mẫu' &&
+                      kitInfo[booking.bookingId]?.status === 'Đã nhận' &&
+                      kitInfo[booking.bookingId]?.kitId &&
+                      booking.status !== 'Hủy' &&
+                      booking.status !== 'Đã check-in' && (
+                        <button
+                          onClick={async () => {
+                            try {
+                              await updateKitById(kitInfo[booking.bookingId]?.kitId as string, { status: 'Đang tới kho' });
+                              setKitStatuses(prev => ({
+                                ...prev,
+                                [booking.bookingId]: 'Đang tới kho'
+                              }));
+                              setKitInfo(prev => ({
+                                ...prev,
+                                [booking.bookingId]: {
+                                  ...prev[booking.bookingId],
+                                  status: 'Đang tới kho'
+                                }
+                              }));
+                              alert('Đã gửi tới kho!');
+                            } catch (e) {
+                              alert('Có lỗi khi cập nhật trạng thái kit!');
+                            }
+                          }}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold w-full text-center transition shadow"
+                          style={{ letterSpacing: 1 }}
+                        >
+                          Gửi tới kho
+                        </button>
+                      )}
+                    {/* Các nút khác */}
+                    {!(booking.method === 'Tự thu mẫu' && kitInfo[booking.bookingId]?.status === 'Đã nhận' && kitInfo[booking.bookingId]?.kitId && booking.status !== 'Hủy' && booking.status !== 'Đã check-in') && (
+                      <>
+                        {booking.method === 'Tại cơ sở y tế' &&
+                          booking.status == 'Đang chờ check-in' && (
+                            <button
+                              onClick={async () => {
+                                if (confirm('Bạn xác nhận đã đến cơ sở để lấy mẫu?')) {
+                                  try {
+                                    const bookingOrigin = bookingResData.find(
+                                      (b: any) =>
+                                        String(b.bookingId || b.bookingID) === String(booking.bookingId)
+                                    );
+                                    const staffId = bookingOrigin?.staffId ||
+                                      bookingOrigin?.staffID ||
+                                      bookingOrigin?.staff_id ||
+                                      bookingOrigin?.StaffId ||
+                                      "";
+
+                                    // Lấy date gồm cả ngày và giờ (nếu có)
+                                    let date = booking.date;
+                                    if (booking.time) {
+                                      date = booking.date.includes('T')
+                                        ? booking.date
+                                        : `${booking.date}T${booking.time}:00`;
+                                    }
+
+                                    const payload = {
+                                      date,
+                                      staffId,
+                                      serviceId: booking.serviceId,
+                                      address: booking.address,
+                                      method: booking.method,
+                                      status: "Đã check-in"
+                                    };
+                                    console.log("Dữ liệu gửi lên API khi check-in:", payload);
+                                    const result = await updateBooking(booking.bookingId, payload);
+                                    if (result.success) {
+                                      setBookings(prev =>
+                                        prev.map(b =>
+                                          b.bookingId === booking.bookingId
+                                            ? { ...b, status: "Đã check-in" }
+                                            : b
+                                        )
+                                      );
+                                      alert('Check-in thành công!');
+                                    } else {
+                                      alert(result.message || 'Có lỗi khi check-in, vui lòng thử lại!');
+                                    }
+                                  } catch (e) {
+                                    alert('Có lỗi khi check-in, vui lòng thử lại!');
+                                  }
+                                }
+                              }}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded text-xs inline-block text-center w-full mb-1"
+                            >
+                              Check-in
+                            </button>
+                          )}
+                        {booking.status === 'Hoàn thành' ? (
+                          <Link
+                            href={`/my-booking/result/${booking.bookingId}`}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs inline-block text-center w-full"
+                          >
+                            Xem kết quả
+                          </Link>
+                        ) : (
+                          // Ẩn nút hủy nếu trạng thái kit đã là các trạng thái sau khi nhận
+                          !['Đã nhận', 'Đang tới kho', 'Đã tới kho', 'Đã lấy mẫu', 'Đã vận chuyển'].includes(kitStatuses[booking.bookingId]) &&
+                          booking.status !== 'Hủy' &&
+                          booking.status !== 'Đã check-in' ? (
+                            <button
+                              onClick={() => handleCancelBooking(booking.bookingId)}
+                              className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs inline-block text-center w-full"
+                              disabled={booking.status === 'Hoàn thành'}
+                            >
+                              Hủy đặt lịch
+                            </button>
+                          ) : (
+                            <span className="text-gray-400 italic">---</span>
+                          )
+                        )}
+                      </>
                     )}
                   </div>
                 </div>

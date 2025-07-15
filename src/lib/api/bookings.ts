@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import apiClient from './client';
+import axios from "axios";
 
 // Interface cho booking request
 export interface BookingRequest {
@@ -117,3 +118,41 @@ export const getAllBookings = async (): Promise<any[]> => {
     return [];
   }
 };
+
+// Hàm cập nhật booking với đầy đủ dữ liệu (không chỉ status)
+export async function updateBooking(
+  bookingId: string,
+  data: {
+    date: string;
+    staffId: string;
+    serviceId: string;
+    address: string;
+    method: string;
+    status: string;
+  }
+): Promise<BookingResponse> {
+  try {
+    // Đảm bảo gửi đúng format cho API backend
+    const payload = {
+      date: data.date,
+      staffId: data.staffId,
+      serviceId: data.serviceId,
+      address: data.address,
+      method: data.method,
+      status: data.status,
+    };
+    const response = await apiClient.put(`/api/Appointments/${bookingId}`, payload);
+    return {
+      success: true,
+      message: 'Cập nhật trạng thái thành công',
+      bookingId,
+      booking: response.data,
+    };
+  } catch (error: any) {
+    console.error('Lỗi khi cập nhật trạng thái booking:', error);
+    return {
+      success: false,
+      message: error?.response?.data?.message || 'Cập nhật trạng thái thất bại',
+    };
+  }
+}
