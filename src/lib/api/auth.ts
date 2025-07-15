@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { jwtDecode } from 'jwt-decode';
 import apiClient from './client';
 
@@ -12,6 +12,28 @@ export interface RegisterRequest {
   phone: string;
   birthdate: string;
   address: string;
+}
+
+// Interface cho update profile request
+export interface UpdateProfileRequest {
+  username: string;
+  email: string;
+  fullname: string;
+  phone: string;
+  birthdate: string;
+  address: string;
+}
+
+// Interface cho update image request
+export interface UpdateImageRequest {
+  picture: File;
+}
+
+// Interface cho update image response
+export interface UpdateImageResponse {
+  success: boolean;
+  message: string;
+  imageUrl?: string;
 }
 
 // Interface cho login request
@@ -45,55 +67,6 @@ export interface TestHistory {
   completionDate: string | null;
   sampleMethod: string;
   amount: string;
-}
-
-// Interface cho Test History từ API response
-interface TestHistoryApiResponse {
-  id?: string;
-  testID?: string;
-  requestID?: string;
-  serviceType?: string;
-  serviceName?: string;
-  type?: string;
-  testType?: string;
-  testName?: string;
-  name?: string;
-  status?: string;
-  state?: string;
-  requestDate?: string;
-  createdDate?: string;
-  orderDate?: string;
-  completionDate?: string;
-  finishedDate?: string;
-  resultDate?: string;
-  sampleMethod?: string;
-  collectionMethod?: string;
-  samplingMethod?: string;
-  amount?: string;
-  price?: string;
-  cost?: string;
-  fee?: string;
-}
-
-// Interface cho Notification từ API response
-interface NotificationApiResponse {
-  id?: string;
-  notificationID?: string;
-  title?: string;
-  subject?: string;
-  header?: string;
-  message?: string;
-  content?: string;
-  body?: string;
-  description?: string;
-  type?: string;
-  category?: string;
-  level?: string;
-  isRead?: boolean;
-  read?: boolean;
-  createdAt?: string;
-  createDate?: string;
-  timestamp?: string;
 }
 
 // Interface cho Notification
@@ -143,6 +116,16 @@ export interface LoginResponse {
   user?: User;
   roleID?: string; // Thêm roleID từ decoded token
   redirectPath?: string; // Thêm path điều hướng
+}
+
+// Interface cho register API response data
+interface RegisterApiResponse {
+  token?: string;
+  accessToken?: string;
+  access_token?: string;
+  jwt?: string;
+  message?: string;
+  user?: User;
 }
 
 // Hàm gọi API đăng nhập
@@ -609,95 +592,9 @@ export const getDashboardData = async (): Promise<DashboardData | null> => {
     console.log('Step 1: Fetching user profile...');
     const userProfile = await getUserProfile(token);
     
-    // Fetch test history
-    console.log('Step 2: Fetching test history...');
-    const testHistory = await getUserTestHistory(token);
-    
-    // Fetch notifications
-    console.log('Step 3: Fetching notifications...');
-    const notifications = await getUserNotifications(token);
-    
-    // Calculate stats
-    const stats: DashboardStats = {
-      totalTests: testHistory?.length || 0,
-      completedTests: testHistory?.filter((test: TestHistory) => test.status === 'Đã hoàn thành').length || 0,
-      pendingTests: testHistory?.filter((test: TestHistory) => test.status === 'Đang xử lý').length || 0,
-      unreadNotifications: notifications?.filter((notif: Notification) => !notif.isRead).length || 0,
-    };
-
-    console.log('Dashboard data compiled successfully:', {
-      user: userProfile ? 'loaded' : 'failed',
-      testHistory: testHistory?.length || 0,
-      notifications: notifications?.length || 0,
-      stats
-    });
-
-    return {
-      user: userProfile,
-      testHistory: testHistory || [],
-      notifications: notifications || [],
-      stats
-    };
-  } catch (error) {
-    console.error('Error fetching dashboard data:', error);
-    return null;
-  }
-};
-
-// Hàm lấy lịch sử xét nghiệm của user
-export const getUserTestHistory = async (token: string): Promise<TestHistory[] | null> => {
-  try {
-    console.log('Fetching user test history from /api/User/tests');
-    
-    const response = await apiClient.get('/api/User/tests', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    console.log('Test History API Response Status:', response.status);
-    console.log('Test History API Response Data:', response.data);
-
-    if (response.status === 200 && response.data) {      // Transform API response to match TestHistory interface
-      const testHistory: TestHistory[] = Array.isArray(response.data) 
-        ? response.data.map((test: TestHistoryApiResponse) => ({
-            id: test.id || test.testID || test.requestID || '',
-            serviceType: test.serviceType || test.serviceName || test.type || 'Không xác định',
-            testType: test.testType || test.testName || test.name || 'Không xác định',
-            status: test.status || test.state || 'Không xác định',
-            requestDate: test.requestDate || test.createdDate || test.orderDate || new Date().toISOString(),
-            completionDate: test.completionDate || test.finishedDate || test.resultDate || null,
-            sampleMethod: test.sampleMethod || test.collectionMethod || test.samplingMethod || 'Không xác định',
-            amount: test.amount || test.price || test.cost || test.fee || '0 VNĐ',
-          }))
-        : [];
-      
-      console.log('Transformed test history data:', testHistory);
-      return testHistory;
-    }
-    
-    console.log('No test history data found or invalid response');
-    return [];
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      console.error('Test History API Error:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        message: error.message
-      });
-      
-      if (error.response?.status === 401) {
-        console.error('Unauthorized - token may be invalid or expired');
-      }
-    } else {
-      console.error('Error fetching user test history:', error);
-    }
-    
-    // Return mock data as fallback
-    console.log('Returning mock test history data as fallback');
-    return [
+    // Mock test history data (API removed)
+    console.log('Step 2: Using mock test history data...');
+    const testHistory: TestHistory[] = [
       {
         id: 'TEST123',
         serviceType: 'Xét nghiệm Huyết thống',
@@ -717,64 +614,12 @@ export const getUserTestHistory = async (token: string): Promise<TestHistory[] |
         completionDate: null,
         sampleMethod: 'Thu mẫu tận nơi',
         amount: '3,500,000 VNĐ',
-      },
+      }
     ];
-  }
-};
-
-// Hàm lấy thông báo của user
-export const getUserNotifications = async (token: string): Promise<Notification[] | null> => {
-  try {
-    console.log('Fetching user notifications from /api/User/notifications');
     
-    const response = await apiClient.get('/api/User/notifications', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    console.log('Notifications API Response Status:', response.status);
-    console.log('Notifications API Response Data:', response.data);
-
-    if (response.status === 200 && response.data) {
-      // Transform API response to match Notification interface
-      const notifications: Notification[] = Array.isArray(response.data) 
-        ? response.data.map((notif: NotificationApiResponse) => ({
-            id: notif.id || notif.notificationID || '',
-            title: notif.title || notif.subject || notif.header || 'Thông báo',
-            message: notif.message || notif.content || notif.body || notif.description || '',
-            type: (notif.type || notif.category || notif.level || 'info') as 'success' | 'info' | 'warning' | 'error',
-            isRead: notif.isRead !== undefined ? notif.isRead : (notif.read !== undefined ? notif.read : false),
-            createdAt: notif.createdAt || notif.createDate || notif.timestamp || new Date().toISOString(),
-          }))
-        : [];
-      
-      console.log('Transformed notifications data:', notifications);
-      return notifications;
-    }
-    
-    console.log('No notifications data found or invalid response');
-    return [];
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      console.error('Notifications API Error:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        message: error.message
-      });
-      
-      if (error.response?.status === 401) {
-        console.error('Unauthorized - token may be invalid or expired');
-      }
-    } else {
-      console.error('Error fetching user notifications:', error);
-    }
-    
-    // Return mock data as fallback
-    console.log('Returning mock notifications data as fallback');
-    return [
+    // Mock notifications data (API removed)
+    console.log('Step 3: Using mock notifications data...');
+    const notifications: Notification[] = [
       {
         id: '1',
         title: 'Kết quả xét nghiệm đã sẵn sàng',
@@ -792,9 +637,34 @@ export const getUserNotifications = async (token: string): Promise<Notification[
         createdAt: '2025-06-19T14:20:00Z'
       }
     ];
+
+    // Calculate stats
+    const stats: DashboardStats = {
+      totalTests: testHistory.length,
+      completedTests: testHistory.filter((test: TestHistory) => test.status === 'Đã hoàn thành').length,
+      pendingTests: testHistory.filter((test: TestHistory) => test.status === 'Đang xử lý').length,
+      unreadNotifications: notifications.filter((notif: Notification) => !notif.isRead).length,
+    };
+
+    console.log('Dashboard data compiled successfully:', {
+      user: userProfile ? 'loaded' : 'failed',
+      testHistory: testHistory.length,
+      notifications: notifications.length,
+      stats
+    });
+
+    return {
+      user: userProfile,
+      testHistory: testHistory,
+      notifications: notifications,
+      stats
+    };
+  } catch (error) {
+    console.error('Error fetching dashboard data:', error);
+    return null;
   }
 };
-
+  
 // Hàm test kết nối API
 export const testApiConnection = async (): Promise<{success: boolean; message: string; data?: unknown}> => {
   try {
@@ -869,20 +739,22 @@ export const registerUser = async (registerData: RegisterRequest): Promise<Regis
     });
 
     return handleRegisterResponse(response);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Register error:', error);
     
     let errorMessage = 'Đăng ký thất bại. Vui lòng thử lại.';
     
-    if (error.response?.status === 415) {
-      errorMessage = 'Định dạng dữ liệu không được hỗ trợ. Vui lòng thử lại.';
-    } else if (error.response?.status === 400) {
-      errorMessage = error.response.data?.message || 'Dữ liệu không hợp lệ.';
-    } else if (error.response?.status === 409) {
-      errorMessage = 'Tên đăng nhập hoặc email đã tồn tại.';
-    } else if (error.response?.data?.message) {
-      errorMessage = error.response.data.message;
-    } else if (error.message) {
+    if (axios.isAxiosError(error)) {
+      if (error.response?.status === 415) {
+        errorMessage = 'Định dạng dữ liệu không được hỗ trợ. Vui lòng thử lại.';
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response.data?.message || 'Dữ liệu không hợp lệ.';
+      } else if (error.response?.status === 409) {
+        errorMessage = 'Tên đăng nhập hoặc email đã tồn tại.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+    } else if (error instanceof Error) {
       errorMessage = error.message;
     }
 
@@ -894,7 +766,7 @@ export const registerUser = async (registerData: RegisterRequest): Promise<Regis
 };
 
 // Hàm helper xử lý response từ API register
-const handleRegisterResponse = (response: any): RegisterResponse => {
+const handleRegisterResponse = (response: { status: number; data: RegisterApiResponse }): RegisterResponse => {
   // Kiểm tra status code thành công (200-299)
   if (response.status >= 200 && response.status < 300) {
     const data = response.data;
@@ -924,6 +796,246 @@ const handleRegisterResponse = (response: any): RegisterResponse => {
     return {
       success: false,
       message: 'Đăng ký thất bại!',
+    };
+  }
+};
+
+// API cập nhật thông tin cá nhân
+export const updateProfile = async (profileData: UpdateProfileRequest): Promise<{
+  success: boolean;
+  message: string;
+  user?: User;
+}> => {
+  try {
+    // Validate dữ liệu trước khi gửi
+    if (!profileData.username || !profileData.email || !profileData.fullname) {
+      return {
+        success: false,
+        message: 'Vui lòng điền đầy đủ thông tin bắt buộc (username, email, fullname)'
+      };
+    }
+
+    // Tạo bản copy của data để không modify original
+    const requestData = { ...profileData };
+
+   
+
+    const response = await apiClient.put('/api/User/profile', requestData);
+    
+    console.log('Update profile API response:', response);
+
+    if (response.status >= 200 && response.status < 300) {
+      const data = response.data;
+      
+      // Cập nhật user info trong localStorage nếu có
+      if (data.user) {
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+        const updatedUser = { ...currentUser, ...data.user };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+
+      return {
+        success: true,
+        message: data.message || 'Cập nhật thông tin thành công!',
+        user: data.user
+      };
+    } else {
+      return {
+        success: false,
+        message: 'Cập nhật thất bại!'
+      };
+    }
+  } catch (error: unknown) {
+    console.error('Update profile error:', error);
+    
+    let errorMessage = 'Có lỗi xảy ra khi cập nhật thông tin';
+    
+    if (error instanceof AxiosError) {
+      // Log chi tiết lỗi để debug
+      console.error('AxiosError details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers,
+          data: error.config?.data
+        }
+      });
+      
+      if (error.response?.status === 400) {
+        // Lỗi 400 - Bad Request
+        if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response?.data?.errors) {
+          const errors = error.response.data.errors;
+          if (typeof errors === 'object') {
+            // Xử lý validation errors từ .NET
+            const errorMessages = Object.keys(errors).map(key => 
+              `${key}: ${Array.isArray(errors[key]) ? errors[key].join(', ') : errors[key]}`
+            ).join('; ');
+            errorMessage = errorMessages;
+          } else {
+            errorMessage = Object.values(errors).flat().join(', ');
+          }
+        } else {
+          errorMessage = 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại thông tin.';
+        }
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Không có quyền truy cập. Vui lòng đăng nhập lại.';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'API endpoint không tồn tại. Vui lòng liên hệ hỗ trợ.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+    } else if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+
+    return {
+      success: false,
+      message: errorMessage
+    };
+  }
+};
+
+// API cập nhật ảnh đại diện
+export const updateUserImage = async (imageFile: File): Promise<UpdateImageResponse> => {
+  try {
+    // Validate input
+    if (!imageFile) {
+      return {
+        success: false,
+        message: 'Vui lòng chọn ảnh để upload'
+      };
+    }
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    if (!allowedTypes.includes(imageFile.type)) {
+      return {
+        success: false,
+        message: 'Chỉ hỗ trợ file ảnh định dạng JPG, PNG, GIF'
+      };
+    }
+
+    // Validate file size (2MB)
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    if (imageFile.size > maxSize) {
+      return {
+        success: false,
+        message: 'Kích thước ảnh không được vượt quá 2MB'
+      };
+    }
+
+    // Lấy token từ localStorage
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return {
+        success: false,
+        message: 'Không tìm thấy token xác thực. Vui lòng đăng nhập lại.'
+      };
+    }
+
+    // Tạo FormData để gửi file
+    const formData = new FormData();
+    formData.append('picture', imageFile);
+
+    console.log('Uploading image:', {
+      fileName: imageFile.name,
+      fileSize: imageFile.size,
+      fileType: imageFile.type,
+      hasToken: !!token
+    });
+
+    // Gửi request đến API
+    const response = await apiClient.put('/api/User/update-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    console.log('Update image API response:', response);
+
+    if (response.status >= 200 && response.status < 300) {
+      const data = response.data;
+      
+      // Cập nhật user info trong localStorage nếu có
+      if (data.user || data.imageUrl) {
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+        const updatedUser = { 
+          ...currentUser, 
+          image: data.imageUrl || data.user?.image || currentUser.image
+        };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+
+      return {
+        success: true,
+        message: data.message || 'Cập nhật ảnh đại diện thành công!',
+        imageUrl: data.imageUrl || data.user?.image
+      };
+    } else {
+      return {
+        success: false,
+        message: 'Cập nhật ảnh thất bại!'
+      };
+    }
+  } catch (error: unknown) {
+    console.error('Update image error:', error);
+    
+    let errorMessage = 'Có lỗi xảy ra khi cập nhật ảnh đại diện';
+    
+    if (error instanceof AxiosError) {
+      // Log chi tiết lỗi để debug
+      console.error('AxiosError details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers
+        }
+      });
+      
+      if (error.response?.status === 400) {
+        // Lỗi 400 - Bad Request
+        if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response?.data?.errors) {
+          const errors = error.response.data.errors;
+          if (typeof errors === 'object') {
+            const errorMessages = Object.keys(errors).map(key => 
+              `${key}: ${Array.isArray(errors[key]) ? errors[key].join(', ') : errors[key]}`
+            ).join('; ');
+            errorMessage = errorMessages;
+          } else {
+            errorMessage = Object.values(errors).flat().join(', ');
+          }
+        } else {
+          errorMessage = 'File ảnh không hợp lệ hoặc vượt quá giới hạn cho phép';
+        }
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Không có quyền truy cập. Vui lòng đăng nhập lại.';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'API endpoint không tồn tại.';
+      } else if (error.response?.status === 413) {
+        errorMessage = 'File ảnh quá lớn. Vui lòng chọn ảnh nhỏ hơn 2MB.';
+      } else if (error.response?.status === 415) {
+        errorMessage = 'Định dạng file không được hỗ trợ. Vui lòng chọn file ảnh JPG, PNG hoặc GIF.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+    } else if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+
+    return {
+      success: false,
+      message: errorMessage
     };
   }
 };

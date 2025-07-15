@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import apiClient from './client';
+import axios from 'axios'; // Added for axios.isAxiosError
 
 // Interface cho admin dashboard statistics
 export interface AdminStats {
@@ -56,6 +57,7 @@ export interface AdminProfile {
   avatar?: string;
   isActive: boolean;
   permissions: string[];
+  birthdate?: string; // Thêm trường birthdate
   statistics: {
     totalUsers: number;
     totalTests: number;
@@ -65,11 +67,12 @@ export interface AdminProfile {
 }
 
 export interface UpdateProfileRequest {
-  fullname: string;
-  phone: string;
-  email?: string;
-  address?: string;
-  avatar?: string;
+  username: string; // Đổi từ optional thành required
+  fullname: string;  // API sẽ chuyển thành fullName
+  phone: string;     // API sẽ chuyển thành phoneNumber
+  email: string;
+  address: string;
+  birthdate: string; // Thêm trường birthdate theo định dạng "YYYY-MM-DD"
 }
 
 export interface ChangePasswordRequest {
@@ -209,18 +212,45 @@ export const getAllUsers = async (): Promise<{ success: boolean; users?: AdminUs
 export const adminProfileAPI = {  // Lấy thông tin profile admin hiện tại
   getProfile: async (): Promise<{ success: boolean; profile?: AdminProfile; message?: string }> => {
     try {
-      const response = await apiClient.get('/api/User/me');
+      // Kiểm tra token trước khi gọi API
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.warn('No token available when fetching admin profile');
+        return {
+          success: false,
+          message: 'Chưa đăng nhập. Vui lòng đăng nhập để tiếp tục.'
+        };
+      }
+
+      console.log('Fetching admin profile with token:', token.substring(0, 15) + '...');
+      
+      // Thử gọi API với timeout ngắn hơn
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      
+      const response = await apiClient.get('/api/User/me', {
+        signal: controller.signal,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      
+      clearTimeout(timeoutId);
       
       if (response.status >= 200 && response.status < 300 && response.data) {
+        console.log('API User/me response:', response.data);
+        
         // Transform API response to match AdminProfile interface
         const profileData: AdminProfile = {
-          id: response.data.userID || response.data.id || '',
+          id: response.data.userID || response.data.userId || response.data.id || '',
           username: response.data.username || response.data.userName || '',
           fullname: response.data.fullname || response.data.fullName || response.data.name || '',
           email: response.data.email || '',
           phone: response.data.phone || response.data.phoneNumber || '',
           address: response.data.address || '',
-          role: response.data.roleID || response.data.role || 'Admin',
+          role: response.data.roleID || response.data.roleId || response.data.role || 'Admin',
           department: response.data.department || 'IT',
           position: response.data.position || 'Administrator',
           joinDate: response.data.joinDate || response.data.createdDate || new Date().toISOString(),
@@ -228,6 +258,7 @@ export const adminProfileAPI = {  // Lấy thông tin profile admin hiện tại
           avatar: response.data.image || response.data.avatar || response.data.profileImage || '',
           isActive: response.data.isActive !== undefined ? response.data.isActive : true,
           permissions: response.data.permissions || ['admin'],
+          birthdate: response.data.birthdate || response.data.dateOfBirth || response.data.Birthdate || response.data.DateOfBirth || undefined,
           statistics: {
             totalUsers: response.data.statistics?.totalUsers || 0,
             totalTests: response.data.statistics?.totalTests || 0,
@@ -248,6 +279,50 @@ export const adminProfileAPI = {  // Lấy thông tin profile admin hiện tại
       };
     } catch (error) {
       console.error('Error fetching admin profile:', error);
+      
+      if (axios.isAxiosError(error)) {
+        // Xử lý lỗi timeout
+        if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+          return {
+            success: false,
+            message: 'Yêu cầu bị timeout. Vui lòng thử lại sau.'
+          };
+        }
+        
+        // Xử lý lỗi abort
+        if (error.message.includes('aborted')) {
+          return {
+            success: false,
+            message: 'Yêu cầu bị hủy.'
+          };
+        }
+        
+        // Xử lý lỗi 401 một cách cụ thể
+        if (error.response?.status === 401) {
+          console.warn('401 Unauthorized when fetching admin profile');
+          // Xóa token nếu không hợp lệ
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          
+          return {
+            success: false,
+            message: 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.'
+          };
+        }
+        
+        if (error.response?.status === 404) {
+          return {
+            success: false,
+            message: 'API endpoint không tồn tại. Vui lòng kiểm tra cấu hình hệ thống.'
+          };
+        }
+        
+        return {
+          success: false,
+          message: `Lỗi: ${error.response?.status} - ${error.response?.data?.message || error.message}`
+        };
+      }
+      
       return {
         success: false,
         message: 'Có lỗi xảy ra khi lấy thông tin profile'
@@ -257,7 +332,34 @@ export const adminProfileAPI = {  // Lấy thông tin profile admin hiện tại
   // Cập nhật thông tin profile
   updateProfile: async (data: UpdateProfileRequest): Promise<{ success: boolean; profile?: AdminProfile; message?: string }> => {
     try {
-      const response = await apiClient.put('/api/User/me', data);
+      // Lấy token từ localStorage để đảm bảo xác thực
+      const token = localStorage.getItem('token');
+      if (!token) {
+        return {
+          success: false,
+          message: 'Không tìm thấy token xác thực. Vui lòng đăng nhập lại.'
+        };
+      }
+      
+      console.log('Updating admin profile with data:', data);
+      
+      // Tạo bản sao của data để không thay đổi dữ liệu gốc
+      const requestData = { ...data };
+      
+      // API yêu cầu các trường đúng định dạng camelCase
+      // Không cần chuyển đổi thêm vì API sẽ tự nhận diện các trường
+      
+      console.log('Formatted request data for API:', requestData);
+      
+      // Sử dụng endpoint '/api/User/profile'
+      const response = await apiClient.put('/api/User/profile', requestData, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      console.log('Update profile API response:', response);
       
       if (response.status >= 200 && response.status < 300) {
         return {
@@ -272,6 +374,53 @@ export const adminProfileAPI = {  // Lấy thông tin profile admin hiện tại
         message: 'Không thể cập nhật thông tin'
       };
     } catch (error) {
+      console.error('Error updating admin profile:', error);
+      
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          return {
+            success: false,
+            message: 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.'
+          };
+        }
+        
+        if (error.response?.status === 400) {
+          const errorData = error.response?.data;
+          console.error('Bad Request Details:', errorData);
+          
+          // Xử lý lỗi validation từ API
+          let errorMessage = errorData?.title || errorData?.message || 'Dữ liệu không hợp lệ';
+          
+          // Kiểm tra xem có lỗi validation chi tiết không
+          if (errorData?.errors) {
+            try {
+              const errorDetails = Object.entries(errorData.errors)
+                .map(([field, messages]) => {
+                  const fieldName = field.charAt(0).toUpperCase() + field.slice(1);
+                  return `${fieldName}: ${Array.isArray(messages) ? messages.join(', ') : messages}`;
+                })
+                .join('; ');
+              
+              if (errorDetails) {
+                errorMessage += ` - ${errorDetails}`;
+              }
+            } catch (parseError) {
+              console.error('Error parsing validation errors:', parseError);
+            }
+          }
+          
+          return {
+            success: false,
+            message: errorMessage
+          };
+        }
+        
+        return {
+          success: false,
+          message: `Lỗi: ${error.response?.status} - ${error.response?.data?.message || error.message}`
+        };
+      }
+      
       return {
         success: false,
         message: 'Có lỗi xảy ra khi cập nhật thông tin'
@@ -305,31 +454,102 @@ export const adminProfileAPI = {  // Lấy thông tin profile admin hiện tại
   // Upload avatar
   uploadAvatar: async (file: File): Promise<{ success: boolean; avatarUrl?: string; message?: string }> => {
     try {
+      // Validate input
+      if (!file) {
+        return {
+          success: false,
+          message: 'Vui lòng chọn ảnh để upload'
+        };
+      }
+
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+      if (!allowedTypes.includes(file.type)) {
+        return {
+          success: false,
+          message: 'Chỉ hỗ trợ file ảnh định dạng JPG, PNG, GIF'
+        };
+      }
+
+      // Validate file size (2MB)
+      const maxSize = 2 * 1024 * 1024; // 2MB
+      if (file.size > maxSize) {
+        return {
+          success: false,
+          message: 'Kích thước ảnh không được vượt quá 2MB'
+        };
+      }
+
+      // Lấy token từ localStorage
+      const token = localStorage.getItem('token');
+      if (!token) {
+        return {
+          success: false,
+          message: 'Không tìm thấy token xác thực. Vui lòng đăng nhập lại.'
+        };
+      }
+
+      // Tạo FormData để gửi file
       const formData = new FormData();
-      formData.append('avatar', file);
-      
-      const response = await apiClient.post('/Admin/profile/upload-avatar', formData, {
+      formData.append('picture', file);
+
+      console.log('Uploading admin avatar:', {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        hasToken: !!token
+      });
+
+      // Gửi request đến API
+      const response = await apiClient.put('/api/User/update-image', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
-        },
+          'Authorization': `Bearer ${token}`,
+        }
       });
-      
+
+      console.log('Update admin avatar API response:', response);
+
       if (response.status >= 200 && response.status < 300) {
+        const data = response.data;
         return {
           success: true,
-          avatarUrl: response.data.avatarUrl,
-          message: 'Upload avatar thành công'
+          avatarUrl: data.imageUrl || data.image || '',
+          message: data.message || 'Cập nhật ảnh đại diện thành công!'
+        };
+      } else {
+        return {
+          success: false,
+          message: 'Cập nhật ảnh thất bại!'
+        };
+      }
+    } catch (error) {
+      console.error('Update admin avatar error:', error);
+      
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          return {
+            success: false,
+            message: 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.'
+          };
+        }
+        
+        if (error.response?.status === 400) {
+          return {
+            success: false,
+            message: error.response?.data?.message || 'File ảnh không hợp lệ hoặc vượt quá giới hạn cho phép'
+          };
+        }
+        
+        return {
+          success: false,
+          message: `Lỗi: ${error.response?.status} - ${error.response?.data?.message || error.message}`
         };
       }
       
       return {
         success: false,
-        message: 'Không thể upload avatar'
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Có lỗi xảy ra khi upload avatar'
+        message: 'Có lỗi xảy ra khi cập nhật ảnh đại diện'
       };
     }
   },

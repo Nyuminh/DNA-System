@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'react-hot-toast';
 import { 
   UserIcon, 
   ChartBarIcon, 
@@ -57,6 +58,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       const result = await logoutUser();
       console.log('Admin logout result:', result.message);
       
+      // Hiển thị thông báo đăng xuất thành công
+      toast.success('Đăng xuất thành công!');
+      
       // Clear AuthContext state
       logout();
       
@@ -67,6 +71,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       // Force logout nếu API fails
       const { forceLogout } = await import('@/lib/api/auth');
       forceLogout();
+      
+      // Hiển thị thông báo đăng xuất thành công ngay cả khi API fails
+      toast.success('Đăng xuất thành công!');
       
       // Clear AuthContext state
       logout();
