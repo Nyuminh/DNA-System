@@ -25,6 +25,7 @@ interface NewKitForm {
   description: string;
   status: 'Đã vận chuyển' | 'Đang vận chuyển' | 'Đang giao' | 'Đã lấy mẫu' | 'Đang tới kho' | 'Đã tới kho' | 'Đang chờ mẫu';
   receivedate: string;
+  address: string; // New address field
 }
 
 export default function KitManagement() {
@@ -42,7 +43,8 @@ export default function KitManagement() {
     bookingId: '',
     description: '',
     status: 'Đã vận chuyển',
-    receivedate: new Date().toISOString().split('T')[0]
+    receivedate: new Date().toISOString().split('T')[0],
+    address: '' // Initialize with empty string
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [editingStatus, setEditingStatus] = useState<{kitID: string, currentStatus: Kit['status']} | null>(null);
@@ -164,6 +166,14 @@ export default function KitManagement() {
       const bookingData = await response.json();
       console.log(`✅ Booking data received:`, bookingData);
       
+      // Set address from booking data if available
+      if (bookingData && bookingData.address) {
+        setFormData(prev => ({
+          ...prev,
+          address: bookingData.address
+        }));
+      }
+      
       // Check if the booking method is "Tự thu mẫu"
       if (bookingData && bookingData.method === 'Tự thu mẫu') {
         setBookingMethod('Tự thu mẫu');
@@ -244,7 +254,8 @@ export default function KitManagement() {
         bookingId: '',
         description: '',
         status: 'Đã vận chuyển',
-        receivedate: new Date().toISOString().split('T')[0]
+        receivedate: new Date().toISOString().split('T')[0],
+        address: '' // Reset address field
       });
       
       // Kiểm tra xem có returnUrl trong searchParams không
@@ -272,7 +283,8 @@ export default function KitManagement() {
       bookingId: '',
       description: '',
       status: 'Đã vận chuyển',
-      receivedate: new Date().toISOString().split('T')[0]
+      receivedate: new Date().toISOString().split('T')[0],
+      address: '' // Reset address field
     });
     setBookingMethod(null); // Reset booking method
     setFormErrors({});
@@ -898,6 +910,27 @@ export default function KitManagement() {
                   {bookingMethod === 'Tại cơ sở y tế' && (
                     <p className="mt-1 text-xs text-cyan-500">
                       Phương thức "Tại cơ sở y tế" chỉ hỗ trợ trạng thái "Đang chờ mẫu"
+                    </p>
+                  )}
+                </div>
+
+                {/* Address */}
+                <div className="md:col-span-2">
+                  <label htmlFor="address" className="block text-sm font-medium text-slate-700 mb-2">
+                    Địa chỉ
+                  </label>
+                  <input
+                    type="text"
+                    id="address"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Địa chỉ sẽ tự động điền khi nhập Booking ID"
+                    readOnly={!!formData.address && !!formData.bookingId}
+                  />
+                  {formData.bookingId && formData.address && (
+                    <p className="mt-1 text-xs text-green-500">
                     </p>
                   )}
                 </div>
