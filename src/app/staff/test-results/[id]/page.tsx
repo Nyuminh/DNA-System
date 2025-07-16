@@ -908,7 +908,7 @@ export default function AppointmentDetailPage() {
                     </svg>
                     Đang kiểm tra kit...
                   </button>
-                ) : kitExists ? (
+                ) : kitExists && kitInfo ? (
                   <div className="flex items-center gap-2">
                     <button 
                       onClick={handleViewKit}
@@ -935,11 +935,55 @@ export default function AppointmentDetailPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                       </svg>
                     </button>
+                    {/* Nút đổi trạng thái Đã tới kho cho tự thu mẫu và kit đang tới kho */}
+                    {appointment.method?.toLowerCase().includes('tự thu mẫu') &&
+                      kitInfo.status === 'Đang tới kho' && (
+                        <button
+                          onClick={async () => {
+                            try {
+                              await kitApi.updateKit(kitInfo.kitID, { status: 'Đã tới kho' });
+                              toast.success('Kit đã chuyển sang trạng thái "Đã tới kho"');
+                              await refreshKitStatus();
+                            } catch (error) {
+                              toast.error('Không thể cập nhật trạng thái kit');
+                            }
+                          }}
+                          className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 font-semibold transition-colors"
+                        >
+                          Đã tới kho
+                        </button>
+                      )
+                    }
+                    {/* Nút chuyển trạng thái Đã lấy mẫu khi kit đang lấy mẫu */}
+                    {kitInfo.status === 'Đang lấy mẫu' && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            await kitApi.updateKit(kitInfo.kitID, { status: 'Đã lấy mẫu' });
+                            toast.success('Kit đã chuyển sang trạng thái "Đã lấy mẫu"');
+                            await refreshKitStatus();
+                          } catch (error) {
+                            toast.error('Không thể cập nhật trạng thái kit');
+                          }
+                        }}
+                        className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 font-semibold transition-colors"
+                      >
+                        Đã lấy mẫu
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
                     <button 
                       onClick={() => {
+                        // Chỉ kiểm tra trạng thái check-in nếu phương thức là "Tại cơ sở y tế"
+                        if (
+                          appointment.method?.toLowerCase().includes('tại cơ sở y tế') &&
+                          (appointment.status === 'Đang chờ check-in' || appointment.status === 'Đang chờ mẫu')
+                        ) {
+                          toast.error('Vui lòng chờ khách hàng check-in trước khi tạo kit!');
+                          return;
+                        }
                         // Tạo URL với đường dẫn đầy đủ
                         const currentUrl = `/staff/test-results/${id}`;
                         const kitUrl = `/staff/kits?bookingId=${appointment.bookingId}&customerId=${appointment.customerId}&staffId=${appointment.staffId || user?.userID || ''}&description=${encodeURIComponent(`Kit cho lịch hẹn #${appointment.bookingId}`)}&returnUrl=${encodeURIComponent(currentUrl)}`;

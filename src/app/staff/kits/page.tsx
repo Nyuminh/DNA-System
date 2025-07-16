@@ -23,7 +23,7 @@ interface NewKitForm {
   staffID: string;
   bookingId: string;
   description: string;
-  status: 'Đã vận chuyển' | 'Đang vận chuyển' | 'Đang giao' | 'Đã lấy mẫu' | 'Đang tới kho' | 'Đã tới kho' | 'Đang chờ mẫu';
+  status: 'Đã vận chuyển' | 'Đang vận chuyển' | 'Đang giao' | 'Đã lấy mẫu' | 'Đang tới kho' | 'Đã tới kho' | 'Đang lấy mẫu';
   receivedate: string;
   address: string; // New address field
 }
@@ -52,6 +52,8 @@ export default function KitManagement() {
   const [showKitModal, setShowKitModal] = useState(false);
   const [kitDetailLoading, setKitDetailLoading] = useState(false);
   const [bookingMethod, setBookingMethod] = useState<string | null>(null); // Add state to track booking method
+  // Thêm biến lưu trạng thái booking
+  const [bookingStatus, setBookingStatus] = useState<string>('');
 
   useEffect(() => {
     fetchKits();
@@ -173,16 +175,15 @@ export default function KitManagement() {
           address: bookingData.address
         }));
       }
-      
       // Check if the booking method is "Tự thu mẫu"
       if (bookingData && bookingData.method === 'Tự thu mẫu') {
         setBookingMethod('Tự thu mẫu');
         // Set the status to "Đang vận chuyển" when method is "Tự thu mẫu"
         setFormData(prev => ({
           ...prev,
-          status: 'Đang vận chuyển' as NewKitForm['status']
+          status: 'Đang giao' as NewKitForm['status']
         }));
-        toast.success('Đã tự động đặt trạng thái "Đang vận chuyển" cho phương thức "Tự thu mẫu"');
+       
       } 
       // Check if the booking method is "Tại cơ sở y tế"
       else if (bookingData && bookingData.method === 'Tại cơ sở y tế') {
@@ -190,12 +191,14 @@ export default function KitManagement() {
         // Set the status to "Đang chờ mẫu" when method is "Tại cơ sở y tế"
         setFormData(prev => ({
           ...prev,
-          status: 'Đang chờ mẫu' as NewKitForm['status']
+          status: 'Đang lấy mẫu' as NewKitForm['status']
         }));
-        toast.success('Đã tự động đặt trạng thái "Đang chờ mẫu" cho phương thức "Tại cơ sở y tế"');
+       
       } else {
         setBookingMethod(null);
       }
+      // Thêm dòng này để cập nhật trạng thái booking
+      setBookingStatus(bookingData.status || '');
       
     } catch (error) {
       console.error('❌ Error fetching booking details:', error);
@@ -500,7 +503,7 @@ export default function KitManagement() {
     switch (status) {
       case 'Đã vận chuyển':
         return 'bg-green-100 text-green-800';
-      case 'Đang vận chuyển':
+      case 'Đang giao':
         return 'bg-blue-100 text-blue-800';
       case 'Đang giao':
         return 'bg-yellow-100 text-yellow-800'; // Thêm màu vàng cho "Đang giao"
@@ -584,7 +587,7 @@ export default function KitManagement() {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-2xl font-bold text-blue-600">{stats.inUse}</div>
-              <div className="text-sm text-slate-500">Đang vận chuyển</div>
+              <div className="text-sm text-slate-500">Đang giao</div>
             </div>
             <CheckCircleIcon className="h-8 w-8 text-blue-400" />
           </div>
@@ -888,9 +891,9 @@ export default function KitManagement() {
                     disabled={bookingMethod === 'Tự thu mẫu' || bookingMethod === 'Tại cơ sở y tế'} // Disable selection for both methods
                   >
                     {bookingMethod === 'Tự thu mẫu' ? (
-                      <option value="Đang vận chuyển">Đang vận chuyển</option>
+                      <option value="Đang giao">Đang giao</option>
                     ) : bookingMethod === 'Tại cơ sở y tế' ? (
-                      <option value="Đang chờ mẫu">Đang chờ mẫu</option>
+                      <option value="Đang lấy mẫu">Đang lấy mẫu</option>
                     ) : (
                       <>
                         <option value="Đã vận chuyển">Đã vận chuyển</option>
@@ -904,7 +907,7 @@ export default function KitManagement() {
                   </select>
                   {bookingMethod === 'Tự thu mẫu' && (
                     <p className="mt-1 text-xs text-amber-500">
-                      Phương thức "Tự thu mẫu" chỉ hỗ trợ trạng thái "Đang vận chuyển"
+                      Phương thức "Tự thu mẫu" chỉ hỗ trợ trạng thái "Đang giao"
                     </p>
                   )}
                   {bookingMethod === 'Tại cơ sở y tế' && (
@@ -989,10 +992,23 @@ export default function KitManagement() {
                 <button
                   type="submit"
                   className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  disabled={
+                    bookingMethod === 'Tại cơ sở y tế' && bookingStatus !== 'Đã check-in'
+                  }
+                  title={
+                    bookingMethod === 'Tại cơ sở y tế' && bookingStatus !== 'Đã check-in'
+                      ? 'Chỉ cho phép tạo kit khi lịch hẹn đã check-in'
+                      : ''
+                  }
                 >
                   Thêm Kit
                 </button>
               </div>
+              {bookingMethod === 'Tại cơ sở y tế' && bookingStatus !== 'Đã check-in' && formData.bookingId && (
+                <p className="mt-2 text-sm text-red-500">
+                  Chỉ cho phép tạo kit khi lịch hẹn đã check-in. Trạng thái hiện tại: <b>{bookingStatus}</b>
+                </p>
+              )}
             </form>
           </div>
         </div>
