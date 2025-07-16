@@ -76,7 +76,21 @@ export default function OrderManagement() {
         };
       });
 
-      setOrders(mappedOrders);
+      // Sort orders by bookingId in descending order (from largest to smallest)
+      const sortedOrders = mappedOrders.sort((a, b) => {
+        // Remove any non-numeric prefix like '#' if present
+        const bookingIdA = a.bookingId.replace(/\D/g, '');
+        const bookingIdB = b.bookingId.replace(/\D/g, '');
+        
+        // Convert to numbers for proper comparison
+        const numA = parseInt(bookingIdA, 10);
+        const numB = parseInt(bookingIdB, 10);
+        
+        // Descending order (b - a)
+        return numB - numA;
+      });
+
+      setOrders(sortedOrders);
     } catch (error) {
       setError('Không thể tải danh sách đơn đặt xét nghiệm. Vui lòng thử lại sau.');
     } finally {

@@ -277,7 +277,8 @@ const mapStatusToBackend = (status: Kit['status']): string => {
     'available': 'Đã vận chuyển',     // Kit đã nhận và sẵn sàng sử dụng
     'in-use': 'Đang vận chuyển',      // Kit đang được xử lý/sử dụng
     'completed': 'Đã lấy mẫu',        // Kit đã hoàn thành và đang chờ
-    'expired': 'Đã tới kho'           // Kit hết hạn quay về trạng thái đã nhận
+    'expired': 'Đã tới kho',          // Kit hết hạn quay về trạng thái đã nhận
+    'sampling': 'Đang lấy mẫu'        // Trạng thái mới: kit đang trong quá trình lấy mẫu
   };
   return statusMap[status] || 'Đã vận chuyển';
 };
@@ -294,6 +295,7 @@ export interface Kit {
   description?: string;
   status: string;
   receivedate?: string;
+  address?: string; // Added address field
   // Additional display fields (not in database)
   customerName?: string;
   staffName?: string;
@@ -308,6 +310,7 @@ interface ApiKitResponse {
   description?: string;
   status?: string;                // Backend might use different status values
   receivedate?: string;
+  address?: string;               // Added address field
   // Additional fields that might come from API
   customer?: {                    // Nested customer object
     fullname?: string;
@@ -412,6 +415,7 @@ export const kitApi = {
           description: kit.description || '',
           status: kit.status || '', // Lấy status tiếng Việt trực tiếp
           receivedate: kit.receivedate || '',
+          address: kit.address || '', // Add address field from API response
           customerName: kit.customer?.fullname || '',
           staffName: kit.staff?.fullname || ''
         };
@@ -446,13 +450,13 @@ export const kitApi = {
         const numA = getNumericPart(a.kitID);
         const numB = getNumericPart(b.kitID);
         
-        // If both have numbers, sort by number
+        // If both have numbers, sort by number in descending order (b - a instead of a - b)
         if (numA && numB) {
-          return numA - numB;
+          return numB - numA;
         }
         
-        // Otherwise, sort alphabetically
-        return a.kitID.localeCompare(b.kitID);
+        // Otherwise, sort alphabetically in reverse order
+        return b.kitID.localeCompare(a.kitID);
       });
       
       console.log('Final normalized kits (sorted by kitID):', sortedKits);
@@ -520,7 +524,8 @@ export const kitApi = {
         bookingId: kitData.bookingId,
         description: kitData.description,
         status: kitData.status || 'available',
-        receivedate: kitData.receivedate
+        receivedate: kitData.receivedate,
+        address: kitData.address
       };
 
       // Only include fields that have values (remove undefined/null fields)
@@ -919,6 +924,7 @@ export const kitApi = {
         description: kitData.description || '',
         status: kitData.status || '', // Lấy thẳng status từ database, không normalized
         receivedate: kitData.receivedate || '',
+        address: kitData.address || '', // Add address field
         customerName: kitData.customer?.fullname || '',
         staffName: kitData.staff?.fullname || ''
       };
