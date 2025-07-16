@@ -385,11 +385,21 @@ export default function AppointmentDetailPage() {
           return;
         }
         
-        // Kiểm tra xem kit đã ở trạng thái "Đã tới kho" chưa
-        if (kitInfo.status !== 'Đã tới kho') {
-          toast.error(`Không thể chuyển trạng thái: Kit phải ở trạng thái "Đã tới kho" (hiện tại: ${kitInfo.status})`);
-          setUpdating(false);
-          return;
+        // Kiểm tra điều kiện kit dựa trên phương thức thu mẫu
+        if (appointment.method?.toLowerCase().includes('tại cơ sở y tế')) {
+          // Đối với phương thức "Tại cơ sở y tế", chỉ cần kit ở trạng thái "Đã lấy mẫu"
+          if (kitInfo.status !== 'Đã lấy mẫu' && kitInfo.status !== 'Đã tới kho') {
+            toast.error(`Không thể chuyển trạng thái: Kit phải ở trạng thái "Đã lấy mẫu" hoặc "Đã tới kho" (hiện tại: ${kitInfo.status})`);
+            setUpdating(false);
+            return;
+          }
+        } else {
+          // Đối với các phương thức khác (như "Tự thu mẫu"), vẫn yêu cầu kit ở trạng thái "Đã tới kho"
+          if (kitInfo.status !== 'Đã tới kho') {
+            toast.error(`Không thể chuyển trạng thái: Kit phải ở trạng thái "Đã tới kho" (hiện tại: ${kitInfo.status})`);
+            setUpdating(false);
+            return;
+          }
         }
       }
       
@@ -660,6 +670,7 @@ export default function AppointmentDetailPage() {
       return (
         <ul className="list-disc ml-5 text-sm text-yellow-700 space-y-1">
           <li>Khách hàng đã checkin tại cơ sở</li>
+          <li>Kit phải ở trạng thái "Đã lấy mẫu" hoặc "Đã tới kho"</li>
           <li>Có thể bắt đầu thực hiện xét nghiệm</li>
         </ul>
       );
@@ -806,22 +817,40 @@ export default function AppointmentDetailPage() {
                     statusVN === 'Hoàn thành' ||
                     statusVN === 'Đã hủy' ||
                     (
+                      !appointment.method?.toLowerCase().includes('tại cơ sở y tế') &&
                       appointment.method?.toLowerCase().includes('tự thu mẫu') &&
                       (
                         !kitExists ||
                         !kitInfo ||
                         (kitInfo.status !== 'Đã tới kho')
                       )
+                    ) ||
+                    (
+                      appointment.method?.toLowerCase().includes('tại cơ sở y tế') &&
+                      (
+                        !kitExists ||
+                        !kitInfo ||
+                        (kitInfo.status !== 'Đã lấy mẫu' && kitInfo.status !== 'Đã tới kho')
+                      )
                     )
                   }
                   className={`px-4 py-2 rounded ${
                     updating || statusVN === 'Đang thực hiện' || statusVN === 'Hoàn thành' || statusVN === 'Đã hủy' ||
                     (
+                      !appointment.method?.toLowerCase().includes('tại cơ sở y tế') &&
                       appointment.method?.toLowerCase().includes('tự thu mẫu') &&
                       (
                         !kitExists ||
                         !kitInfo ||
                         (kitInfo.status !== 'Đã tới kho')
+                      )
+                    ) ||
+                    (
+                      appointment.method?.toLowerCase().includes('tại cơ sở y tế') &&
+                      (
+                        !kitExists ||
+                        !kitInfo ||
+                        (kitInfo.status !== 'Đã lấy mẫu' && kitInfo.status !== 'Đã tới kho')
                       )
                     )
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -830,7 +859,11 @@ export default function AppointmentDetailPage() {
                   title={
                     statusVN === 'Đang chờ mẫu'
                       ? appointment.method?.toLowerCase().includes('tại cơ sở')
-                        ? 'Chuyển sang trạng thái Đang thực hiện khi khách hàng đã checkin'
+                        ? kitExists 
+                          ? (kitInfo?.status === 'Đã lấy mẫu' || kitInfo?.status === 'Đã tới kho')
+                            ? 'Chuyển sang trạng thái Đang thực hiện khi khách hàng đã checkin'
+                            : `Kit phải ở trạng thái "Đã lấy mẫu" hoặc "Đã tới kho" trước khi chuyển sang thực hiện (hiện tại: ${kitInfo ? kitInfo.status : 'N/A'})`
+                          : 'Booking này chưa có kit. Vui lòng tạo kit trước.'
                         : kitExists 
                           ? kitInfo?.status === 'Đã tới kho'
                             ? 'Chuyển sang trạng thái Đang thực hiện' 
