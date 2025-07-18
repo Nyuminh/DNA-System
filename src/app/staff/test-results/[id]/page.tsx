@@ -872,7 +872,7 @@ export default function AppointmentDetailPage() {
                       : ''
                   }
                 >
-                  {updating ? 'Đang xử lý...' : 'Đang thực hiện'}
+                  {updating ? 'Đang xử lý...' : 'Thực hiện'}
                 </button>
                 
                 <button 
@@ -950,7 +950,7 @@ export default function AppointmentDetailPage() {
                           }}
                           className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 font-semibold transition-colors"
                         >
-                          Đã tới kho
+                          Đã Nhận Kit
                         </button>
                       )
                     }
@@ -968,7 +968,7 @@ export default function AppointmentDetailPage() {
                         }}
                         className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 font-semibold transition-colors"
                       >
-                        Đã lấy mẫu
+                        Lấy mẫu
                       </button>
                     )}
                   </div>
