@@ -276,6 +276,7 @@ const mapStatusToBackend = (status: Kit['status']): string => {
   if (status && [
     'Đã vận chuyển', 
     'Đang vận chuyển', 
+    'Đang giao',
     'Đã lấy mẫu', 
     'Đã tới kho', 
     'Đang lấy mẫu',
@@ -295,7 +296,8 @@ const mapStatusToBackend = (status: Kit['status']): string => {
     'in-transit': 'Đang tới kho',     // Kit đang được chuyển về kho
     'waiting': 'Đang chờ mẫu'         // Kit đang chờ mẫu
   };
-  return statusMap[status] || 'Đã vận chuyển';
+  // Only fallback to 'Đã vận chuyển' if status is empty or not found
+  return statusMap[status] || (status ? status : 'Đã vận chuyển');
 };
 
 // Helper function to map backend status to frontend status
@@ -538,7 +540,7 @@ export const kitApi = {
         staffId: kitData.staffID,        // backend expects staffId not staffID
         bookingId: kitData.bookingId,
         description: kitData.description,
-        status: mapStatusToBackend(kitData.status || 'Đã vận chuyển'), // Map to backend status value
+        status: kitData.status || '',   // Don't map status - keep as is from form
         receivedate: kitData.receivedate,
         address: kitData.address
       };
@@ -551,6 +553,7 @@ export const kitApi = {
       });
 
       console.log('Creating kit with payload:', payload);
+      console.log('Original status value:', kitData.status);
       
       // Get token directly for debugging
       let token = null;

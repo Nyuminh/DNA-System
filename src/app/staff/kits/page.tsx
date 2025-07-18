@@ -23,7 +23,7 @@ interface NewKitForm {
   staffID: string;
   bookingId: string;
   description: string;
-  status: 'Đã vận chuyển' | 'Đang vận chuyển' | 'Đang giao' | 'Đã lấy mẫu' | 'Đang tới kho' | 'Đã tới kho' | 'Đang lấy mẫu';
+  status: string;
   receivedate: string;
   address: string; // New address field
 }
@@ -42,7 +42,7 @@ export default function KitManagement() {
     staffID: '',
     bookingId: '',
     description: '',
-    status: 'Đã vận chuyển',
+    status: '',
     receivedate: new Date().toISOString().split('T')[0],
     address: '' // Initialize with empty string
   });
@@ -72,7 +72,7 @@ export default function KitManagement() {
         customerID: customerId || '',
         staffID: staffId || '',
         description: description || '',
-        status: 'Đã vận chuyển',
+        status: '',
         receivedate: new Date().toISOString().split('T')[0]
       }));
       
@@ -177,21 +177,23 @@ export default function KitManagement() {
       }
       // Check if the booking method is "Tự thu mẫu"
       if (bookingData && bookingData.method === 'Tự thu mẫu') {
+        console.log('Booking method is "Tự thu mẫu" - setting status to "Đang giao"');
         setBookingMethod('Tự thu mẫu');
-        // Set the status to "Đang vận chuyển" when method is "Tự thu mẫu"
+        // Set the status to "Đang giao" when method is "Tự thu mẫu"
         setFormData(prev => ({
           ...prev,
-          status: 'Đang giao' as NewKitForm['status']
+          status: 'Đang giao'
         }));
        
       } 
       // Check if the booking method is "Tại cơ sở y tế"
       else if (bookingData && bookingData.method === 'Tại cơ sở y tế') {
+        console.log('Booking method is "Tại cơ sở y tế" - setting status to "Đang lấy mẫu"');
         setBookingMethod('Tại cơ sở y tế');
-        // Set the status to "Đang chờ mẫu" when method is "Tại cơ sở y tế"
+        // Set the status to "Đang lấy mẫu" when method is "Tại cơ sở y tế"
         setFormData(prev => ({
           ...prev,
-          status: 'Đang lấy mẫu' as NewKitForm['status']
+          status: 'Đang lấy mẫu'
         }));
        
       } else {
@@ -240,11 +242,12 @@ export default function KitManagement() {
       // Create kit data without kitID - let backend auto-generate it
       const kitDataToCreate = {
         ...formData,
-        status: formData.status, // luôn là tiếng Việt
+        status: formData.status, // ensure status is preserved as is
         // Backend will auto-generate kitID
       };
       
       console.log('📤 Sending kit data to API:', JSON.stringify(kitDataToCreate));
+      console.log('📤 Status being sent:', formData.status);
       
       const newKit = await kitApi.createKit(kitDataToCreate);
       console.log('✅ Kit created successfully:', newKit);
@@ -256,7 +259,7 @@ export default function KitManagement() {
         staffID: '',
         bookingId: '',
         description: '',
-        status: 'Đã vận chuyển',
+        status: '',
         receivedate: new Date().toISOString().split('T')[0],
         address: '' // Reset address field
       });
@@ -295,7 +298,7 @@ export default function KitManagement() {
       staffID: '',
       bookingId: '',
       description: '',
-      status: 'Đã vận chuyển',
+      status: 'Đang giao',
       receivedate: new Date().toISOString().split('T')[0],
       address: '' // Reset address field
     });
