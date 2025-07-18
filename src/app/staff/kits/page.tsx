@@ -286,7 +286,7 @@ export default function KitManagement() {
       router.push(returnUrl);
     } else {
       // Otherwise just close the form
-      setShowAddForm(false);
+    setShowAddForm(false);
     }
     
     // Reset form data regardless
@@ -827,15 +827,15 @@ export default function KitManagement() {
                     Quay lại
                   </button>
                 )}
-                <button 
-                  onClick={handleCloseForm}
+              <button
+                onClick={handleCloseForm}
                   className="text-slate-400 hover:text-slate-500"
-                >
-                  <XMarkIcon className="h-6 w-6" />
-                </button>
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
               </div>
             </div>
-            
+
             <form onSubmit={handleSubmit} className="px-6 py-4">
               {error && (
                 <div className="mb-4 p-3 bg-red-100 border border-red-200 text-red-700 rounded-lg">

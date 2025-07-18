@@ -413,7 +413,7 @@ export default function AppointmentDetailPage() {
     try {
       setUpdating(true);
       
-      // Nếu muốn chuyển sang "Đang thực hiện", kiểm tra điều kiện kit
+              // Nếu muốn chuyển sang "Đang thực hiện", kiểm tra điều kiện kit
       if (newStatus === 'Đang thực hiện') {
         // Kiểm tra xem kit đã tồn tại chưa
         if (!kitExists || !kitInfo) {
@@ -422,16 +422,37 @@ export default function AppointmentDetailPage() {
           return;
         }
         
-        // Kiểm tra điều kiện kit dựa trên phương thức thu mẫu
+        // Kiểm tra điều kiện dựa trên phương thức thu mẫu
         if (appointment.method?.toLowerCase().includes('tại cơ sở')) {
-          // Đối với phương thức "Tại cơ sở", chỉ cần kit ở trạng thái "Đã lấy mẫu"
+          // Đối với phương thức "Tại cơ sở", yêu cầu trạng thái booking phải là "Đã check-in"
+          if (statusVN !== 'Đã check-in') {
+            toast.error('Không thể chuyển trạng thái: Khách hàng chưa check-in!');
+            setUpdating(false);
+            return;
+          }
+          
+          // Và kit phải ở trạng thái "Đã lấy mẫu" hoặc "Đã tới kho"
           if (kitInfo.status !== 'Đã lấy mẫu' && kitInfo.status !== 'Đã tới kho') {
             toast.error(`Không thể chuyển trạng thái: Kit phải ở trạng thái "Đã lấy mẫu" hoặc "Đã tới kho" (hiện tại: ${kitInfo.status})`);
             setUpdating(false);
             return;
           }
+        } else if (appointment.method?.toLowerCase().includes('tự thu mẫu')) {
+          // Đối với phương thức "Tự thu mẫu", yêu cầu trạng thái booking phải là "Đang chờ mẫu"
+          if (statusVN !== 'Đang chờ mẫu') {
+            toast.error('Không thể chuyển trạng thái: Booking phải ở trạng thái "Đang chờ mẫu"!');
+            setUpdating(false);
+            return;
+          }
+          
+          // Đối với "Tự thu mẫu", kiểm tra xem đã có kit chưa, không cần kiểm tra trạng thái kit
+          if (!kitExists) {
+            toast.error('Không thể chuyển trạng thái: Booking này chưa có kit!');
+            setUpdating(false);
+            return;
+          }
         } else {
-          // Đối với các phương thức khác (như "Tự thu mẫu"), vẫn yêu cầu kit ở trạng thái "Đã tới kho"
+          // Đối với các phương thức khác, vẫn yêu cầu kit ở trạng thái "Đã tới kho"
           if (kitInfo.status !== 'Đã tới kho') {
             toast.error(`Không thể chuyển trạng thái: Kit phải ở trạng thái "Đã tới kho" (hiện tại: ${kitInfo.status})`);
             setUpdating(false);
@@ -886,9 +907,10 @@ export default function AppointmentDetailPage() {
                 </svg>
                 <span className="font-medium">Đang đợi khách hàng check-in</span>
               </div>
-            ) : statusVN === 'Đã check-in' ? (
-              <button
-                onClick={() => handleUpdateStatus('Đang thực hiện')}
+            ) : (statusVN === 'Đã check-in' && appointment.method?.toLowerCase().includes('tại cơ sở')) || 
+                (statusVN === 'Đang chờ mẫu' && appointment.method?.toLowerCase().includes('tự thu mẫu')) ? (
+                <button 
+                  onClick={() => handleUpdateStatus('Đang thực hiện')}
                 className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-md hover:shadow-lg transition-all duration-200 flex items-center font-medium"
                 disabled={updating}
               >
@@ -909,10 +931,10 @@ export default function AppointmentDetailPage() {
                     <span>Bắt đầu thực hiện</span>
                   </>
                 )}
-              </button>
+                </button>
             ) : statusVN === 'Đang thực hiện' ? (
               <>
-                <button
+                <button 
                   onClick={() => setShowResultForm(true)}
                   className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:from-purple-600 hover:to-indigo-700 shadow-md hover:shadow-lg transition-all duration-200 flex items-center font-medium"
                 >
@@ -934,8 +956,8 @@ export default function AppointmentDetailPage() {
             
             {/* Cancel button - hidden when status is "Đang chờ Checkin" */}
             {statusVN !== 'Đang chờ Checkin' && (
-              <button
-                onClick={() => handleUpdateStatus('Đã hủy')}
+                <button 
+                  onClick={() => handleUpdateStatus('Đã hủy')}
                 className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 shadow-md hover:shadow-lg transition-all duration-200 flex items-center font-medium"
                 disabled={updating || statusVN === 'Đã hủy' || statusVN === 'Hoàn thành'}
               >
@@ -955,137 +977,136 @@ export default function AppointmentDetailPage() {
                     <span>Hủy</span>
                   </>
                 )}
-              </button>
+                </button>
             )}
           </div>
             
             {/* Kit management section */}
             <div className="mt-6 border-t border-gray-200 pt-6">
               <h3 className="text-lg font-medium text-gray-900 mb-3">Thông tin Kit xét nghiệm</h3>
-              
-              {checkingKit ? (
+
+                {checkingKit ? (
                 <button className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-gray-400 to-gray-500 text-white cursor-wait flex items-center shadow-md">
                   <svg className="animate-spin mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span className="font-medium">Đang kiểm tra kit...</span>
-                </button>
-              ) : kitExists && kitInfo ? (
-                <div className="flex items-center gap-3 flex-wrap">
-                  <button 
-                    onClick={handleViewKit}
-                    className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-md hover:shadow-lg flex items-center transition-all duration-200"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
+                  <span className="font-medium">Đang kiểm tra kit...</span>
+                  </button>
+                ) : kitExists && kitInfo ? (
+                <div className="flex items-center gap-3 flex-wrap">
+                    <button 
+                      onClick={handleViewKit}
+                    className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-md hover:shadow-lg flex items-center transition-all duration-200"
+                    >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
                     <span className="font-medium">Xem Kit:</span> 
                     <span className="font-bold ml-1">{kitInfo?.kitID}</span>
-                  </button>
+                    </button>
                   <div className="bg-green-100 text-green-800 px-3 py-1.5 rounded-lg text-xs flex items-center border border-green-200 shadow-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
                     <span className="font-medium">Kit:</span> <span className="font-semibold ml-1">{ kitInfo?.status}</span>
-                  </div>
-                  <button
-                    onClick={refreshKitStatus}
+                    </div>
+                    <button
+                      onClick={refreshKitStatus}
                     className="p-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors shadow-sm border border-blue-200"
-                    title="Làm mới trạng thái kit"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                  </button>
-                  {/* Nút đổi trạng thái Đã tới kho cho tự thu mẫu và kit đang tới kho */}
-                  {appointment.method?.toLowerCase().includes('tự thu mẫu') &&
-                    kitInfo.status === 'Đang tới kho' && (
+                      title="Làm mới trạng thái kit"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    </button>
+                    {/* Nút đổi trạng thái cho tự thu mẫu */}
+                    {appointment.method?.toLowerCase().includes('tự thu mẫu') && kitExists && (
+                        <button
+                          onClick={async () => {
+                            try {
+                              await kitApi.updateKit(kitInfo.kitID, { status: 'Đã tới kho' });
+                              toast.success('Kit đã chuyển sang trạng thái "Đã tới kho"');
+                              await refreshKitStatus();
+                            } catch (error) {
+                              toast.error('Không thể cập nhật trạng thái kit');
+                            }
+                          }}
+                        className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-orange-500 to-amber-600 text-white hover:from-orange-600 hover:to-amber-700 font-medium shadow-md hover:shadow-lg transition-all duration-200 flex items-center"
+                        >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                        </svg>
+                          Đã tới kho
+                        </button>
+                      )
+                    }
+                    {/* Nút chuyển trạng thái Đã lấy mẫu khi kit đang lấy mẫu */}
+                    {kitInfo.status === 'Đang lấy mẫu' && (
                       <button
                         onClick={async () => {
                           try {
-                            await kitApi.updateKit(kitInfo.kitID, { status: 'Đã tới kho' });
-                            toast.success('Kit đã chuyển sang trạng thái "Đã tới kho"');
+                            await kitApi.updateKit(kitInfo.kitID, { status: 'Đã lấy mẫu' });
+                            toast.success('Kit đã chuyển sang trạng thái "Đã lấy mẫu"');
                             await refreshKitStatus();
                           } catch (error) {
                             toast.error('Không thể cập nhật trạng thái kit');
                           }
                         }}
-                        className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-orange-500 to-amber-600 text-white hover:from-orange-600 hover:to-amber-700 font-medium shadow-md hover:shadow-lg transition-all duration-200 flex items-center"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                        </svg>
-                        Đã tới kho
-                      </button>
-                    )
-                  }
-                  {/* Nút chuyển trạng thái Đã lấy mẫu khi kit đang lấy mẫu */}
-                  {kitInfo.status === 'Đang lấy mẫu' && (
-                    <button
-                      onClick={async () => {
-                        try {
-                          await kitApi.updateKit(kitInfo.kitID, { status: 'Đã lấy mẫu' });
-                          toast.success('Kit đã chuyển sang trạng thái "Đã lấy mẫu"');
-                          await refreshKitStatus();
-                        } catch (error) {
-                          toast.error('Không thể cập nhật trạng thái kit');
-                        }
-                      }}
                       className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 font-medium shadow-md hover:shadow-lg transition-all duration-200 flex items-center"
-                    >
+                      >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                       </svg>
-                      Đã lấy mẫu
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <button 
-                    onClick={() => {
-                      // Chỉ kiểm tra trạng thái check-in nếu phương thức là "Tại cơ sở y tế"
-                      if (
-                        appointment.method?.toLowerCase().includes('tại cơ sở y tế') &&
-                        (appointment.status === 'Đang chờ check-in' || appointment.status === 'Đang chờ mẫu')
-                      ) {
-                        toast.error('Vui lòng chờ khách hàng check-in trước khi tạo kit!');
-                        return;
-                      }
-                      // Tạo URL với đường dẫn đầy đủ
-                      const currentUrl = `/staff/test-results/${id}`;
-                      const kitUrl = `/staff/kits?bookingId=${appointment.bookingId}&customerId=${appointment.customerId}&staffId=${appointment.staffId || user?.userID || ''}&description=${encodeURIComponent(`Kit cho lịch hẹn #${appointment.bookingId}`)}&returnUrl=${encodeURIComponent(currentUrl)}`;
-                      router.push(kitUrl);
-                    }}
-                    className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 font-medium shadow-md hover:shadow-lg transition-all duration-200 flex items-center"
-                    title="Tạo kit cho booking này"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    Tạo Kit
-                  </button>
-                  <div className="bg-yellow-100 text-yellow-800 px-3 py-1.5 rounded-lg text-xs flex items-center border border-yellow-200 shadow-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Chưa có kit
+                        Đã lấy mẫu
+                      </button>
+                    )}
                   </div>
-                  <button
-                    onClick={refreshKitStatus}
+                ) : (
+                <div className="flex items-center gap-3">
+                    <button 
+                      onClick={() => {
+                        // Chỉ kiểm tra trạng thái check-in nếu phương thức là "Tại cơ sở y tế"
+                        if (
+                          appointment.method?.toLowerCase().includes('tại cơ sở y tế') &&
+                          (appointment.status === 'Đang chờ check-in' || appointment.status === 'Đang chờ mẫu')
+                        ) {
+                          toast.error('Vui lòng chờ khách hàng check-in trước khi tạo kit!');
+                          return;
+                        }
+                        // Tạo URL với đường dẫn đầy đủ
+                        const currentUrl = `/staff/test-results/${id}`;
+                        const kitUrl = `/staff/kits?bookingId=${appointment.bookingId}&customerId=${appointment.customerId}&staffId=${appointment.staffId || user?.userID || ''}&description=${encodeURIComponent(`Kit cho lịch hẹn #${appointment.bookingId}`)}&returnUrl=${encodeURIComponent(currentUrl)}`;
+                        router.push(kitUrl);
+                      }}
+                    className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 font-medium shadow-md hover:shadow-lg transition-all duration-200 flex items-center"
+                      title="Tạo kit cho booking này"
+                    >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Tạo Kit
+                    </button>
+                  <div className="bg-yellow-100 text-yellow-800 px-3 py-1.5 rounded-lg text-xs flex items-center border border-yellow-200 shadow-sm">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Chưa có kit
+                    </div>
+                    <button
+                      onClick={refreshKitStatus}
                     className="p-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors shadow-sm border border-blue-200"
-                    title="Làm mới trạng thái kit"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                  </button>
-                </div>
-              )}
-            </div>
-            
+                      title="Làm mới trạng thái kit"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+              </div>
+              
               {statusVN === 'Đang thực hiện' && !showResultForm && (
                 <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
                   <p className="text-blue-700 flex items-center font-medium">
@@ -1119,9 +1140,26 @@ export default function AppointmentDetailPage() {
                     </p>
                     {getStatusRequirements(appointment.method)}
                     {appointment.method?.toLowerCase().includes('tại cơ sở') ? (
-                                          <p className="mt-2 text-sm text-yellow-700">
+                      <p className="mt-2 text-sm text-yellow-700">
                       ⚠️ Hãy đảm bảo khách hàng đã check-in tại cơ sở trước khi chuyển trạng thái.
                       </p>
+                    ) : appointment.method?.toLowerCase().includes('tự thu mẫu') ? (
+                      <div className="mt-2 p-2 bg-yellow-100 rounded border border-yellow-200">
+                        <p className="text-sm text-yellow-800 font-medium">
+                          Đây là booking với phương thức "Tự thu mẫu"
+                        </p>
+                        <ul className="list-disc ml-5 text-sm text-yellow-800 mt-1 space-y-1">
+                          <li>Khách hàng tự thu mẫu và gửi đến phòng lab</li>
+                          {kitExists ? (
+                            <>
+                              <li>Booking đã có kit được tạo: <strong>{kitInfo?.kitID}</strong></li>
+                              <li className="text-green-700 font-medium">✅ Bạn có thể bắt đầu thực hiện xét nghiệm ngay bằng cách nhấn nút "Bắt đầu thực hiện"!</li>
+                            </>
+                          ) : (
+                            <li className="text-red-600">⚠️ Cần tạo kit trước khi có thể bắt đầu thực hiện</li>
+                          )}
+                        </ul>
+                      </div>
                     ) : checkingKit ? (
                       <div className="flex items-center space-x-2 mt-2 text-sm text-blue-600">
                         <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -1131,13 +1169,13 @@ export default function AppointmentDetailPage() {
                         <span>Đang kiểm tra trạng thái kit...</span>
                       </div>
                     ) : kitExists ? (
-                      <p className="mt-2 text-sm text-green-600">
+                        <p className="mt-2 text-sm text-green-600">
                           ✅ Tất cả điều kiện đã thỏa mãn. Bạn có thể chuyển sang trạng thái "Đang thực hiện".
                         </p>
-                    ) : (
-                      <p className="mt-2 text-sm text-yellow-700">
-                        ⚠️ Trạng thái kit hiện tại: <strong>{kitInfo ? getKitStatusText(kitInfo.status) : 'N/A'}</strong>. 
-                        Cần đổi sang <strong>Đã tới kho</strong> trước khi có thể chuyển trạng thái booking.
+                      ) : (
+                        <p className="mt-2 text-sm text-yellow-700">
+                          ⚠️ Trạng thái kit hiện tại: <strong>{kitInfo ? getKitStatusText(kitInfo.status) : 'N/A'}</strong>. 
+                          Cần đổi sang <strong>Đã tới kho</strong> trước khi có thể chuyển trạng thái booking.
                       </p>
                     )}
                   </div>
