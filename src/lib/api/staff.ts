@@ -272,13 +272,28 @@ export interface KitApiResponse {
 
 // Helper function to map frontend status to backend status
 const mapStatusToBackend = (status: Kit['status']): string => {
-  // Map frontend status values to backend status values (matching database varchar(50))
-  const statusMap: Record<Kit['status'], string> = {
+  // First check if the status is already in Vietnamese, if so, return as is
+  if (status && [
+    'Đã vận chuyển', 
+    'Đang vận chuyển', 
+    'Đã lấy mẫu', 
+    'Đã tới kho', 
+    'Đang lấy mẫu',
+    'Đang tới kho',
+    'Đang chờ mẫu'
+  ].includes(status)) {
+    return status;
+  }
+  
+  // Otherwise map English terms to Vietnamese
+  const statusMap: Record<string, string> = {
     'available': 'Đã vận chuyển',     // Kit đã nhận và sẵn sàng sử dụng
     'in-use': 'Đang vận chuyển',      // Kit đang được xử lý/sử dụng
     'completed': 'Đã lấy mẫu',        // Kit đã hoàn thành và đang chờ
     'expired': 'Đã tới kho',          // Kit hết hạn quay về trạng thái đã nhận
-    'sampling': 'Đang lấy mẫu'        // Trạng thái mới: kit đang trong quá trình lấy mẫu
+    'sampling': 'Đang lấy mẫu',       // Trạng thái mới: kit đang trong quá trình lấy mẫu
+    'in-transit': 'Đang tới kho',     // Kit đang được chuyển về kho
+    'waiting': 'Đang chờ mẫu'         // Kit đang chờ mẫu
   };
   return statusMap[status] || 'Đã vận chuyển';
 };
@@ -517,13 +532,13 @@ export const kitApi = {
    * @returns Promise<Kit>
    */  async createKit(kitData: Partial<Kit>): Promise<Kit> {
     try {
-      // Don't send kitID - let backend auto-generate it
+      // Map to proper casing for backend API
       const payload: any = {
-        customerID: kitData.customerID,
-        staffID: kitData.staffID,
+        customerId: kitData.customerID,  // backend expects customerId not customerID
+        staffId: kitData.staffID,        // backend expects staffId not staffID
         bookingId: kitData.bookingId,
         description: kitData.description,
-        status: kitData.status || 'available',
+        status: mapStatusToBackend(kitData.status || 'Đã vận chuyển'), // Map to backend status value
         receivedate: kitData.receivedate,
         address: kitData.address
       };
@@ -536,11 +551,33 @@ export const kitApi = {
       });
 
       console.log('Creating kit with payload:', payload);
-      const response = await apiClient.post<Kit>('/api/Kit', payload);
+      
+      // Get token directly for debugging
+      let token = null;
+      if (typeof window !== 'undefined') {
+        token = localStorage.getItem('token');
+        console.log('Using auth token:', token ? 'Valid token present' : 'No token found');
+      }
+      
+      const response = await apiClient.post<Kit>('/api/Kit', payload, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
       
       return response.data;
     } catch (error) {
       console.error('Error creating kit:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('Response status:', error.response?.status);
+        console.error('Response data:', error.response?.data);
+        
+        // Check if this is an authentication error
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          throw new Error('Không có quyền tạo kit. Vui lòng kiểm tra đăng nhập và quyền hạn của bạn.');
+        }
+      }
       throw new Error('Không thể tạo kit mới');
     }
   },

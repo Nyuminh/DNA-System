@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 
 // Định nghĩa lại type trạng thái tiếng Việt
-type AppointmentStatusVN = 'Đang chờ mẫu' | 'Đang chờ Checkin' | 'Đang thực hiện' | 'Hoàn thành' | 'Đã hủy';
+type AppointmentStatusVN = 'Đang chờ mẫu' | 'Đang chờ Checkin' | 'Đã check-in' | 'Đang thực hiện' | 'Hoàn thành' | 'Đã hủy';
 
 // Hàm chuyển đổi trạng thái từ database sang enum tiếng Việt
 const mapStatusToVN = (status: string): AppointmentStatusVN => {
@@ -17,8 +17,11 @@ const mapStatusToVN = (status: string): AppointmentStatusVN => {
   const normalizedStatus = status.toLowerCase().trim();
   
   // Map to specific status
-  if (normalizedStatus === 'đang chờ checkin' || normalizedStatus === 'waiting for checkin') 
+  if (normalizedStatus === 'đang chờ check-in' || normalizedStatus === 'waiting for check-in') 
     return 'Đang chờ Checkin';
+  
+  if (normalizedStatus === 'đã check-in' || normalizedStatus === 'checked in')
+    return 'Đã check-in';
   
   if (normalizedStatus === 'đang chờ mẫu' || normalizedStatus === 'đã xác nhận' || normalizedStatus === 'pending') 
     return 'Đang chờ mẫu';
@@ -43,6 +46,8 @@ const getStatusColorVN = (status: AppointmentStatusVN) => {
       return 'bg-yellow-100 text-yellow-800';
     case 'Đang chờ Checkin':
       return 'bg-yellow-100 text-yellow-800';
+    case 'Đã check-in':
+      return 'bg-blue-100 text-blue-800';
     case 'Đang thực hiện':
       return 'bg-blue-100 text-blue-800';
     case 'Hoàn thành':
@@ -709,7 +714,7 @@ export default function AppointmentDetailPage() {
     if (method?.toLowerCase().includes('tại cơ sở')) {
       return (
         <ul className="list-disc ml-5 text-sm text-yellow-700 space-y-1">
-          <li>Khách hàng đã checkin tại cơ sở</li>
+                                <li>Khách hàng đã check-in tại cơ sở</li>
           <li>Kit phải ở trạng thái "Đã lấy mẫu" hoặc "Đã tới kho"</li>
           <li>Có thể bắt đầu thực hiện xét nghiệm</li>
         </ul>
@@ -826,6 +831,20 @@ export default function AppointmentDetailPage() {
                 </div>
               </div>
               
+              {appointment.method?.toLowerCase().includes('tại cơ sở') && (
+                <div className="flex items-center">
+                  <div className={`w-8 h-8 rounded-full ${statusVN === 'Đã check-in' || statusVN === 'Đang thực hiện' || statusVN === 'Hoàn thành' ? 'bg-green-500' : 'bg-gray-300'} flex items-center justify-center text-white`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="font-medium">Đã check-in</p>
+                    <p className="text-sm text-gray-500">{statusVN === 'Đã check-in' || statusVN === 'Đang thực hiện' || statusVN === 'Hoàn thành' ? 'Đã xác nhận' : 'Chưa xác nhận'}</p>
+                  </div>
+                </div>
+              )}
+              
               <div className="flex items-center">
                 <div className={`w-8 h-8 rounded-full ${statusVN === 'Đang thực hiện' || statusVN === 'Hoàn thành' ? 'bg-green-500' : 'bg-gray-300'} flex items-center justify-center text-white`}>
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -860,7 +879,14 @@ export default function AppointmentDetailPage() {
                 </svg>
                 <span className="font-medium">Đang tải...</span>
               </button>
-            ) : statusVN === 'Đang chờ mẫu' || statusVN === 'Đang chờ Checkin' ? (
+            ) : statusVN === 'Đang chờ Checkin' ? (
+              <div className="bg-yellow-100 text-yellow-800 px-4 py-2.5 rounded-lg flex items-center space-x-2 border border-yellow-200 shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="font-medium">Đang đợi khách hàng check-in</span>
+              </div>
+            ) : statusVN === 'Đã check-in' ? (
               <button
                 onClick={() => handleUpdateStatus('Đang thực hiện')}
                 className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-md hover:shadow-lg transition-all duration-200 flex items-center font-medium"
@@ -906,29 +932,31 @@ export default function AppointmentDetailPage() {
               </div>
             )}
             
-            {/* Cancel button */}
-            <button
-              onClick={() => handleUpdateStatus('Đã hủy')}
-              className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 shadow-md hover:shadow-lg transition-all duration-200 flex items-center font-medium"
-              disabled={updating || statusVN === 'Đã hủy' || statusVN === 'Hoàn thành'}
-            >
-              {updating ? (
-                <>
-                  <svg className="animate-spin mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span>Đang xử lý...</span>
-                </>
-              ) : (
-                <>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  <span>Hủy</span>
-                </>
-              )}
-            </button>
+            {/* Cancel button - hidden when status is "Đang chờ Checkin" */}
+            {statusVN !== 'Đang chờ Checkin' && (
+              <button
+                onClick={() => handleUpdateStatus('Đã hủy')}
+                className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 shadow-md hover:shadow-lg transition-all duration-200 flex items-center font-medium"
+                disabled={updating || statusVN === 'Đã hủy' || statusVN === 'Hoàn thành'}
+              >
+                {updating ? (
+                  <>
+                    <svg className="animate-spin mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Đang xử lý...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span>Hủy</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
             
             {/* Kit management section */}
@@ -1073,12 +1101,6 @@ export default function AppointmentDetailPage() {
                     <p className="text-sm text-blue-600">
                       <strong>Lưu ý:</strong> Nếu bạn không thấy dữ liệu đầy đủ, hãy bấm nút "Làm mới" ở góc trên cùng bên phải.
                     </p>
-                    <button 
-                      onClick={() => setShowResultForm(true)}
-                      className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                    >
-                      Nhập kết quả ngay
-                    </button>
                   </div>
                 </div>
               )}
@@ -1097,8 +1119,8 @@ export default function AppointmentDetailPage() {
                     </p>
                     {getStatusRequirements(appointment.method)}
                     {appointment.method?.toLowerCase().includes('tại cơ sở') ? (
-                      <p className="mt-2 text-sm text-yellow-700">
-                        ⚠️ Hãy đảm bảo khách hàng đã checkin tại cơ sở trước khi chuyển trạng thái.
+                                          <p className="mt-2 text-sm text-yellow-700">
+                      ⚠️ Hãy đảm bảo khách hàng đã check-in tại cơ sở trước khi chuyển trạng thái.
                       </p>
                     ) : checkingKit ? (
                       <div className="flex items-center space-x-2 mt-2 text-sm text-blue-600">
@@ -1109,19 +1131,13 @@ export default function AppointmentDetailPage() {
                         <span>Đang kiểm tra trạng thái kit...</span>
                       </div>
                     ) : kitExists ? (
-                      kitInfo?.status === 'expired' ? (
-                        <p className="mt-2 text-sm text-green-600">
+                      <p className="mt-2 text-sm text-green-600">
                           ✅ Tất cả điều kiện đã thỏa mãn. Bạn có thể chuyển sang trạng thái "Đang thực hiện".
                         </p>
-                      ) : (
-                        <p className="mt-2 text-sm text-yellow-700">
-                          ⚠️ Trạng thái kit hiện tại: <strong>{kitInfo ? getKitStatusText(kitInfo.status) : 'N/A'}</strong>. 
-                          Cần đổi sang <strong>Đã tới kho</strong> trước khi có thể chuyển trạng thái booking.
-                        </p>
-                      )
                     ) : (
                       <p className="mt-2 text-sm text-yellow-700">
-                        ⚠️ Booking này chưa có kit. Vui lòng tạo kit trước khi chuyển trạng thái.
+                        ⚠️ Trạng thái kit hiện tại: <strong>{kitInfo ? getKitStatusText(kitInfo.status) : 'N/A'}</strong>. 
+                        Cần đổi sang <strong>Đã tới kho</strong> trước khi có thể chuyển trạng thái booking.
                       </p>
                     )}
                   </div>
@@ -1134,19 +1150,26 @@ export default function AppointmentDetailPage() {
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    Thông tin về việc chuyển trạng thái
+                    Thông tin về trạng thái Check-in
                   </p>
                   <div className="mt-2 ml-7">
                     <p className="text-sm text-yellow-700 mb-2">
-                      <strong>Điều kiện để chuyển sang trạng thái "Đang thực hiện":</strong>
+                      <strong>Đang đợi khách hàng check-in:</strong>
+                    </p>
+                    <p className="text-sm text-yellow-700 mb-2">
+                      Khách hàng cần tự check-in trên ứng dụng di động hoặc trang web dành cho người dùng.
+                      Nhân viên không thể check-in thay khách hàng.
+                    </p>
+                    <p className="text-sm text-yellow-700 mb-2">
+                      <strong>Sau khi khách check-in thành công:</strong>
                     </p>
                     <ul className="list-disc ml-5 text-sm text-yellow-700 space-y-1">
-                      <li>Khách hàng đã checkin tại cơ sở</li>
+                      <li>Trạng thái sẽ tự động thay đổi thành "Đã check-in"</li>
                       <li>Kit phải ở trạng thái "Đã lấy mẫu" hoặc "Đã tới kho"</li>
-                      <li>Có thể bắt đầu thực hiện xét nghiệm</li>
+                      <li>Sau đó có thể bắt đầu thực hiện xét nghiệm</li>
                     </ul>
                     <p className="mt-2 text-sm text-yellow-700">
-                      ⚠️ Hãy đảm bảo khách hàng đã checkin tại cơ sở trước khi chuyển trạng thái.
+                      ⚠️ Trạng thái booking sẽ được cập nhật tự động khi khách check-in.
                     </p>
                     {checkingKit ? (
                       <div className="flex items-center space-x-2 mt-2 text-sm text-blue-600">
@@ -1172,6 +1195,31 @@ export default function AppointmentDetailPage() {
                         ⚠️ Booking này chưa có kit. Vui lòng tạo kit trước khi chuyển trạng thái.
                       </p>
                     )}
+                  </div>
+                </div>
+              )}
+
+              {statusVN === 'Đã check-in' && (
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                  <p className="text-blue-700 flex items-center font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Khách hàng đã check-in thành công
+                  </p>
+                  <div className="mt-2 ml-7">
+                    <p className="text-sm text-blue-600 mb-2">
+                      <strong>Hệ thống đã ghi nhận khách hàng đã check-in thành công.</strong> Bạn có thể bắt đầu quá trình xét nghiệm bằng cách nhấn nút "Bắt đầu thực hiện".
+                    </p>
+                    <p className="text-sm text-blue-600">
+                      Đảm bảo kit xét nghiệm đã sẵn sàng và đã được chuẩn bị cho khách hàng này.
+                    </p>
+                    <button 
+                      onClick={() => handleUpdateStatus('Đang thực hiện')}
+                      className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      Bắt đầu thực hiện ngay
+                    </button>
                   </div>
                 </div>
               )}
