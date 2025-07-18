@@ -7,15 +7,32 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 
 // Định nghĩa lại type trạng thái tiếng Việt
-type AppointmentStatusVN = 'Đang chờ mẫu' | 'Đang thực hiện' | 'Hoàn thành' | 'Đã hủy';
+type AppointmentStatusVN = 'Đang chờ mẫu' | 'Đang chờ Checkin' | 'Đang thực hiện' | 'Hoàn thành' | 'Đã hủy';
 
 // Hàm chuyển đổi trạng thái từ database sang enum tiếng Việt
 const mapStatusToVN = (status: string): AppointmentStatusVN => {
   if (!status) return 'Đang chờ mẫu';
-  if (status === 'Đang chờ mẫu' || status === 'Đã xác nhận' || status === 'pending') return 'Đang chờ mẫu';
-  if (status === 'Đang thực hiện' || status === 'in-progress') return 'Đang thực hiện';
-  if (status === 'Hoàn thành' || status === 'completed') return 'Hoàn thành';
-  if (status === 'Đã hủy' || status === 'Hủy' || status === 'cancelled') return 'Đã hủy';
+  
+  // Normalize status
+  const normalizedStatus = status.toLowerCase().trim();
+  
+  // Map to specific status
+  if (normalizedStatus === 'đang chờ checkin' || normalizedStatus === 'waiting for checkin') 
+    return 'Đang chờ Checkin';
+  
+  if (normalizedStatus === 'đang chờ mẫu' || normalizedStatus === 'đã xác nhận' || normalizedStatus === 'pending') 
+    return 'Đang chờ mẫu';
+  
+  if (normalizedStatus === 'đang thực hiện' || normalizedStatus === 'in-progress') 
+    return 'Đang thực hiện';
+  
+  if (normalizedStatus === 'hoàn thành' || normalizedStatus === 'completed') 
+    return 'Hoàn thành';
+  
+  if (normalizedStatus === 'đã hủy' || normalizedStatus === 'hủy' || normalizedStatus === 'cancelled') 
+    return 'Đã hủy';
+  
+  // Default status
   return 'Đang chờ mẫu';
 };
 
@@ -23,6 +40,8 @@ const mapStatusToVN = (status: string): AppointmentStatusVN => {
 const getStatusColorVN = (status: AppointmentStatusVN) => {
   switch (status) {
     case 'Đang chờ mẫu':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'Đang chờ Checkin':
       return 'bg-yellow-100 text-yellow-800';
     case 'Đang thực hiện':
       return 'bg-blue-100 text-blue-800';
@@ -209,7 +228,15 @@ export default function AppointmentDetailPage() {
         
         // Xác định trạng thái từ dữ liệu booking
         if (data.status) {
-          setStatusVN(mapStatusToVN(data.status));
+          // Đặt trạng thái dựa trên mapping tiêu chuẩn
+          const mappedStatus = mapStatusToVN(data.status);
+          
+          // Nếu phương thức là "Tại cơ sở" và trạng thái là "Đang chờ mẫu", chuyển thành "Đang chờ Checkin"
+          if (data.method?.toLowerCase().includes('tại cơ sở') && mappedStatus === 'Đang chờ mẫu') {
+            setStatusVN('Đang chờ Checkin');
+          } else {
+            setStatusVN(mappedStatus);
+          }
         }
         
         // Fetch customer info if we have customerId
@@ -386,8 +413,8 @@ export default function AppointmentDetailPage() {
         }
         
         // Kiểm tra điều kiện kit dựa trên phương thức thu mẫu
-        if (appointment.method?.toLowerCase().includes('tại cơ sở y tế')) {
-          // Đối với phương thức "Tại cơ sở y tế", chỉ cần kit ở trạng thái "Đã lấy mẫu"
+        if (appointment.method?.toLowerCase().includes('tại cơ sở')) {
+          // Đối với phương thức "Tại cơ sở", chỉ cần kit ở trạng thái "Đã lấy mẫu"
           if (kitInfo.status !== 'Đã lấy mẫu' && kitInfo.status !== 'Đã tới kho') {
             toast.error(`Không thể chuyển trạng thái: Kit phải ở trạng thái "Đã lấy mẫu" hoặc "Đã tới kho" (hiện tại: ${kitInfo.status})`);
             setUpdating(false);
@@ -483,7 +510,15 @@ export default function AppointmentDetailPage() {
         
         // Determine status from appointment data
         if (data.status) {
-          setStatusVN(mapStatusToVN(data.status));
+          // Đặt trạng thái dựa trên mapping tiêu chuẩn
+          const mappedStatus = mapStatusToVN(data.status);
+          
+          // Nếu phương thức là "Tại cơ sở" và trạng thái là "Đang chờ mẫu", chuyển thành "Đang chờ Checkin"
+          if (data.method?.toLowerCase().includes('tại cơ sở') && mappedStatus === 'Đang chờ mẫu') {
+            setStatusVN('Đang chờ Checkin');
+          } else {
+            setStatusVN(mappedStatus);
+          }
         }
         
         // Re-check kit status
@@ -654,7 +689,7 @@ export default function AppointmentDetailPage() {
 
   // Hàm xác định văn bản trạng thái đầu tiên dựa trên phương thức booking
   const getInitialStatusText = (method: string): string => {
-    // Nếu phương thức là "Tại cơ sở y tế" thì hiển thị "Đang chờ checkin"
+    // Nếu phương thức là "Tại cơ sở y tế" thì hiển thị "Đang chờ Checkin"
     if (method?.toLowerCase().includes('tại cơ sở')) {
       return "Đang chờ Checkin";
     }
@@ -760,7 +795,10 @@ export default function AppointmentDetailPage() {
             <div className="flex justify-between border-b pb-2 items-center">
               <span className="font-medium text-gray-500">Trạng thái:</span>
               <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColorVN(statusVN)}`}>
-                {statusVN}
+                {appointment.method?.toLowerCase().includes('tại cơ sở') && statusVN === 'Đang chờ mẫu' 
+                  ? 'Đang chờ Checkin'
+                  : statusVN
+                }
               </span>
               </div>
             </div>
