@@ -764,7 +764,7 @@ export default function AppointmentDetailPage() {
             Làm mới
           </button>
           <button 
-            onClick={() => router.back()}
+            onClick={() => router.push('/staff/test-results')}
             className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 shadow-sm"
           >
             Quay lại

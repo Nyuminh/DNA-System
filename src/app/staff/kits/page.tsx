@@ -279,7 +279,17 @@ export default function KitManagement() {
   };
 
   const handleCloseForm = () => {
-    setShowAddForm(false);
+    // Check if there's a returnUrl in the search params
+    const returnUrl = searchParams.get('returnUrl');
+    if (returnUrl) {
+      // If returnUrl exists, navigate to that URL
+      router.push(returnUrl);
+    } else {
+      // Otherwise just close the form
+      setShowAddForm(false);
+    }
+    
+    // Reset form data regardless
     setFormData({
       customerID: '',
       staffID: '',
@@ -800,20 +810,40 @@ export default function KitManagement() {
 
       {/* Add Kit Modal */}
       {showAddForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-slate-200">
-              <h2 className="text-xl font-semibold text-slate-900">Thêm Kit Mới</h2>
-              <button
-                onClick={handleCloseForm}
-                className="text-slate-400 hover:text-slate-600 transition-colors"
-              >
-                <XMarkIcon className="h-6 w-6" />
-              </button>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div className="border-b border-slate-200 px-6 py-4 flex justify-between items-center">
+              <h3 className="text-lg font-medium text-slate-900">Thêm Kit Mới</h3>
+              <div className="flex items-center space-x-2">
+                {searchParams.get('returnUrl') && (
+                  <button
+                    type="button"
+                    onClick={() => router.push(searchParams.get('returnUrl') || '/staff/test-results')}
+                    className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 flex items-center"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    Quay lại
+                  </button>
+                )}
+                <button 
+                  onClick={handleCloseForm}
+                  className="text-slate-400 hover:text-slate-500"
+                >
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+              </div>
             </div>
+            
+            <form onSubmit={handleSubmit} className="px-6 py-4">
+              {error && (
+                <div className="mb-4 p-3 bg-red-100 border border-red-200 text-red-700 rounded-lg">
+                  {error}
+                </div>
+              )}
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 {/* Customer ID */}
                 <div>
                   <label htmlFor="customerID" className="block text-sm font-medium text-slate-700 mb-2">
@@ -987,7 +1017,7 @@ export default function KitManagement() {
                   onClick={handleCloseForm}
                   className="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
                 >
-                  Hủy
+                  {searchParams.get('returnUrl') ? 'Quay lại' : 'Hủy'}
                 </button>
                 <button
                   type="submit"
