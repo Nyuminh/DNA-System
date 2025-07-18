@@ -180,6 +180,11 @@ export default function AppointmentDetailPage() {
                       year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
                     }) : 'N/A'}</p>
                   </div>
+
+                  <div className="border-b pb-2">
+                    <span className="font-medium text-gray-500">Địa chỉ:</span>
+                    <p className="mt-1">{appointment?.address || 'N/A'}</p>
+                  </div>
                 </div>
                 
                 <div className="border-b pb-2">
@@ -855,7 +860,7 @@ export default function AppointmentDetailPage() {
                 </svg>
                 <span className="font-medium">Đang tải...</span>
               </button>
-            ) : statusVN === 'Đang chờ mẫu' ? (
+            ) : statusVN === 'Đang chờ mẫu' || statusVN === 'Đang chờ Checkin' ? (
               <button
                 onClick={() => handleUpdateStatus('Đang thực hiện')}
                 className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-md hover:shadow-lg transition-all duration-200 flex items-center font-medium"
@@ -1112,6 +1117,54 @@ export default function AppointmentDetailPage() {
                         <p className="mt-2 text-sm text-yellow-700">
                           ⚠️ Trạng thái kit hiện tại: <strong>{kitInfo ? getKitStatusText(kitInfo.status) : 'N/A'}</strong>. 
                           Cần đổi sang <strong>Đã tới kho</strong> trước khi có thể chuyển trạng thái booking.
+                        </p>
+                      )
+                    ) : (
+                      <p className="mt-2 text-sm text-yellow-700">
+                        ⚠️ Booking này chưa có kit. Vui lòng tạo kit trước khi chuyển trạng thái.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {statusVN === 'Đang chờ Checkin' && (
+                <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-100">
+                  <p className="text-yellow-700 flex items-center font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Thông tin về việc chuyển trạng thái
+                  </p>
+                  <div className="mt-2 ml-7">
+                    <p className="text-sm text-yellow-700 mb-2">
+                      <strong>Điều kiện để chuyển sang trạng thái "Đang thực hiện":</strong>
+                    </p>
+                    <ul className="list-disc ml-5 text-sm text-yellow-700 space-y-1">
+                      <li>Khách hàng đã checkin tại cơ sở</li>
+                      <li>Kit phải ở trạng thái "Đã lấy mẫu" hoặc "Đã tới kho"</li>
+                      <li>Có thể bắt đầu thực hiện xét nghiệm</li>
+                    </ul>
+                    <p className="mt-2 text-sm text-yellow-700">
+                      ⚠️ Hãy đảm bảo khách hàng đã checkin tại cơ sở trước khi chuyển trạng thái.
+                    </p>
+                    {checkingKit ? (
+                      <div className="flex items-center space-x-2 mt-2 text-sm text-blue-600">
+                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Đang kiểm tra trạng thái kit...</span>
+                      </div>
+                    ) : kitExists ? (
+                      (kitInfo?.status === 'Đã lấy mẫu' || kitInfo?.status === 'Đã tới kho' || kitInfo?.status === 'completed' || kitInfo?.status === 'expired') ? (
+                        <p className="mt-2 text-sm text-green-600">
+                          ✅ Tất cả điều kiện đã thỏa mãn. Bạn có thể chuyển sang trạng thái "Đang thực hiện".
+                        </p>
+                      ) : (
+                        <p className="mt-2 text-sm text-yellow-700">
+                          ⚠️ Trạng thái kit hiện tại: <strong>{kitInfo ? getKitStatusText(kitInfo.status) : 'N/A'}</strong>. 
+                          Cần đổi sang <strong>Đã lấy mẫu</strong> hoặc <strong>Đã tới kho</strong> trước khi có thể chuyển trạng thái booking.
                         </p>
                       )
                     ) : (
