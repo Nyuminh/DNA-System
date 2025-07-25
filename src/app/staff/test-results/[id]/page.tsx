@@ -1022,7 +1022,7 @@ export default function AppointmentDetailPage() {
                       </svg>
                     </button>
                     {/* Nút đổi trạng thái cho tự thu mẫu */}
-                    {appointment.method?.toLowerCase().includes('tự thu mẫu') && kitExists && (
+                    {appointment.method?.toLowerCase().includes('tự thu mẫu') && kitInfo.status === 'Đang tới kho' && (
                         <button
                           onClick={async () => {
                             try {
