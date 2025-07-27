@@ -7,6 +7,7 @@ import { DocumentTextIcon } from "@heroicons/react/24/outline";
 import { getServices } from "@/lib/api/services";
 import { submitFeedback, deleteFeedbackById } from "@/lib/api/feedback";
 import { downloadResultPdf } from "@/lib/api/testResults";
+import { set } from "react-hook-form";
 
 interface ResultDetail {
    feedbackId?: string; 
@@ -51,6 +52,14 @@ export default function ResultDetailPage() {
   const [existingFeedback, setExistingFeedback] = useState<Feedback | null>(null);
   const [feedbackChecked, setFeedbackChecked] = useState<boolean>(false);
   const [downloading, setDownloading] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+
+  // Lấy token khi component mount
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    setToken(storedToken);
+    console.log("Token lấy được từ localStorage:", storedToken);
+  }, []);
 
   useEffect(() => {
     async function fetchResultAndKit() {
@@ -489,10 +498,18 @@ useEffect(() => {
     if (!result?.resultId) return;
     setDownloading(true);
     try {
-      const blob = await downloadResultPdf(result.resultId);
+      // Lấy lại token trực tiếp từ localStorage để chắc chắn luôn có giá trị mới nhất
+      const currentToken = localStorage.getItem("token");
+      setToken(currentToken);
+      console.log("Token khi tải PDF:", currentToken);
+      if (!currentToken) {
+        alert("Bạn cần đăng nhập để tải file PDF.");
+        setDownloading(false);
+        return;
+      }
+      const blob = await downloadResultPdf(result.resultId, currentToken);
       if (blob) {
         const url = URL.createObjectURL(blob);
-        // Tạo link và click để tải về
         const link = document.createElement("a");
         link.href = url;
         link.download = `KetQua_${result.resultId}.pdf`;
@@ -512,6 +529,7 @@ useEffect(() => {
 
   return (
     <div className="max-w-2xl mx-auto mt-12 bg-white rounded-xl shadow-lg p-8">
+      
       <div className="flex items-center mb-8">
         <DocumentTextIcon className="h-10 w-10 text-blue-600 mr-3" />
         <div>
@@ -762,3 +780,5 @@ function getExistingFeedbackFromStorage(bookingId: string): Feedback | null {
     return null;
   }
 }
+
+
