@@ -309,6 +309,10 @@ export default function ServiceDetailPage() {
     } catch (err: any) {
       alert("Cập nhật thất bại!");
     }
+    finally{
+      setShowEditForm(false);
+       window.location.reload();
+    }
   };
 
   const getBookingStatusColor = (status: string) => {

@@ -482,7 +482,7 @@ export const getUserProfile = async (token: string): Promise<User | null> => {
     if (response.status === 200 && response.data) {
       // Transform API response to match User interface
       const userData: User = {
-        userID: response.data.userID || response.data.id || '',
+        userID: response.data.userId || response.data.id || '',
         username: response.data.username || response.data.userName || '',
         fullname: response.data.fullname || response.data.fullName || response.data.name || '',
         gender: response.data.gender || '',
