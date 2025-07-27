@@ -6,6 +6,7 @@ import Link from "next/link";
 import { DocumentTextIcon } from "@heroicons/react/24/outline";
 import { getServices } from "@/lib/api/services";
 import { submitFeedback, deleteFeedbackById } from "@/lib/api/feedback";
+import { downloadResultPdf } from "@/lib/api/testResults";
 
 interface ResultDetail {
    feedbackId?: string; 
@@ -49,6 +50,7 @@ export default function ResultDetailPage() {
   });
   const [existingFeedback, setExistingFeedback] = useState<Feedback | null>(null);
   const [feedbackChecked, setFeedbackChecked] = useState<boolean>(false);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     async function fetchResultAndKit() {
@@ -447,6 +449,67 @@ useEffect(() => {
     }
   }
 
+  // Thêm hàm parseDescriptionTable
+  function renderDescriptionTable(description: string) {
+  // Giả sử description là chuỗi dạng CSV hoặc text bảng, ví dụ:
+  // Locus,(B),(Ct)\nD3S1358,16;17,15;16\n...
+  const rows = description
+    .trim()
+    .split("\n")
+    .map((row) => row.split(/\s{2,}|,|\t/).map(cell => cell.trim()));
+
+  // Nếu không đủ dữ liệu, trả về null
+  if (rows.length < 2) return <div>{description}</div>;
+
+  return (
+    <div className="overflow-x-auto mt-6">
+      <table className="min-w-full border border-gray-200 rounded-lg">
+        <thead>
+          <tr className="bg-blue-200">
+            {rows[0].map((cell, idx) => (
+              <th key={idx} className="px-4 py-2 text-left font-bold">{cell}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.slice(1).map((cols, i) => (
+            <tr key={i} className="border-t">
+              {cols.map((cell, j) => (
+                <td key={j} className="px-4 py-2">{cell}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+  const handleDownloadPdf = async () => {
+    if (!result?.resultId) return;
+    setDownloading(true);
+    try {
+      const blob = await downloadResultPdf(result.resultId);
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        // Tạo link và click để tải về
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `KetQua_${result.resultId}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      } else {
+        alert("Không thể tải file PDF. Vui lòng thử lại sau.");
+      }
+    } catch (e) {
+      alert("Có lỗi khi tải file PDF.");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto mt-12 bg-white rounded-xl shadow-lg p-8">
       <div className="flex items-center mb-8">
@@ -504,41 +567,31 @@ useEffect(() => {
                   </span>
                 </td>
               </tr>
-              {/* <tr>
-                <td className="py-2 pr-4 font-medium text-gray-500">Trạng thái Kit</td>
-                <td className="py-2">
-                  <span
-                    className={`inline-block px-2 py-[2px] rounded-full font-bold uppercase text-[11px] ${getKitStatusColor(
-                      kitStatus
-                    )}`}
-                  >
-                    {kitStatus}
-                  </span>
+              
+              <tr>
+                <td colSpan={2} className="pt-8 pb-2">
+                  <div className="mb-2">
+                    <h2 className="text-lg font-bold text-blue-700 mb-2">BẢNG DỮ LIỆU CHI TIẾT</h2>
+                    {renderDescriptionTable(String(result.description))}
+                  </div>
                 </td>
-              </tr> */}
-              {/* Hiển thị thêm các trường khác nếu có */}
-              {Object.entries(result).map(([key, value]) =>
-                ![
-                  "resultId",
-                  "bookingId",
-                  "serviceId", // Đã bỏ mã dịch vụ
-                  "staffId",
-                  "date",
-                  "status",
-                  "booking",
-                  "service",
-                  "staff",
-                  "customerId",
-                  "customer"
-                ].includes(key) && value !== null && value !== undefined ? (
-                  <tr key={key}>
-                    <td className="py-2 pr-4 font-medium text-gray-500 capitalize">
-                      {key === "description" ? "Mô tả" : key}
-                    </td>
-                    <td className="py-2">{String(value)}</td>
-                  </tr>
-                ) : null
-              )}
+              </tr>
+      
+          <tr>
+            <td colSpan={2} className="pt-4 pb-2 text-center">
+              <button
+                onClick={handleDownloadPdf}
+                disabled={downloading}
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg shadow transition mb-4 mx-auto"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+                </svg>
+                {downloading ? "Đang tải..." : "Tải file PDF kết quả"}
+              </button>
+            </td>
+          </tr>
+        
             </tbody>
           </table>
         </div>
@@ -688,6 +741,9 @@ useEffect(() => {
           </div>
         </div>
       )}
+
+      
+      
     </div>
   );
 }

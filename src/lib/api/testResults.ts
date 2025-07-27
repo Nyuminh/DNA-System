@@ -35,3 +35,19 @@ export async function getTestResults(userId?: string): Promise<TestResult[]> {
     return [];
   }
 }
+
+export async function downloadResultPdf(resultId: string): Promise<Blob | null> {
+  try {
+    const url = `${API_BASE_URL}/api/Results/${resultId}/pdf`;
+    const response = await axios.get(url, {
+      responseType: 'blob',
+    });
+    if (response.status >= 200 && response.status < 300) {
+      return response.data;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error downloading result PDF:', error);
+    return null;
+  }
+}
