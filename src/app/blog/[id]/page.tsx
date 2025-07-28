@@ -170,12 +170,12 @@ function RelatedPosts({ currentPostId }: { currentPostId: string }) {
         <Link href={`/blog/${post.id}`} key={post.id} className="group">
           <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
             <div className="relative h-48">
-              <Image
-                src={post.image ? `/images/${post.image.split('/').pop()}` : '/images/blog/blog-1.jpg'}
-                alt={post.title || 'Ảnh bài viết'}
-                fill
-                className="object-cover group-hover:scale-105 transition-transform duration-300"
-              />
+              <img
+    src={post.image ? `http://localhost:5198/${post.image.replace(/^\/+/, '')}` : '/images/blog/blog-1.jpg'}
+    alt={post.title || 'Ảnh bài viết'}
+    className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+    loading="lazy"
+  />
             </div>
             <div className="p-4">
               <h3 className="font-bold text-lg mb-2 group-hover:text-blue-600 transition-colors">

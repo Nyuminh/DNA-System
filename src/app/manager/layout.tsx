@@ -48,12 +48,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
       icon: <AcademicCapIcon className="h-6 w-6" />,
       match: (p: string) => p.startsWith("/manager/courses"),
     },
-    {
-      href: "/manager/settings",
-      label: "Cài đặt",
-      icon: <Cog6ToothIcon className="h-6 w-6" />,
-      match: (p: string) => p === "/manager/settings",
-    },
+   
   ];
 
   const handleLogout = () => {
