@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { getAppointmentById, updateAppointment, updateAppointmentStatus, updateAppointmentStatusSafe, Appointment, TestResult, createTestResultV2, getTestResultsByBookingId, kitApi, Kit, getUserById, User, getAllUsers, Relative, getRelativesByBookingId } from '@/lib/api/staff';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
-import { downloadResultPdf } from '@/lib/api/testResults';
+import { downloadResultPdf, updateTestResult } from '@/lib/api/testResults';
 
 // Định nghĩa lại type trạng thái tiếng Việt
 type AppointmentStatusVN = 'Đang chờ mẫu' | 'Đang chờ Checkin' | 'Đã check-in' | 'Đang thực hiện' | 'Hoàn thành' | 'Đã hủy';
@@ -100,6 +100,20 @@ export default function AppointmentDetailPage() {
   const [loadingResults, setLoadingResults] = useState<boolean>(false);
   const [existingResults, setExistingResults] = useState<TestResult[]>([]);
   const [downloadingPdf, setDownloadingPdf] = useState<boolean>(false);
+  
+  // State cho chức năng chỉnh sửa kết quả
+  const [isEditingResult, setIsEditingResult] = useState<boolean>(false);
+  const [editingResultId, setEditingResultId] = useState<string | null>(null);
+  const [editResultData, setEditResultData] = useState<{
+    date: string;
+    description: string;
+    status: string;
+  }>({
+    date: '',
+    description: '',
+    status: 'Trùng nhau'
+  });
+  const [updatingResult, setUpdatingResult] = useState<boolean>(false);
   
   // State hiển thị form kết quả
   
@@ -666,6 +680,68 @@ export default function AppointmentDetailPage() {
     } finally {
       setDownloadingPdf(false);
     }
+  };
+  
+  // Hàm bắt đầu chỉnh sửa kết quả
+  const handleEditResult = (result: TestResult) => {
+    if (!result.resultId) {
+      toast.error('Không thể chỉnh sửa kết quả này');
+      return;
+    }
+    
+    setEditingResultId(result.resultId);
+    setEditResultData({
+      date: new Date(result.date).toISOString().slice(0, 16), // Format datetime-local
+      description: result.description,
+      status: result.status
+    });
+    setIsEditingResult(true);
+  };
+  
+  // Hàm xử lý thay đổi input form chỉnh sửa
+  const handleEditResultInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setEditResultData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  
+  // Hàm xử lý lưu kết quả đã chỉnh sửa
+  const handleUpdateResult = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingResultId || !token) return;
+    
+    setUpdatingResult(true);
+    try {
+      const result = await updateTestResult(editingResultId, editResultData, token);
+      
+      if (result.success) {
+        toast.success('Cập nhật kết quả xét nghiệm thành công');
+        
+        // Cập nhật lại danh sách kết quả
+        if (appointment?.bookingId) {
+          await fetchTestResults(appointment.bookingId);
+        }
+        
+        // Reset form và trạng thái chỉnh sửa
+        setIsEditingResult(false);
+        setEditingResultId(null);
+      } else {
+        toast.error(result.message || 'Không thể cập nhật kết quả xét nghiệm');
+      }
+    } catch (error) {
+      console.error('Error updating test result:', error);
+      toast.error('Đã xảy ra lỗi khi cập nhật kết quả xét nghiệm');
+    } finally {
+      setUpdatingResult(false);
+    }
+  };
+  
+  // Hàm hủy chỉnh sửa
+  const cancelEditResult = () => {
+    setIsEditingResult(false);
+    setEditingResultId(null);
   };
 
   // Xử lý thay đổi input form kết quả
@@ -1378,54 +1454,148 @@ export default function AppointmentDetailPage() {
               <div className="space-y-6">
                 {existingResults.map((result, index) => (
                   <div key={result.resultId || index} className="bg-gray-50 p-4 rounded-md border">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-gray-500">Ngày có kết quả:</p>
-                        <p className="font-medium">{formatDate(result.date)}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Kết quả:</p>
-                        <p className="font-semibold text-lg">
-                          <span className={`inline-block px-3 py-1 rounded-full ${
-                            result.status === 'Trùng nhau' 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {result.status}
-                          </span>
-                        </p>
-                      </div>
-                      <div className="md:col-span-2">
-                        <p className="text-sm text-gray-500">Mô tả chi tiết:</p>
-                        <div className="mt-1 p-3 bg-white border rounded-md">
-                          <p className="whitespace-pre-line">{result.description}</p>
+                    {isEditingResult && result.resultId === editingResultId ? (
+                      /* Form chỉnh sửa kết quả */
+                      <form onSubmit={handleUpdateResult} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label htmlFor="date" className="block text-sm font-medium text-gray-700">
+                              Ngày có kết quả <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="datetime-local"
+                              id="date"
+                              name="date"
+                              value={editResultData.date}
+                              onChange={handleEditResultInputChange}
+                              required
+                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+                              Kết quả xét nghiệm <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                              id="status"
+                              name="status"
+                              value={editResultData.status}
+                              onChange={handleEditResultInputChange}
+                              required
+                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            >
+                              <option value="Trùng nhau">Trùng nhau</option>
+                              <option value="Không trùng nhau">Không trùng nhau</option>
+                            </select>
+                          </div>
+                          
+                          <div className="md:col-span-2">
+                            <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                              Mô tả chi tiết <span className="text-red-500">*</span>
+                            </label>
+                            <textarea
+                              id="description"
+                              name="description"
+                              value={editResultData.description}
+                              onChange={handleEditResultInputChange}
+                              rows={10}
+                              required
+                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            ></textarea>
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-end space-x-2">
+                          <button
+                            type="button"
+                            onClick={cancelEditResult}
+                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                            disabled={updatingResult}
+                          >
+                            Hủy
+                          </button>
+                          <button
+                            type="submit"
+                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
+                            disabled={updatingResult}
+                          >
+                            {updatingResult ? (
+                              <>
+                                <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Đang lưu...
+                              </>
+                            ) : 'Lưu thay đổi'}
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      /* Hiển thị thông tin kết quả */
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-gray-500">Ngày có kết quả:</p>
+                          <p className="font-medium">{formatDate(result.date)}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Kết quả:</p>
+                          <p className="font-semibold text-lg">
+                            <span className={`inline-block px-3 py-1 rounded-full ${
+                              result.status === 'Trùng nhau' 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {result.status}
+                            </span>
+                          </p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <p className="text-sm text-gray-500">Mô tả chi tiết:</p>
+                          <div className="mt-1 p-3 bg-white border rounded-md">
+                            <p className="whitespace-pre-line">{result.description}</p>
+                          </div>
+                        </div>
+                        <div className="md:col-span-2 mt-4 flex flex-wrap gap-2">
+                          <button
+                            onClick={() => result.resultId && handleDownloadPdf(result.resultId)}
+                            disabled={downloadingPdf || isEditingResult}
+                            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg shadow transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                          >
+                            {downloadingPdf ? (
+                              <>
+                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Đang tải...
+                              </>
+                            ) : (
+                              <>
+                                <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+                                </svg>
+                                Tải file PDF kết quả
+                              </>
+                            )}
+                          </button>
+                          
+                          {user?.roleID?.toLowerCase() === 'staff' && (
+                            <button
+                              onClick={() => handleEditResult(result)}
+                              disabled={isEditingResult}
+                              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            >
+                              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                              Chỉnh sửa kết quả
+                            </button>
+                          )}
                         </div>
                       </div>
-                      <div className="md:col-span-2 mt-4">
-                        <button
-                          onClick={() => result.resultId && handleDownloadPdf(result.resultId)}
-                          disabled={downloadingPdf}
-                          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg shadow transition disabled:bg-gray-400 disabled:cursor-not-allowed"
-                        >
-                          {downloadingPdf ? (
-                            <>
-                              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                              Đang tải...
-                            </>
-                          ) : (
-                            <>
-                              <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
-                              </svg>
-                              Tải file PDF kết quả
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 ))}
               </div>

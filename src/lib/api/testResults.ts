@@ -54,3 +54,45 @@ export async function downloadResultPdf(resultId: string, token: string): Promis
     return null;
   }
 }
+
+export interface UpdateTestResultRequest {
+  date: string;
+  description: string;
+  status: string;
+}
+
+export async function updateTestResult(
+  resultId: string,
+  data: UpdateTestResultRequest,
+  token: string
+): Promise<any> {
+  try {
+    const url = `${API_BASE_URL}/api/Results/${resultId}`;
+    const response = await axios.put(url, data, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    
+    if (response.status >= 200 && response.status < 300) {
+      return {
+        success: true,
+        data: response.data,
+        message: 'Cập nhật kết quả xét nghiệm thành công',
+      };
+    }
+    
+    return {
+      success: false,
+      message: 'Không thể cập nhật kết quả xét nghiệm',
+    };
+  } catch (error) {
+    console.error('Error updating test result:', error);
+    return {
+      success: false,
+      message: 'Đã xảy ra lỗi khi cập nhật kết quả xét nghiệm',
+      error,
+    };
+  }
+}
