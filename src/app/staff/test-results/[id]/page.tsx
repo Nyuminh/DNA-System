@@ -1534,29 +1534,29 @@ export default function AppointmentDetailPage() {
                       </form>
                     ) : (
                       /* Hiển thị thông tin kết quả */
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-gray-500">Ngày có kết quả:</p>
-                          <p className="font-medium">{formatDate(result.date)}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-gray-500">Ngày có kết quả:</p>
+                        <p className="font-medium">{formatDate(result.date)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Kết quả:</p>
+                        <p className="font-semibold text-lg">
+                          <span className={`inline-block px-3 py-1 rounded-full ${
+                            result.status === 'Trùng nhau' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {result.status}
+                          </span>
+                        </p>
+                      </div>
+                      <div className="md:col-span-2">
+                        <p className="text-sm text-gray-500">Mô tả chi tiết:</p>
+                        <div className="mt-1 p-3 bg-white border rounded-md">
+                          <p className="whitespace-pre-line">{result.description}</p>
                         </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Kết quả:</p>
-                          <p className="font-semibold text-lg">
-                            <span className={`inline-block px-3 py-1 rounded-full ${
-                              result.status === 'Trùng nhau' 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-red-100 text-red-800'
-                            }`}>
-                              {result.status}
-                            </span>
-                          </p>
-                        </div>
-                        <div className="md:col-span-2">
-                          <p className="text-sm text-gray-500">Mô tả chi tiết:</p>
-                          <div className="mt-1 p-3 bg-white border rounded-md">
-                            <p className="whitespace-pre-line">{result.description}</p>
-                          </div>
-                        </div>
+                      </div>
                         <div className="md:col-span-2 mt-4 flex flex-wrap gap-2">
                           <button
                             onClick={() => result.resultId && handleDownloadPdf(result.resultId)}
@@ -1593,7 +1593,7 @@ export default function AppointmentDetailPage() {
                               Chỉnh sửa kết quả
                             </button>
                           )}
-                        </div>
+                    </div>
                       </div>
                     )}
                   </div>
