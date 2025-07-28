@@ -681,69 +681,105 @@ function BookServiceContent() {
                 <div className="bg-white shadow-sm rounded-lg p-6 border border-gray-200">
                   <h3 className="text-lg font-medium text-gray-900 mb-4">Phương thức thu mẫu</h3>
                   <div className="grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
-                    <div className="relative flex border rounded-lg overflow-hidden">
-                      <input
-                        type="radio"
-                        name="collectionMethod"
-                        id="self-collection"
-                        value="self"
-                        className="sr-only"
-                        checked={formData.collectionMethod === 'self'}
-                        onChange={handleInputChange}
-                      />
-                      <label
-                        htmlFor="self-collection"
-                        className={`flex-1 cursor-pointer p-4 ${
-                          formData.collectionMethod === 'self'
-                            ? 'bg-blue-50 border-blue-500'
-                            : 'border-transparent'
-                        }`}
-                      >
-                        <span className="flex items-center">
-                          <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full border border-gray-300 mr-2">
-                            {formData.collectionMethod === 'self' && (
-                              <span className="w-2.5 h-2.5 bg-blue-600 rounded-full" />
-                            )}
+                    {/* Nếu là dịch vụ dân sự thì hiển thị cả 2 phương thức, ngược lại chỉ hiển thị tại cơ sở */}
+                    {(service?.type === 'Dân sự' || service?.type === 'dan su' || service?.type?.toLowerCase().includes('dân sự')) ? (
+                      <>
+                        <div className="relative flex border rounded-lg overflow-hidden">
+                          <input
+                            type="radio"
+                            name="collectionMethod"
+                            id="self-collection"
+                            value="self"
+                            className="sr-only"
+                            checked={formData.collectionMethod === 'self'}
+                            onChange={handleInputChange}
+                          />
+                          <label
+                            htmlFor="self-collection"
+                            className={`flex-1 cursor-pointer p-4 ${
+                              formData.collectionMethod === 'self'
+                                ? 'bg-blue-50 border-blue-500'
+                                : 'border-transparent'
+                            }`}
+                          >
+                            <span className="flex items-center">
+                              <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full border border-gray-300 mr-2">
+                                {formData.collectionMethod === 'self' && (
+                                  <span className="w-2.5 h-2.5 bg-blue-600 rounded-full" />
+                                )}
+                              </span>
+                              <span className="text-sm font-medium text-gray-900">Tự thu mẫu</span>
+                            </span>
+                            <span className="block mt-1 text-sm text-gray-500">
+                              Nhận kit và tự thu mẫu tại nhà
+                            </span>
+                          </label>
+                        </div>
+                        <div className="relative flex border rounded-lg overflow-hidden">
+                          <input
+                            type="radio"
+                            name="collectionMethod"
+                            id="facility-collection"
+                            value="facility"
+                            className="sr-only"
+                            checked={formData.collectionMethod === 'facility'}
+                            onChange={handleInputChange}
+                          />
+                          <label
+                            htmlFor="facility-collection"
+                            className={`flex-1 cursor-pointer p-4 ${
+                              formData.collectionMethod === 'facility'
+                                ? 'bg-blue-50 border-blue-500'
+                                : 'border-transparent'
+                            }`}
+                          >
+                            <span className="flex items-center">
+                              <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full border border-gray-300 mr-2">
+                                {formData.collectionMethod === 'facility' && (
+                                  <span className="w-2.5 h-2.5 bg-blue-600 rounded-full" />
+                                )}
+                              </span>
+                              <span className="text-sm font-medium text-gray-900">Tại cơ sở y tế</span>
+                            </span>
+                            <span className="block mt-1 text-sm text-gray-500">
+                              Đến cơ sở y tế để thu mẫu
+                            </span>
+                          </label>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="relative flex border rounded-lg overflow-hidden">
+                        <input
+                          type="radio"
+                          name="collectionMethod"
+                          id="facility-collection"
+                          value="facility"
+                          className="sr-only"
+                          checked={formData.collectionMethod === 'facility'}
+                          onChange={handleInputChange}
+                        />
+                        <label
+                          htmlFor="facility-collection"
+                          className={`flex-1 cursor-pointer p-4 ${
+                            formData.collectionMethod === 'facility'
+                              ? 'bg-blue-50 border-blue-500'
+                              : 'border-transparent'
+                          }`}
+                        >
+                          <span className="flex items-center">
+                            <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full border border-gray-300 mr-2">
+                              {formData.collectionMethod === 'facility' && (
+                                <span className="w-2.5 h-2.5 bg-blue-600 rounded-full" />
+                              )}
+                            </span>
+                            <span className="text-sm font-medium text-gray-900">Tại cơ sở y tế</span>
                           </span>
-                          <span className="text-sm font-medium text-gray-900">Tự thu mẫu</span>
-                        </span>
-                        <span className="block mt-1 text-sm text-gray-500">
-                          Nhận kit và tự thu mẫu tại nhà
-                        </span>
-                      </label>
-                    </div>
-
-                    <div className="relative flex border rounded-lg overflow-hidden">
-                      <input
-                        type="radio"
-                        name="collectionMethod"
-                        id="facility-collection"
-                        value="facility"
-                        className="sr-only"
-                        checked={formData.collectionMethod === 'facility'}
-                        onChange={handleInputChange}
-                      />
-                      <label
-                        htmlFor="facility-collection"
-                        className={`flex-1 cursor-pointer p-4 ${
-                          formData.collectionMethod === 'facility'
-                            ? 'bg-blue-50 border-blue-500'
-                            : 'border-transparent'
-                        }`}
-                      >
-                        <span className="flex items-center">
-                          <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full border border-gray-300 mr-2">
-                            {formData.collectionMethod === 'facility' && (
-                              <span className="w-2.5 h-2.5 bg-blue-600 rounded-full" />
-                            )}
+                          <span className="block mt-1 text-sm text-gray-500">
+                            Đến cơ sở y tế để thu mẫu
                           </span>
-                          <span className="text-sm font-medium text-gray-900">Tại cơ sở y tế</span>
-                        </span>
-                        <span className="block mt-1 text-sm text-gray-500">
-                          Đến cơ sở y tế để thu mẫu
-                        </span>
-                      </label>
-                    </div>
+                        </label>
+                      </div>
+                    )}
                   </div>
 
                   {/* Thông tin liên hệ người đặt mẫu */}
@@ -1067,6 +1103,7 @@ function BookServiceContent() {
                               onChange={(e) => handleParticipantChange(index, 'dob', e.target.value)}
                               className="py-3 px-4 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md"
                               required
+                              max={new Date().toISOString().split('T')[0]}
                             />
                           </div>
                         </div>
