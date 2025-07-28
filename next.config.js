@@ -16,6 +16,12 @@ const nextConfig = {
       serverComponentsExternalPackages: ['axios'],
     },
   }),
+  
+  // Tắt chỉ báo phát triển
+  devIndicators: {
+    buildActivity: false,
+    buildActivityPosition: 'bottom-right',
+  },
 };
 
 module.exports = nextConfig;

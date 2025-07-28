@@ -467,9 +467,6 @@ export default function AccountsPage() {
                   Họ tên
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Giới tính
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Vai trò
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -480,9 +477,6 @@ export default function AccountsPage() {
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Ngày sinh
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Địa chỉ
                 </th>
                 <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Thao tác
@@ -517,9 +511,6 @@ export default function AccountsPage() {
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                     {user.fullname || 'N/A'}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                    {user.gender || 'N/A'}
-                  </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     {getRoleBadge(user.roleID)}
                   </td>
@@ -532,17 +523,8 @@ export default function AccountsPage() {
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                     {user.birthdate ? new Date(user.birthdate).toLocaleDateString('vi-VN') : 'N/A'}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 max-w-[200px] truncate">
-                    {user.address || 'N/A'}
-                  </td>
                   <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => viewUserDetails(user)}
-                        className="text-gray-600 hover:text-indigo-600"
-                      >
-                        <EyeIcon className="h-5 w-5" />
-                      </button>
                       <button
                         onClick={() => editUser(user)}
                         className="text-gray-600 hover:text-blue-600"
