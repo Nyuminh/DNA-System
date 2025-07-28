@@ -1039,3 +1039,28 @@ export const updateUserImage = async (imageFile: File): Promise<UpdateImageRespo
     };
   }
 };
+
+export const getAllUsers = async (): Promise<User[]> => {
+  try {
+    const response = await apiClient.get('http://localhost:5198/api/User');
+    if (response.status >= 200 && response.status < 300) {
+      // Map dữ liệu trả về sang mảng User
+      return (response.data || []).map((user: any) => ({
+        userID: user.userId || user.id || '',
+        username: user.username || user.userName || '',
+        fullname: user.fullname || user.fullName || user.name || '',
+        gender: user.gender || '',
+        roleID: user.roleID || user.role || '',
+        email: user.email || '',
+        phone: user.phone || user.phoneNumber || '',
+        birthdate: user.birthdate || user.birthDate || user.dateOfBirth || '',
+        image: user.image || user.avatar || user.profileImage || '',
+        address: user.address || '',
+      }));
+    }
+    return [];
+  } catch (error) {
+    console.error('Error fetching all users:', error);
+    return [];
+  }
+};
