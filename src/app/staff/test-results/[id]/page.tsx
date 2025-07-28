@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { getAppointmentById, updateAppointment, updateAppointmentStatus, updateAppointmentStatusSafe, Appointment, TestResult, createTestResultV2, getTestResultsByBookingId, kitApi, Kit, getUserById, User, getAllUsers, Relative, getRelativesByBookingId } from '@/lib/api/staff';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
+import { downloadResultPdf } from '@/lib/api/testResults';
 
 // Định nghĩa lại type trạng thái tiếng Việt
 type AppointmentStatusVN = 'Đang chờ mẫu' | 'Đang chờ Checkin' | 'Đã check-in' | 'Đang thực hiện' | 'Hoàn thành' | 'Đã hủy';
@@ -98,6 +99,7 @@ export default function AppointmentDetailPage() {
   const [submittingResult, setSubmittingResult] = useState<boolean>(false);
   const [loadingResults, setLoadingResults] = useState<boolean>(false);
   const [existingResults, setExistingResults] = useState<TestResult[]>([]);
+  const [downloadingPdf, setDownloadingPdf] = useState<boolean>(false);
   
   // State hiển thị form kết quả
   
@@ -632,6 +634,37 @@ export default function AppointmentDetailPage() {
     } catch (error) {
       console.error('Error refreshing kit status:', error);
       toast.error('Không thể làm mới trạng thái kit');
+    }
+  };
+  
+  // Function to download test result PDF
+  const handleDownloadPdf = async (resultId: string) => {
+    if (!token) {
+      toast.error("Bạn cần đăng nhập để tải file PDF");
+      return;
+    }
+    
+    setDownloadingPdf(true);
+    try {
+      const blob = await downloadResultPdf(resultId, token);
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `KetQua_${resultId}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+        toast.success("Đã tải file PDF thành công");
+      } else {
+        toast.error("Không thể tải file PDF. Vui lòng thử lại sau.");
+      }
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+      toast.error("Có lỗi khi tải file PDF.");
+    } finally {
+      setDownloadingPdf(false);
     }
   };
 
@@ -1367,6 +1400,30 @@ export default function AppointmentDetailPage() {
                         <div className="mt-1 p-3 bg-white border rounded-md">
                           <p className="whitespace-pre-line">{result.description}</p>
                         </div>
+                      </div>
+                      <div className="md:col-span-2 mt-4">
+                        <button
+                          onClick={() => result.resultId && handleDownloadPdf(result.resultId)}
+                          disabled={downloadingPdf}
+                          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg shadow transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        >
+                          {downloadingPdf ? (
+                            <>
+                              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Đang tải...
+                            </>
+                          ) : (
+                            <>
+                              <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+                              </svg>
+                              Tải file PDF kết quả
+                            </>
+                          )}
+                        </button>
                       </div>
                     </div>
                   </div>
