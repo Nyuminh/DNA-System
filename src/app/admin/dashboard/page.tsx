@@ -286,16 +286,10 @@ export default function AdminDashboardPage() {
           <div className="space-y-3">
             {recentUsers.map((user, index) => (
               <div key={user.userID || index} className="flex items-center p-3 bg-gradient-to-r from-blue-50 to-blue-100/50 rounded-lg border border-blue-100/50">
-                <div className="flex-shrink-0 h-10 w-10 rounded-full overflow-hidden bg-gray-100 mr-3">
-                  <img 
-                    src={user.image || "/images/default-avatar.jpg"} 
-                    alt={user.fullname}
-                    className="h-full w-full object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = "/images/default-avatar.jpg";
-                    }}
-                  />
+                <div className="flex-shrink-0 h-10 w-10 rounded-full overflow-hidden bg-blue-100 mr-3 flex items-center justify-center">
+                  <span className="text-blue-600 font-semibold text-sm">
+                    {user.fullname ? user.fullname.charAt(0).toUpperCase() : 'U'}
+                  </span>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-900">{user.fullname}</p>

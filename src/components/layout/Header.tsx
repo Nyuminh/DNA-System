@@ -85,12 +85,18 @@ export default function Header() {
                   className="flex items-center gap-x-2 text-sm font-medium text-secondary-700 hover:text-primary-600 transition-colors duration-200 group"
                 >                  <div className="flex items-center gap-x-2">                    {user?.image ? (
                       <div 
-                        className="h-8 w-8 rounded-full bg-cover bg-center border-2 border-primary-600"
-                        style={{ backgroundImage: `url(${user.image})` }}
-                        title={user.fullname || user.username}
-                      />
+                        className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center border-2 border-primary-600"
+                      >
+                        <span className="text-blue-600 font-semibold text-sm">
+                          {user.fullname ? user.fullname.charAt(0).toUpperCase() : (user.username ? user.username.charAt(0).toUpperCase() : 'U')}
+                        </span>
+                      </div>
                     ) : (
-                      <UserCircleIcon className="h-8 w-8 text-primary-600" />
+                      <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center border-2 border-primary-600">
+                        <span className="text-blue-600 font-semibold text-sm">
+                          {user?.fullname ? user.fullname.charAt(0).toUpperCase() : (user?.username ? user.username.charAt(0).toUpperCase() : 'U')}
+                        </span>
+                      </div>
                     )}
                     <div className="text-left">
                       <div className="text-sm font-medium text-secondary-900">

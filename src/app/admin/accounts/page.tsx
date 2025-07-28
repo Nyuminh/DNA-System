@@ -532,17 +532,10 @@ export default function AccountsPage() {
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="h-8 w-8 rounded-full overflow-hidden flex-shrink-0">
-                        <img 
-                          src={getUserImage(user)}
-                          alt={user.fullname} 
-                          className="h-full w-full object-cover"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            // Fallback trực tiếp đến default avatar nếu ảnh không load được
-                            target.src = "/images/default-avatar.jpg";
-                          }}
-                        />
+                      <div className="h-8 w-8 rounded-full overflow-hidden bg-blue-100 flex-shrink-0 flex items-center justify-center">
+                        <span className="text-blue-600 font-semibold text-sm">
+                          {user.fullname ? user.fullname.charAt(0).toUpperCase() : 'U'}
+                        </span>
                       </div>
                       <div className="ml-3 text-sm text-gray-900">
                         {user.username || 'N/A'}
