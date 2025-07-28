@@ -9,9 +9,10 @@ import {
   LockClosedIcon, 
   LockOpenIcon,
   PlusIcon,
-  XMarkIcon
+  XMarkIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline';
-import { getAllUsers, AdminUser, updateUserById, UpdateUserRequest } from "@/lib/api/admin";
+import { getAllUsers, AdminUser, updateUserById, UpdateUserRequest, deleteUserById } from "@/lib/api/admin";
 import { toast } from "react-hot-toast";
 
 export default function AccountsPage() {
@@ -326,6 +327,35 @@ export default function AccountsPage() {
     }
   };
 
+  // Thêm hàm handleDeleteUser vào trong AccountsPage component
+  const handleDeleteUser = async (user: AdminUser) => {
+    // Không cho phép xóa tài khoản Admin
+    if (user.roleID === 'Admin' || user.roleID === 'R01') {
+      toast.error('Không thể xóa tài khoản Admin');
+      return;
+    }
+
+    // Hiển thị xác nhận từ người dùng
+    if (!confirm(`Bạn có chắc muốn xóa tài khoản ${user.fullname}?\nHành động này không thể hoàn tác!`)) {
+      return;
+    }
+
+    try {
+      const result = await deleteUserById(user.userID);
+
+      if (result.success) {
+        // Cập nhật danh sách người dùng - Loại bỏ người dùng vừa xóa
+        setUsers(prevUsers => prevUsers.filter(u => u.userID !== user.userID));
+        toast.success('Đã xóa tài khoản thành công');
+      } else {
+        toast.error(result.message || 'Không thể xóa người dùng');
+      }
+    } catch (err) {
+      console.error('Error deleting user:', err);
+      toast.error('Đã xảy ra lỗi khi xóa người dùng');
+    }
+  };
+
   // Filter users based on search and filters
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -539,6 +569,7 @@ export default function AccountsPage() {
                       <button
                         onClick={() => editUser(user)}
                         className="text-gray-600 hover:text-blue-600"
+                        title="Chỉnh sửa thông tin"
                       >
                         <PencilIcon className="h-5 w-5" />
                       </button>
@@ -552,6 +583,13 @@ export default function AccountsPage() {
                         ) : (
                           <LockClosedIcon className="h-5 w-5" />
                         )}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteUser(user)}
+                        className="text-red-600 hover:text-red-800"
+                        title="Xóa tài khoản"
+                      >
+                        <TrashIcon className="h-5 w-5" />
                       </button>
                     </div>
                   </td>
