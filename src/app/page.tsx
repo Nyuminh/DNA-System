@@ -94,6 +94,7 @@ export default function Home() {    const services = [
         const user = users.find((u: any) => u.userID === fb.customerId);
         return {
           name: user?.fullname || user?.username || 'Ẩn danh',
+          role:  'Khách hàng', // Thêm trường role
           rating: fb.rating || 5,
           content: fb.comment || '',
           imageUrl: user?.image || '/images/lab-equipment.svg',
