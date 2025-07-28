@@ -445,9 +445,16 @@ export default function AppointmentDetailPage() {
             return;
           }
           
-          // Đối với "Tự thu mẫu", kiểm tra xem đã có kit chưa, không cần kiểm tra trạng thái kit
+          // Đối với "Tự thu mẫu", kiểm tra xem đã có kit chưa
           if (!kitExists) {
             toast.error('Không thể chuyển trạng thái: Booking này chưa có kit!');
+            setUpdating(false);
+            return;
+          }
+          
+          // Đối với "Tự thu mẫu", kiểm tra trạng thái kit phải là "Đã tới kho"
+          if (kitInfo.status !== 'Đã tới kho') {
+            toast.error(`Không thể chuyển trạng thái: Kit phải ở trạng thái "Đã tới kho" (hiện tại: ${kitInfo.status})`);
             setUpdating(false);
             return;
           }
@@ -1153,7 +1160,12 @@ export default function AppointmentDetailPage() {
                           {kitExists ? (
                             <>
                               <li>Booking đã có kit được tạo: <strong>{kitInfo?.kitID}</strong></li>
-                              <li className="text-green-700 font-medium">✅ Bạn có thể bắt đầu thực hiện xét nghiệm ngay bằng cách nhấn nút "Bắt đầu thực hiện"!</li>
+                              <li>Trạng thái kit hiện tại: <strong>{kitInfo ? getKitStatusText(kitInfo.status) : 'N/A'}</strong></li>
+                              {kitInfo?.status === 'Đã tới kho' ? (
+                                <li className="text-green-700 font-medium">✅ Kit đã tới kho. Bạn có thể bắt đầu thực hiện xét nghiệm!</li>
+                              ) : (
+                                <li className="text-red-600">⚠️ Kit chưa tới kho. Cần đợi kit đổi trạng thái sang "Đã tới kho" trước khi bắt đầu thực hiện!</li>
+                              )}
                             </>
                           ) : (
                             <li className="text-red-600">⚠️ Cần tạo kit trước khi có thể bắt đầu thực hiện</li>

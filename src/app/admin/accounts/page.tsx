@@ -158,17 +158,10 @@ export default function AccountsPage() {
     }
 
     try {
-      // Đầu tiên, hỏi người dùng nhập mật khẩu cho tài khoản
-      const password = prompt("Vui lòng nhập mật khẩu cho tài khoản này:", "");
-      
-      if (!password) {
-        alert("Cần cung cấp mật khẩu để cập nhật trạng thái tài khoản!");
-        return;
-      }
-
+      // Sử dụng mật khẩu hiện có từ user object
       const result = await updateUserById(user.userID, {
         username: user.username,
-        password: password,
+        password: user.password || "", // Sử dụng mật khẩu hiện tại
         fullname: user.fullname,
         roleId: user.roleID,
         email: user.email,
@@ -254,21 +247,17 @@ export default function AccountsPage() {
     e.preventDefault();
     if (!selectedUser) return;
 
-    // Kiểm tra password đã được nhập
-    if (!editFormData.password) {
-      setEditError('Vui lòng nhập mật khẩu để cập nhật thông tin!');
-      return;
-    }
-
+    // Không kiểm tra mật khẩu vì đã bị vô hiệu hóa
+    
     setIsSaving(true);
     setEditError(null);
     setSuccessMessage(null);
 
     try {      
-      // Đảm bảo dữ liệu đầy đủ theo yêu cầu API
+      // Đảm bảo dữ liệu đầy đủ theo yêu cầu API - sử dụng mật khẩu cũ từ selectedUser
       const formData: UpdateUserRequest = {
         username: editFormData.username,
-        password: editFormData.password,
+        password: selectedUser.password || "", // Giữ nguyên mật khẩu hiện tại
         fullname: editFormData.fullname,
         roleId: editFormData.roleId,
         email: editFormData.email,
@@ -679,10 +668,12 @@ export default function AccountsPage() {
                         id="password"
                         value={editFormData.password}
                         onChange={handleEditChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-gray-100"
                         required
-                        placeholder="Nhập mật khẩu"
+                        placeholder="Không thể chỉnh sửa mật khẩu"
+                        disabled
                       />
+                      <p className="text-xs text-gray-500 mt-1">Mật khẩu không thể thay đổi từ màn hình này</p>
                     </div>
                     
                     {/* Họ tên */}
