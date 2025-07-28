@@ -191,7 +191,7 @@ export default function ServicesPage() {
               <p className="text-gray-600">Đang tải dịch vụ...</p>
             </div>
           ) : error ? (
-            <div className="flex flex-col items-center justify-center bg-red-50 p-8 rounded-lg">
+            <div className="flex flex-col items-center justify-center bg-red-50 p-8 rounded-lg ">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
@@ -215,7 +215,7 @@ export default function ServicesPage() {
               {/* Service type tabs */}
               <div className="border-b border-gray-200 mb-8">
                 <div className="overflow-x-auto -mb-px">
-                  <nav className="flex space-x-8 whitespace-nowrap px-4" aria-label="Tabs">
+                  <nav className="flex space-x-8 whitespace-nowrap px-4 " aria-label="Tabs">
                     {serviceTypes.map((type) => (
                       <button
                         key={type}
@@ -247,33 +247,33 @@ export default function ServicesPage() {
                     {servicesByType[selectedType].map((service, index) => (
                       <div 
                         key={service.id ? `service-${service.id}` : `service-${selectedType}-${index}`} 
-                        className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow"
+                        className="group bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl hover:ring-2 hover:ring-blue-500 transition-all duration-300 cursor-pointer"
                       >
-                        {/* Keep existing content */}
+                        {/* Hình ảnh dịch vụ với hiệu ứng khi hover */}
                         {service.image && (
-                          <div className="h-48 w-full bg-gray-200">
+                          <div className="h-48 w-full bg-gray-200 relative overflow-hidden">
                             <img
                               src={`http://localhost:5198/${service.image}`}
                               alt={service.name}
-                              className="w-full h-full object-cover"
+                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 group-hover:brightness-90"
                               loading="lazy"
                             />
+                            {/* Overlay hiệu ứng khi hover */}
+                            <div className="absolute inset-0 pointer-events-none transition-opacity duration-300 opacity-0 group-hover:opacity-20 bg-blue-600"></div>
                           </div>
                         )}
-                        <div className="p-6">
-                          <h4 className="text-xl font-bold text-gray-900 mb-2">{service.name}</h4>
+                        <div className="p-6 transition-all duration-300 group-hover:bg-blue-50 group-hover:scale-[1.03] group-hover:shadow-lg">
+                          <h4 className="text-xl font-bold text-gray-900 mb-2 transition-colors duration-300 group-hover:text-blue-700">{service.name}</h4>
                           <div className="h-20 mb-4 overflow-hidden">
-                            <p className="text-gray-600 line-clamp-3">{service.description}</p>
+                            <p className="text-gray-600 line-clamp-3 transition-colors duration-300 group-hover:text-blue-600">{service.description}</p>
                           </div>
                           <div className="flex justify-between items-center">
-                            <p className="text-lg font-bold text-blue-600">
-                              {new Intl.NumberFormat('vi-VN', { 
-                                maximumFractionDigits: 0 
-                              }).format(Number(service.price))} ₫
+                            <p className="text-lg font-bold text-blue-600 transition-colors duration-300 group-hover:text-blue-800">
+                              {new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(Number(service.price))} ₫
                             </p>
                             <Link 
                               href={`/services/book?serviceId=${encodeURIComponent(String(service.id))}`}
-                              className="inline-block bg-blue-600 text-white text-sm px-4 py-2 rounded hover:bg-blue-700"
+                              className="inline-block bg-blue-600 text-white text-sm px-4 py-2 rounded hover:bg-blue-700 transition-all duration-300 group-hover:bg-blue-800"
                             >
                               Xem chi tiết
                             </Link>

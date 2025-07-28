@@ -411,6 +411,15 @@ setBookings(bookingsWithNames);
     }
   }, [activeTab, serviceId]);
 
+  // Tính trung bình đánh giá (thang điểm 5) và số lượt đặt dịch vụ này
+  const averageRating = reviews.length
+    ? Math.round(
+        (reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length) * 10
+      ) / 10
+    : 0;
+
+  const bookingCount = bookings.length;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -501,7 +510,6 @@ setBookings(bookingsWithNames);
             <div className="flex-1">
               <div className="flex items-center space-x-4 mb-4">
                 <h2 className="text-2xl font-bold text-gray-900">{service.name}</h2>
-       
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                   {service.category}
                 </span>
@@ -526,9 +534,9 @@ setBookings(bookingsWithNames);
               </div>
               <div className="flex items-center text-sm text-gray-500">
                 <StarIcon className="h-4 w-4 text-yellow-400 mr-1" />
-                <span className="font-medium">{service?.rating || 0}</span>
+                <span className="font-medium">{averageRating}</span>
                 <span className="mx-1">•</span>
-                <span>{service?.bookings || 0} đặt lịch</span>
+                <span>{bookingCount} đặt lịch</span>
               </div>
             </div>
           </div>
@@ -714,7 +722,7 @@ setBookings(bookingsWithNames);
                   <h3 className="text-lg font-semibold text-gray-900">Đánh giá khách hàng</h3>
                   <div className="flex items-center">
                     <StarIcon className="h-5 w-5 text-yellow-400 mr-1" />
-                    <span className="font-medium">{service.rating}</span>
+                    <span className="font-medium">{averageRating}</span>
                     <span className="text-gray-500 ml-1">({reviews.length} đánh giá)</span>
                   </div>
                 </div>

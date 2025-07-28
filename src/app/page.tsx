@@ -25,14 +25,7 @@ type TestimonialType = {
 };
 
 export default function Home() {    const services = [
-    {
-      id: 'paternity',
-      title: 'Xét nghiệm Huyết thống',
-      description: 'Xác định mối quan hệ cha con, mẹ con thông qua xét nghiệm ADN với độ chính xác cao lên đến 99.9999%.',
-      imageUrl: '/images/cau-truc-xoan-kep-cua-DNA_.png',
-      href: '/services#paternity',
-      features: ['Kết quả chính xác', 'Bảo mật tuyệt đối', 'Tư vấn miễn phí'],
-    },
+    
     {
       id: 'legal',
       title: 'Xét nghiệm ADN Hành chính',
@@ -138,7 +131,7 @@ export default function Home() {    const services = [
               </div>
               
               {/* Stats */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 justify-center">
                 {stats.map((stat, index) => (
                   <div key={index} className="text-center">
                     <div className="text-2xl lg:text-3xl font-bold text-white">{stat.number}</div>
@@ -177,14 +170,15 @@ export default function Home() {    const services = [
               đáp ứng mọi nhu cầu của khách hàng.
             </p>
           </div>
-          
-          <div className="grid lg:grid-cols-3 gap-8">
+          {/* Căn giữa tất cả dịch vụ */}
+          <div className="flex flex-wrap justify-center gap-8">
             {services.map((service, index) => (
               <div 
                 key={service.id} 
-                className="card-elevated p-8 group hover:scale-105 transition-all duration-300 animate-slide-up"
+                className="card-elevated p-8 group hover:scale-105 transition-all duration-300 animate-slide-up max-w-md w-full"
                 style={{animationDelay: `${index * 100}ms`}}
-              >                <div className="relative w-full h-48 rounded-xl mb-6 overflow-hidden group-hover:scale-105 transition-transform duration-300">
+              >
+                <div className="relative w-full h-48 rounded-xl mb-6 overflow-hidden group-hover:scale-105 transition-transform duration-300">
                   <Image 
                     src={service.imageUrl} 
                     alt={service.title}
@@ -200,7 +194,8 @@ export default function Home() {    const services = [
                 </div>
                 
                 <h3 className="text-xl font-bold text-secondary-900 mb-3">{service.title}</h3>
-                <p className="text-secondary-600 mb-6 leading-relaxed">{service.description}</p>                <div className="space-y-2 mb-6">
+                <p className="text-secondary-600 mb-6 leading-relaxed">{service.description}</p>
+                <div className="space-y-2 mb-6">
                   {service.features.map((feature, featureIndex) => (
                     <div key={featureIndex} className="flex items-center text-sm text-secondary-700">
                       <CheckCircleIcon className="w-4 h-4 text-success-600 mr-2 flex-shrink-0" />

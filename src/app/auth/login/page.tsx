@@ -540,7 +540,7 @@ export default function LoginPage() {
             </div>
 
             <h2 className="text-center text-3xl font-bold tracking-tight bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              Chào mừng trở lại
+              Chào mừng đến với DNA Testing VN
             </h2>
             <p className="mt-3 text-center text-sm text-gray-600">
               Đăng nhập để tiếp tục sử dụng dịch vụ xét nghiệm DNA
