@@ -38,7 +38,6 @@ export async function submitFeedback(feedbackData: Feedback) {
 export async function getAllFeedbacks() {
   try {
     const res = await axios.get('http://localhost:5198/api/Feedbacks');
-    // Nếu API trả về .NET $values
     if (res.data && res.data.$values) {
       return res.data.$values;
     }

@@ -663,3 +663,43 @@ export const updateUserById = async (userId: string, userData: UpdateUserRequest
     };
   }
 };
+
+// Xóa người dùng theo ID
+export const deleteUserById = async (userId: string): Promise<{
+  success: boolean;
+  message: string;
+}> => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return {
+        success: false,
+        message: 'Không có quyền truy cập. Vui lòng đăng nhập lại.'
+      };
+    }
+
+    const response = await apiClient.delete(`/api/User/${userId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (response.status >= 200 && response.status < 300) {
+      return {
+        success: true,
+        message: 'Xóa người dùng thành công'
+      };
+    }
+
+    return {
+      success: false,
+      message: 'Không thể xóa người dùng'
+    };
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    return {
+      success: false,
+      message: 'Có lỗi xảy ra khi xóa người dùng'
+    };
+  }
+};

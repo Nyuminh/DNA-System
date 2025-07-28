@@ -9,9 +9,11 @@ import {
   LockClosedIcon, 
   LockOpenIcon,
   PlusIcon,
-  XMarkIcon
+  XMarkIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline';
-import { getAllUsers, AdminUser, updateUserById, UpdateUserRequest } from "@/lib/api/admin";
+import { getAllUsers, AdminUser, updateUserById, UpdateUserRequest, deleteUserById } from "@/lib/api/admin";
+import { toast } from "react-hot-toast";
 
 export default function AccountsPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -55,6 +57,7 @@ export default function AccountsPage() {
     'R02': 'Nhân viên',
     'R03': 'Khách Hàng',
     'R04': 'Quản lí',
+    'R05': 'Bị khóa', // Thêm vai trò Ban
     'default': 'Không xác định'
   };
 
@@ -134,12 +137,14 @@ export default function AccountsPage() {
     );
   };
   
+  // Cập nhật hàm getRoleBadge để hiển thị màu đặc biệt cho vai trò "Ban"
   const getRoleBadge = (roleID: string) => {
     const roleConfig = {
       "R01": { color: "bg-purple-100 text-purple-800", text: "Quản trị viên" },
       "R02": { color: "bg-green-100 text-green-800", text: "Nhân viên" },
       "R03": { color: "bg-gray-100 text-gray-800", text: "Khách Hàng" },
-      "R04": { color: "bg-blue-100 text-blue-800", text: "Quản lí" }
+      "R04": { color: "bg-blue-100 text-blue-800", text: "Quản lí" },
+      "R05": { color: "bg-red-100 text-red-800", text: "Bị khóa" } // Thêm màu đỏ cho vai trò Ban
     };
     
     const config = roleConfig[roleID as keyof typeof roleConfig] || 
@@ -151,19 +156,39 @@ export default function AccountsPage() {
     );
   };
 
+  // Cập nhật chức năng khóa/mở khóa tài khoản người dùng
   const toggleUserStatus = async (user: AdminUser) => {
+    // Kiểm tra nếu user đang bị khóa hoặc chưa
+    const isBanned = user.roleID === "R05";
+    
     // Hiển thị xác nhận từ người dùng
-    if (!confirm(`Bạn có chắc muốn ${user.status === "active" ? "khóa" : "mở khóa"} tài khoản ${user.fullname}?`)) {
+    if (!confirm(`Bạn có chắc muốn ${isBanned ? "mở khóa" : "khóa"} tài khoản ${user.fullname}?`)) {
       return;
     }
 
     try {
-      // Sử dụng mật khẩu hiện có từ user object
+      // Lưu roleID trước đó và lấy từ localStorage nếu mở khóa
+      let newRoleId = "R05"; // Mặc định là khóa (R05)
+      
+      if (isBanned) {
+        // Nếu đang bị khóa, lấy vai trò trước đó từ localStorage hoặc mặc định là "R03" (Khách hàng)
+        const previousRoles = localStorage.getItem('previousRoles');
+        const parsedRoles = previousRoles ? JSON.parse(previousRoles) : {};
+        newRoleId = parsedRoles[user.userID] || "R03"; // Mặc định là khách hàng nếu không tìm thấy
+      } else {
+        // Lưu vai trò hiện tại trước khi khóa
+        const previousRoles = localStorage.getItem('previousRoles');
+        const parsedRoles = previousRoles ? JSON.parse(previousRoles) : {};
+        parsedRoles[user.userID] = user.roleID;
+        localStorage.setItem('previousRoles', JSON.stringify(parsedRoles));
+      }
+      
+      // Gọi API để cập nhật vai trò
       const result = await updateUserById(user.userID, {
         username: user.username,
         password: user.password || "", // Sử dụng mật khẩu hiện tại
         fullname: user.fullname,
-        roleId: user.roleID,
+        roleId: newRoleId, // Sử dụng vai trò mới
         email: user.email,
         phone: user.phone,
         birthdate: user.birthdate,
@@ -172,27 +197,24 @@ export default function AccountsPage() {
       });
       
       if (result.success) {
-        // Cập nhật danh sách người dùng - giả định backend đã xử lý chuyển đổi trạng thái
-        const newStatus = user.status === "active" ? "suspended" : "active";
+        // Cập nhật danh sách người dùng - Thay đổi roleID
         setUsers(prevUsers =>
           prevUsers.map(u =>
             u.userID === user.userID
-              ? { ...u, status: newStatus as "active" | "inactive" | "suspended" }
+              ? { ...u, roleID: newRoleId }
               : u
           )
         );
+        toast.success(isBanned ? "Đã mở khóa tài khoản thành công" : "Đã khóa tài khoản thành công");
       } else {
-        alert(result.message || 'Không thể thay đổi trạng thái người dùng');
+        toast.error(result.message || 'Không thể thay đổi trạng thái người dùng');
       }
     } catch (err) {
       console.error('Error toggling user status:', err);
-      alert('Đã xảy ra lỗi khi thay đổi trạng thái người dùng');
+      toast.error('Đã xảy ra lỗi khi thay đổi trạng thái người dùng');
     }
   };
 
-  const viewUserDetails = (user: AdminUser) => {
-    alert(`Xem chi tiết người dùng: ${user.fullname}`);
-  };
 
   const editUser = (user: AdminUser) => {
     console.log('Editing user:', user);
@@ -305,6 +327,35 @@ export default function AccountsPage() {
     }
   };
 
+  // Thêm hàm handleDeleteUser vào trong AccountsPage component
+  const handleDeleteUser = async (user: AdminUser) => {
+    // Không cho phép xóa tài khoản Admin
+    if (user.roleID === 'Admin' || user.roleID === 'R01') {
+      toast.error('Không thể xóa tài khoản Admin');
+      return;
+    }
+
+    // Hiển thị xác nhận từ người dùng
+    if (!confirm(`Bạn có chắc muốn xóa tài khoản ${user.fullname}?\nHành động này không thể hoàn tác!`)) {
+      return;
+    }
+
+    try {
+      const result = await deleteUserById(user.userID);
+
+      if (result.success) {
+        // Cập nhật danh sách người dùng - Loại bỏ người dùng vừa xóa
+        setUsers(prevUsers => prevUsers.filter(u => u.userID !== user.userID));
+        toast.success('Đã xóa tài khoản thành công');
+      } else {
+        toast.error(result.message || 'Không thể xóa người dùng');
+      }
+    } catch (err) {
+      console.error('Error deleting user:', err);
+      toast.error('Đã xảy ra lỗi khi xóa người dùng');
+    }
+  };
+
   // Filter users based on search and filters
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -332,6 +383,7 @@ export default function AccountsPage() {
     { value: "R02", label: "Nhân viên" },
     { value: "R03", label: "Khách hàng" },
     { value: "R04", label: "Quản lí" },
+    { value: "R05", label: "Bị khóa" },
   ];
 
   return (
@@ -407,17 +459,6 @@ export default function AccountsPage() {
               <option value="R001">Quản trị viên</option>
               <option value="R002">Quản lý</option>
               <option value="R003">Người dùng</option>
-            </select>
-            
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/50 backdrop-blur-sm text-sm"
-            >
-              <option value="">Tất cả trạng thái</option>
-              <option value="active">Hoạt động</option>
-              <option value="inactive">Không hoạt động</option>
-              <option value="suspended">Bị khóa</option>
             </select>
             
             <Link
@@ -528,18 +569,27 @@ export default function AccountsPage() {
                       <button
                         onClick={() => editUser(user)}
                         className="text-gray-600 hover:text-blue-600"
+                        title="Chỉnh sửa thông tin"
                       >
                         <PencilIcon className="h-5 w-5" />
                       </button>
                       <button
                         onClick={() => toggleUserStatus(user)}
-                        className={`${user.status === "active" ? "text-red-600 hover:text-red-800" : "text-green-600 hover:text-green-800"}`}
+                        className={`${user.roleID === "R05" ? "text-green-600 hover:text-green-800" : "text-red-600 hover:text-red-800"}`}
+                        title={user.roleID === "R05" ? "Mở khóa tài khoản" : "Khóa tài khoản"}
                       >
-                        {user.status === "active" ? (
-                          <LockClosedIcon className="h-5 w-5" />
-                        ) : (
+                        {user.roleID === "R05" ? (
                           <LockOpenIcon className="h-5 w-5" />
+                        ) : (
+                          <LockClosedIcon className="h-5 w-5" />
                         )}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteUser(user)}
+                        className="text-red-600 hover:text-red-800"
+                        title="Xóa tài khoản"
+                      >
+                        <TrashIcon className="h-5 w-5" />
                       </button>
                     </div>
                   </td>
@@ -557,29 +607,6 @@ export default function AccountsPage() {
         </div>
       )}
       
-      {/* Pagination */}
-      {!loading && filteredUsers.length > 0 && (
-        <div className="bg-white/70 backdrop-blur-sm rounded-lg shadow-sm p-4 border border-white/20 flex items-center justify-between">
-          <div className="text-sm text-gray-700">
-            Hiển thị <span className="font-medium">{filteredUsers.length}</span> trong tổng số{" "}
-            <span className="font-medium">{users.length}</span> người dùng
-          </div>
-          <div className="flex gap-1">
-            <button className="bg-white border border-gray-200 rounded-lg px-3 py-1 text-sm text-gray-700 hover:bg-gray-50">
-              Trước
-            </button>
-            <button className="bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-1 text-sm text-indigo-700 font-medium">
-              1
-            </button>
-            <button className="bg-white border border-gray-200 rounded-lg px-3 py-1 text-sm text-gray-700 hover:bg-gray-50">
-              2
-            </button>
-            <button className="bg-white border border-gray-200 rounded-lg px-3 py-1 text-sm text-gray-700 hover:bg-gray-50">
-              Tiếp
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Modal Edit User */}
       {isEditModalOpen && (

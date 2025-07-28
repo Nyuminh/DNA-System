@@ -1140,12 +1140,37 @@ function BookServiceContent() {
                               required
                             >
                               <option value="">Chọn vai trò</option>
-                              <option value="Cha">Cha</option>
-                              <option value="Mẹ">Mẹ</option>
-                              <option value="Con">Con</option>
-                              <option value="Anh/Chị/Em">Anh/Chị/Em</option>
-                              <option value="Ông/Bà">Ông/Bà</option>
-                              <option value="Khác">Khác</option>
+                              {(service?.name?.toLowerCase().includes('cha con') || service?.type?.toLowerCase().includes('cha con')) ? (
+                                <>
+                                  <option value="Cha">Cha</option>
+                                  <option value="Con">Con</option>
+                                </>
+                              ) :(service?.name?.toLowerCase().includes('mẹ con') ||
+                                  service?.type?.toLowerCase().includes('mẹ con')) ? (
+                                  <>
+                                    <option value="Mẹ">Mẹ</option>
+                                    <option value="Con">Con</option>
+                                  </>
+                              ) :(service?.name?.toLowerCase().includes('anh chị em') ||
+                                  service?.type?.toLowerCase().includes('anh chị em')) ? (
+                                  <>
+                                    <option value="Anh">Anh</option>
+                                    <option value="Chị">Chị</option>
+                                    <option value="Em">Em</option>
+                                  </>
+                              ):(
+                                <>
+                                  <option value="Cha">Cha</option>
+                                  <option value="Mẹ">Mẹ</option>
+                                  <option value="Con">Con</option>
+                                  <option value="Anh">Anh</option>
+                                  <option value="Chị">Chị</option>
+                                  <option value="Em">Em</option>
+                                  <option value="Ông">Ông</option>\
+                                  <option value="Bà">Bà</option>
+                                  <option value="Khác">Khác</option>
+                                </>
+                              )}
                             </select>
                           </div>
                         </div>
