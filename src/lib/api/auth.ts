@@ -482,7 +482,7 @@ export const getUserProfile = async (token: string): Promise<User | null> => {
     if (response.status === 200 && response.data) {
       // Transform API response to match User interface
       const userData: User = {
-        userID: response.data.userID || response.data.id || '',
+        userID: response.data.userId || response.data.id || '',
         username: response.data.username || response.data.userName || '',
         fullname: response.data.fullname || response.data.fullName || response.data.name || '',
         gender: response.data.gender || '',
@@ -1037,5 +1037,30 @@ export const updateUserImage = async (imageFile: File): Promise<UpdateImageRespo
       success: false,
       message: errorMessage
     };
+  }
+};
+
+export const getAllUsers = async (): Promise<User[]> => {
+  try {
+    const response = await apiClient.get('http://localhost:5198/api/User');
+    if (response.status >= 200 && response.status < 300) {
+      // Map dữ liệu trả về sang mảng User
+      return (response.data || []).map((user: any) => ({
+        userID: user.userId || user.id || '',
+        username: user.username || user.userName || '',
+        fullname: user.fullname || user.fullName || user.name || '',
+        gender: user.gender || '',
+        roleID: user.roleID || user.role || '',
+        email: user.email || '',
+        phone: user.phone || user.phoneNumber || '',
+        birthdate: user.birthdate || user.birthDate || user.dateOfBirth || '',
+        image: user.image || user.avatar || user.profileImage || '',
+        address: user.address || '',
+      }));
+    }
+    return [];
+  } catch (error) {
+    console.error('Error fetching all users:', error);
+    return [];
   }
 };

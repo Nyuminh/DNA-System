@@ -23,7 +23,7 @@ interface NewKitForm {
   staffID: string;
   bookingId: string;
   description: string;
-  status: 'Đã vận chuyển' | 'Đang vận chuyển' | 'Đang giao' | 'Đã lấy mẫu' | 'Đang tới kho' | 'Đã tới kho' | 'Đang lấy mẫu';
+  status: string;
   receivedate: string;
   address: string; // New address field
 }
@@ -42,7 +42,7 @@ export default function KitManagement() {
     staffID: '',
     bookingId: '',
     description: '',
-    status: 'Đã vận chuyển',
+    status: '',
     receivedate: new Date().toISOString().split('T')[0],
     address: '' // Initialize with empty string
   });
@@ -72,7 +72,7 @@ export default function KitManagement() {
         customerID: customerId || '',
         staffID: staffId || '',
         description: description || '',
-        status: 'Đã vận chuyển',
+        status: '',
         receivedate: new Date().toISOString().split('T')[0]
       }));
       
@@ -177,21 +177,23 @@ export default function KitManagement() {
       }
       // Check if the booking method is "Tự thu mẫu"
       if (bookingData && bookingData.method === 'Tự thu mẫu') {
+        console.log('Booking method is "Tự thu mẫu" - setting status to "Đang giao"');
         setBookingMethod('Tự thu mẫu');
-        // Set the status to "Đang vận chuyển" when method is "Tự thu mẫu"
+        // Set the status to "Đang giao" when method is "Tự thu mẫu"
         setFormData(prev => ({
           ...prev,
-          status: 'Đang giao' as NewKitForm['status']
+          status: 'Đang giao'
         }));
        
       } 
       // Check if the booking method is "Tại cơ sở y tế"
       else if (bookingData && bookingData.method === 'Tại cơ sở y tế') {
+        console.log('Booking method is "Tại cơ sở y tế" - setting status to "Đang lấy mẫu"');
         setBookingMethod('Tại cơ sở y tế');
-        // Set the status to "Đang chờ mẫu" when method is "Tại cơ sở y tế"
+        // Set the status to "Đang lấy mẫu" when method is "Tại cơ sở y tế"
         setFormData(prev => ({
           ...prev,
-          status: 'Đang lấy mẫu' as NewKitForm['status']
+          status: 'Đang lấy mẫu'
         }));
        
       } else {
@@ -240,11 +242,12 @@ export default function KitManagement() {
       // Create kit data without kitID - let backend auto-generate it
       const kitDataToCreate = {
         ...formData,
-        status: formData.status, // luôn là tiếng Việt
+        status: formData.status, // ensure status is preserved as is
         // Backend will auto-generate kitID
       };
       
       console.log('📤 Sending kit data to API:', JSON.stringify(kitDataToCreate));
+      console.log('📤 Status being sent:', formData.status);
       
       const newKit = await kitApi.createKit(kitDataToCreate);
       console.log('✅ Kit created successfully:', newKit);
@@ -256,7 +259,7 @@ export default function KitManagement() {
         staffID: '',
         bookingId: '',
         description: '',
-        status: 'Đã vận chuyển',
+        status: '',
         receivedate: new Date().toISOString().split('T')[0],
         address: '' // Reset address field
       });
@@ -279,13 +282,23 @@ export default function KitManagement() {
   };
 
   const handleCloseForm = () => {
+    // Check if there's a returnUrl in the search params
+    const returnUrl = searchParams.get('returnUrl');
+    if (returnUrl) {
+      // If returnUrl exists, navigate to that URL
+      router.push(returnUrl);
+    } else {
+      // Otherwise just close the form
     setShowAddForm(false);
+    }
+    
+    // Reset form data regardless
     setFormData({
       customerID: '',
       staffID: '',
       bookingId: '',
       description: '',
-      status: 'Đã vận chuyển',
+      status: 'Đang giao',
       receivedate: new Date().toISOString().split('T')[0],
       address: '' // Reset address field
     });
@@ -800,20 +813,40 @@ export default function KitManagement() {
 
       {/* Add Kit Modal */}
       {showAddForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-slate-200">
-              <h2 className="text-xl font-semibold text-slate-900">Thêm Kit Mới</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div className="border-b border-slate-200 px-6 py-4 flex justify-between items-center">
+              <h3 className="text-lg font-medium text-slate-900">Thêm Kit Mới</h3>
+              <div className="flex items-center space-x-2">
+                {searchParams.get('returnUrl') && (
+                  <button
+                    type="button"
+                    onClick={() => router.push(searchParams.get('returnUrl') || '/staff/test-results')}
+                    className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 flex items-center"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    Quay lại
+                  </button>
+                )}
               <button
                 onClick={handleCloseForm}
-                className="text-slate-400 hover:text-slate-600 transition-colors"
+                  className="text-slate-400 hover:text-slate-500"
               >
                 <XMarkIcon className="h-6 w-6" />
               </button>
+              </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <form onSubmit={handleSubmit} className="px-6 py-4">
+              {error && (
+                <div className="mb-4 p-3 bg-red-100 border border-red-200 text-red-700 rounded-lg">
+                  {error}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 {/* Customer ID */}
                 <div>
                   <label htmlFor="customerID" className="block text-sm font-medium text-slate-700 mb-2">
@@ -987,7 +1020,7 @@ export default function KitManagement() {
                   onClick={handleCloseForm}
                   className="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
                 >
-                  Hủy
+                  {searchParams.get('returnUrl') ? 'Quay lại' : 'Hủy'}
                 </button>
                 <button
                   type="submit"

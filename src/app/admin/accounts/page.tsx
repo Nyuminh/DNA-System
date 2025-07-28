@@ -158,17 +158,10 @@ export default function AccountsPage() {
     }
 
     try {
-      // Đầu tiên, hỏi người dùng nhập mật khẩu cho tài khoản
-      const password = prompt("Vui lòng nhập mật khẩu cho tài khoản này:", "");
-      
-      if (!password) {
-        alert("Cần cung cấp mật khẩu để cập nhật trạng thái tài khoản!");
-        return;
-      }
-
+      // Sử dụng mật khẩu hiện có từ user object
       const result = await updateUserById(user.userID, {
         username: user.username,
-        password: password,
+        password: user.password || "", // Sử dụng mật khẩu hiện tại
         fullname: user.fullname,
         roleId: user.roleID,
         email: user.email,
@@ -177,29 +170,12 @@ export default function AccountsPage() {
         address: user.address,
         image: user.image,
       });
-      
-      if (result.success) {
-        // Cập nhật danh sách người dùng - giả định backend đã xử lý chuyển đổi trạng thái
-        const newStatus = user.status === "active" ? "suspended" : "active";
-        setUsers(prevUsers =>
-          prevUsers.map(u =>
-            u.userID === user.userID
-              ? { ...u, status: newStatus as "active" | "inactive" | "suspended" }
-              : u
-          )
-        );
-      } else {
-        alert(result.message || 'Không thể thay đổi trạng thái người dùng');
-      }
     } catch (err) {
       console.error('Error toggling user status:', err);
       alert('Đã xảy ra lỗi khi thay đổi trạng thái người dùng');
     }
   };
 
-  const viewUserDetails = (user: AdminUser) => {
-    alert(`Xem chi tiết người dùng: ${user.fullname}`);
-  };
 
   const editUser = (user: AdminUser) => {
     console.log('Editing user:', user);
@@ -254,21 +230,17 @@ export default function AccountsPage() {
     e.preventDefault();
     if (!selectedUser) return;
 
-    // Kiểm tra password đã được nhập
-    if (!editFormData.password) {
-      setEditError('Vui lòng nhập mật khẩu để cập nhật thông tin!');
-      return;
-    }
+    // Không kiểm tra mật khẩu vì đã bị vô hiệu hóa
 
     setIsSaving(true);
     setEditError(null);
     setSuccessMessage(null);
 
     try {      
-      // Đảm bảo dữ liệu đầy đủ theo yêu cầu API
+      // Đảm bảo dữ liệu đầy đủ theo yêu cầu API - sử dụng mật khẩu cũ từ selectedUser
       const formData: UpdateUserRequest = {
         username: editFormData.username,
-        password: editFormData.password,
+        password: selectedUser.password || "", // Giữ nguyên mật khẩu hiện tại
         fullname: editFormData.fullname,
         roleId: editFormData.roleId,
         email: editFormData.email,
@@ -420,17 +392,6 @@ export default function AccountsPage() {
               <option value="R003">Người dùng</option>
             </select>
             
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/50 backdrop-blur-sm text-sm"
-            >
-              <option value="">Tất cả trạng thái</option>
-              <option value="active">Hoạt động</option>
-              <option value="inactive">Không hoạt động</option>
-              <option value="suspended">Bị khóa</option>
-            </select>
-            
             <Link
               href="/admin/accounts/new"
               className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium flex items-center justify-center min-w-[120px]"
@@ -478,9 +439,6 @@ export default function AccountsPage() {
                   Họ tên
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Giới tính
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Vai trò
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -491,9 +449,6 @@ export default function AccountsPage() {
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Ngày sinh
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Địa chỉ
                 </th>
                 <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Thao tác
@@ -528,9 +483,6 @@ export default function AccountsPage() {
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                     {user.fullname || 'N/A'}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                    {user.gender || 'N/A'}
-                  </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     {getRoleBadge(user.roleID)}
                   </td>
@@ -543,17 +495,8 @@ export default function AccountsPage() {
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                     {user.birthdate ? new Date(user.birthdate).toLocaleDateString('vi-VN') : 'N/A'}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 max-w-[200px] truncate">
-                    {user.address || 'N/A'}
-                  </td>
                   <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => viewUserDetails(user)}
-                        className="text-gray-600 hover:text-indigo-600"
-                      >
-                        <EyeIcon className="h-5 w-5" />
-                      </button>
                       <button
                         onClick={() => editUser(user)}
                         className="text-gray-600 hover:text-blue-600"
@@ -586,29 +529,6 @@ export default function AccountsPage() {
         </div>
       )}
       
-      {/* Pagination */}
-      {!loading && filteredUsers.length > 0 && (
-        <div className="bg-white/70 backdrop-blur-sm rounded-lg shadow-sm p-4 border border-white/20 flex items-center justify-between">
-          <div className="text-sm text-gray-700">
-            Hiển thị <span className="font-medium">{filteredUsers.length}</span> trong tổng số{" "}
-            <span className="font-medium">{users.length}</span> người dùng
-          </div>
-          <div className="flex gap-1">
-            <button className="bg-white border border-gray-200 rounded-lg px-3 py-1 text-sm text-gray-700 hover:bg-gray-50">
-              Trước
-            </button>
-            <button className="bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-1 text-sm text-indigo-700 font-medium">
-              1
-            </button>
-            <button className="bg-white border border-gray-200 rounded-lg px-3 py-1 text-sm text-gray-700 hover:bg-gray-50">
-              2
-            </button>
-            <button className="bg-white border border-gray-200 rounded-lg px-3 py-1 text-sm text-gray-700 hover:bg-gray-50">
-              Tiếp
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Modal Edit User */}
       {isEditModalOpen && (
@@ -679,10 +599,12 @@ export default function AccountsPage() {
                         id="password"
                         value={editFormData.password}
                         onChange={handleEditChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-gray-100"
                         required
-                        placeholder="Nhập mật khẩu"
+                        placeholder="Không thể chỉnh sửa mật khẩu"
+                        disabled
                       />
+                      <p className="text-xs text-gray-500 mt-1">Mật khẩu không thể thay đổi từ màn hình này</p>
                     </div>
                     
                     {/* Họ tên */}
