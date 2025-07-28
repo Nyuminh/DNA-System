@@ -12,6 +12,7 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline';
 import { getAllUsers, AdminUser, updateUserById, UpdateUserRequest } from "@/lib/api/admin";
+import { toast } from "react-hot-toast";
 
 export default function AccountsPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -55,6 +56,7 @@ export default function AccountsPage() {
     'R02': 'Nhân viên',
     'R03': 'Khách Hàng',
     'R04': 'Quản lí',
+    'R05': 'Bị khóa', // Thêm vai trò Ban
     'default': 'Không xác định'
   };
 
@@ -134,12 +136,14 @@ export default function AccountsPage() {
     );
   };
   
+  // Cập nhật hàm getRoleBadge để hiển thị màu đặc biệt cho vai trò "Ban"
   const getRoleBadge = (roleID: string) => {
     const roleConfig = {
       "R01": { color: "bg-purple-100 text-purple-800", text: "Quản trị viên" },
       "R02": { color: "bg-green-100 text-green-800", text: "Nhân viên" },
       "R03": { color: "bg-gray-100 text-gray-800", text: "Khách Hàng" },
-      "R04": { color: "bg-blue-100 text-blue-800", text: "Quản lí" }
+      "R04": { color: "bg-blue-100 text-blue-800", text: "Quản lí" },
+      "R05": { color: "bg-red-100 text-red-800", text: "Bị khóa" } // Thêm màu đỏ cho vai trò Ban
     };
     
     const config = roleConfig[roleID as keyof typeof roleConfig] || 
@@ -151,28 +155,62 @@ export default function AccountsPage() {
     );
   };
 
+  // Cập nhật chức năng khóa/mở khóa tài khoản người dùng
   const toggleUserStatus = async (user: AdminUser) => {
+    // Kiểm tra nếu user đang bị khóa hoặc chưa
+    const isBanned = user.roleID === "R05";
+    
     // Hiển thị xác nhận từ người dùng
-    if (!confirm(`Bạn có chắc muốn ${user.status === "active" ? "khóa" : "mở khóa"} tài khoản ${user.fullname}?`)) {
+    if (!confirm(`Bạn có chắc muốn ${isBanned ? "mở khóa" : "khóa"} tài khoản ${user.fullname}?`)) {
       return;
     }
 
     try {
-      // Sử dụng mật khẩu hiện có từ user object
+      // Lưu roleID trước đó và lấy từ localStorage nếu mở khóa
+      let newRoleId = "R05"; // Mặc định là khóa (R05)
+      
+      if (isBanned) {
+        // Nếu đang bị khóa, lấy vai trò trước đó từ localStorage hoặc mặc định là "R03" (Khách hàng)
+        const previousRoles = localStorage.getItem('previousRoles');
+        const parsedRoles = previousRoles ? JSON.parse(previousRoles) : {};
+        newRoleId = parsedRoles[user.userID] || "R03"; // Mặc định là khách hàng nếu không tìm thấy
+      } else {
+        // Lưu vai trò hiện tại trước khi khóa
+        const previousRoles = localStorage.getItem('previousRoles');
+        const parsedRoles = previousRoles ? JSON.parse(previousRoles) : {};
+        parsedRoles[user.userID] = user.roleID;
+        localStorage.setItem('previousRoles', JSON.stringify(parsedRoles));
+      }
+      
+      // Gọi API để cập nhật vai trò
       const result = await updateUserById(user.userID, {
         username: user.username,
         password: user.password || "", // Sử dụng mật khẩu hiện tại
         fullname: user.fullname,
-        roleId: user.roleID,
+        roleId: newRoleId, // Sử dụng vai trò mới
         email: user.email,
         phone: user.phone,
         birthdate: user.birthdate,
         address: user.address,
         image: user.image,
       });
+      
+      if (result.success) {
+        // Cập nhật danh sách người dùng - Thay đổi roleID
+        setUsers(prevUsers =>
+          prevUsers.map(u =>
+            u.userID === user.userID
+              ? { ...u, roleID: newRoleId }
+              : u
+          )
+        );
+        toast.success(isBanned ? "Đã mở khóa tài khoản thành công" : "Đã khóa tài khoản thành công");
+      } else {
+        toast.error(result.message || 'Không thể thay đổi trạng thái người dùng');
+      }
     } catch (err) {
       console.error('Error toggling user status:', err);
-      alert('Đã xảy ra lỗi khi thay đổi trạng thái người dùng');
+      toast.error('Đã xảy ra lỗi khi thay đổi trạng thái người dùng');
     }
   };
 
@@ -315,6 +353,7 @@ export default function AccountsPage() {
     { value: "R02", label: "Nhân viên" },
     { value: "R03", label: "Khách hàng" },
     { value: "R04", label: "Quản lí" },
+    { value: "R05", label: "Bị khóa" },
   ];
 
   return (
@@ -505,12 +544,13 @@ export default function AccountsPage() {
                       </button>
                       <button
                         onClick={() => toggleUserStatus(user)}
-                        className={`${user.status === "active" ? "text-red-600 hover:text-red-800" : "text-green-600 hover:text-green-800"}`}
+                        className={`${user.roleID === "R05" ? "text-green-600 hover:text-green-800" : "text-red-600 hover:text-red-800"}`}
+                        title={user.roleID === "R05" ? "Mở khóa tài khoản" : "Khóa tài khoản"}
                       >
-                        {user.status === "active" ? (
-                          <LockClosedIcon className="h-5 w-5" />
-                        ) : (
+                        {user.roleID === "R05" ? (
                           <LockOpenIcon className="h-5 w-5" />
+                        ) : (
+                          <LockClosedIcon className="h-5 w-5" />
                         )}
                       </button>
                     </div>

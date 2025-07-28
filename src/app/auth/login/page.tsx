@@ -81,12 +81,22 @@ export default function LoginPage() {
   useEffect(() => {
     if (!isLoading && isLoggedIn && user) {
       console.log('User already logged in, redirecting...', user);
+      
+      // Kiểm tra tài khoản bị khóa
+      if (user.roleID === 'R05' || user.roleID === 'Ban') {
+        // Đăng xuất nếu tài khoản bị khóa
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setLoginError('Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên để được hỗ trợ.');
+        return;
+      }
+      
       // Redirect dựa trên role
-      if (user.roleID === 'Admin') {
+      if (user.roleID === 'Admin' || user.roleID === 'R01') {
         router.push('/admin');
-      } else if (user.roleID === 'Manager') {
+      } else if (user.roleID === 'Manager' || user.roleID === 'R04') {
         router.push('/manager');
-      } else if (user.roleID === 'Staff') {
+      } else if (user.roleID === 'Staff' || user.roleID === 'R02') {
         router.push('/staff');
       } else {
         router.push('/');
@@ -112,6 +122,12 @@ export default function LoginPage() {
         if (result.success && result.token) {
         // Debug token để xem cấu trúc
         debugToken(result.token);
+        
+        // Kiểm tra xem tài khoản có bị khóa không
+        if (result.user && (result.user.roleID === 'R05' || result.user.roleID === 'Ban')) {
+          setLoginError('Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên để được hỗ trợ.');
+          return;
+        }
         
         // Lưu token vào localStorage (đã được decode trong loginUser)
         localStorage.setItem('token', result.token);
@@ -239,6 +255,17 @@ export default function LoginPage() {
               };
               
               console.log("Formatted user data:", user);
+              
+              // Kiểm tra xem tài khoản có bị khóa không
+              if (user.roleID === 'R05' || user.roleID === 'Ban') {
+                toast.dismiss(loadingToast);
+                setLoginError('Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên để được hỗ trợ.');
+                // Đóng popup
+                if (popup && !popup.closed) {
+                  popup.close();
+                }
+                return;
+              }
               
               // Lưu token vào localStorage
               localStorage.setItem('token', token);
@@ -475,6 +502,15 @@ export default function LoginPage() {
 
   // Cập nhật hàm navigateByRole
   function navigateByRole(roleID: string): void {
+    // Kiểm tra tài khoản bị khóa
+    if (roleID === 'R05' || roleID === 'Ban') {
+      setLoginError('Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên để được hỗ trợ.');
+      // Xóa thông tin đăng nhập
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      return;
+    }
+    
     if (roleID === 'R01' || roleID === 'Admin') { // Admin
       router.push('/admin');
     } else if (roleID === 'R04' || roleID === 'Manager') { // Manager

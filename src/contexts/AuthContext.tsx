@@ -15,6 +15,7 @@ interface AuthContextType {
   isManager: () => boolean;
   isCustomer: () => boolean;
   isStaff: () => boolean;
+  isBanned: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -64,6 +65,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     setIsLoading(false);
   }, []);const login = (newToken: string, newUser: User) => {
+    // Kiểm tra nếu tài khoản bị khóa (vai trò R05)
+    if (newUser.roleID === 'R05') {
+      alert('Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên để được hỗ trợ.');
+      // Không lưu token và user vào localStorage
+      return;
+    }
+    
     setToken(newToken);
     setUser(newUser);
     localStorage.setItem('token', newToken);
@@ -85,10 +93,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.location.href = '/auth/login';
     }
   };  // Helper functions để kiểm tra quyền
-  const isAdmin = () => user?.roleID === 'Admin';
-  const isManager = () => user?.roleID === 'Manager';
-  const isCustomer = () => user?.roleID === 'Customer';
-  const isStaff = () => user?.roleID === 'Staff';
+  const isAdmin = () => user?.roleID === 'Admin' || user?.roleID === 'R01';
+  const isManager = () => user?.roleID === 'Manager' || user?.roleID === 'R04';
+  const isCustomer = () => user?.roleID === 'Customer' || user?.roleID === 'R03';
+  const isStaff = () => user?.roleID === 'Staff' || user?.roleID === 'R02';
+  // Kiểm tra tài khoản bị khóa
+  const isBanned = () => user?.roleID === 'Ban' || user?.roleID === 'R05';
 
   const value = {
     user,
@@ -101,6 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isManager,
     isCustomer,
     isStaff,
+    isBanned
   };
 
   return (
