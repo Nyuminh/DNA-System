@@ -256,12 +256,7 @@ function DashboardContent() {
                     <span>{tab.name}</span>
                   </button>
                 ))}
-                <button
-                  className="flex items-center px-4 py-3 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-                >
-                  <ArrowRightStartOnRectangleIcon className="mr-3 h-5 w-5 flex-shrink-0" aria-hidden="true" />
-                  <span>Đăng xuất</span>
-                </button>
+                
               </nav>
             </aside>
 
