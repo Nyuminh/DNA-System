@@ -21,6 +21,9 @@ const nextConfig = {
   devIndicators: {
     buildActivity: false,
     buildActivityPosition: 'bottom-right',
+    autoPrerender: false,
+    buildError: false,
+    routeIndicator: false,
   },
 };
 

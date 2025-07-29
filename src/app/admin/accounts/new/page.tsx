@@ -8,20 +8,26 @@ import {
   UserIcon,
   EnvelopeIcon,
   KeyIcon,
-  UserGroupIcon
+  CalendarIcon,
+  PhoneIcon,
+  MapPinIcon
 } from '@heroicons/react/24/outline';
+import { registerUser } from "@/lib/api/auth";
 
 export default function NewAccountPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
+    username: '',
     password: '',
     confirmPassword: '',
-    role: 'user' as 'admin' | 'manager' | 'user',
-    status: 'active' as 'active' | 'inactive',
-    sendWelcomeEmail: true
+    fullname: '',
+    email: '',
+    phone: '',
+    gender: 'Male' as 'Male' | 'Female' | 'Other',
+    address: '',
+    birthdate: '',
+    image: 'string',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -29,14 +35,30 @@ export default function NewAccountPage() {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Vui lòng nhập họ tên';
+    if (!formData.username.trim()) {
+      newErrors.username = 'Vui lòng nhập tên đăng nhập';
+    }
+
+    if (!formData.fullname.trim()) {
+      newErrors.fullname = 'Vui lòng nhập họ tên';
     }
 
     if (!formData.email.trim()) {
       newErrors.email = 'Vui lòng nhập email';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Email không hợp lệ';
+    }
+
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Vui lòng nhập số điện thoại';
+    }
+
+    if (!formData.birthdate) {
+      newErrors.birthdate = 'Vui lòng chọn ngày sinh';
+    }
+
+    if (!formData.address.trim()) {
+      newErrors.address = 'Vui lòng nhập địa chỉ';
     }
 
     if (!formData.password) {
@@ -63,12 +85,26 @@ export default function NewAccountPage() {
     setIsSubmitting(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Call the register API
+      const result = await registerUser({
+        username: formData.username,
+        password: formData.password,
+        fullname: formData.fullname,
+        email: formData.email,
+        phone: formData.phone,
+        gender: formData.gender,
+        address: formData.address,
+        birthdate: formData.birthdate,
+      });
       
-      alert(`Tạo tài khoản thành công cho ${formData.name}`);
-      router.push('/admin/accounts');
-    } catch  {
+      if (result.success) {
+        alert(`Tạo tài khoản thành công cho ${formData.fullname}`);
+        router.push('/admin/accounts');
+      } else {
+        alert(`Lỗi: ${result.message}`);
+      }
+    } catch (error) {
+      console.error("Error creating account:", error);
       alert('Có lỗi xảy ra khi tạo tài khoản');
     } finally {
       setIsSubmitting(false);
@@ -126,21 +162,40 @@ export default function NewAccountPage() {
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+                    Tên đăng nhập <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="username"
+                    value={formData.username}
+                    onChange={(e) => handleInputChange('username', e.target.value)}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/70 backdrop-blur-sm text-sm transition-all duration-200 ${
+                      errors.username ? 'border-red-300' : 'border-gray-200'
+                    }`}
+                    placeholder="Nhập tên đăng nhập"
+                  />
+                  {errors.username && (
+                    <p className="mt-1 text-xs text-red-600">{errors.username}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="fullname" className="block text-sm font-medium text-gray-700 mb-2">
                     Họ và tên <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    id="fullname"
+                    value={formData.fullname}
+                    onChange={(e) => handleInputChange('fullname', e.target.value)}
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/70 backdrop-blur-sm text-sm transition-all duration-200 ${
-                      errors.name ? 'border-red-300' : 'border-gray-200'
+                      errors.fullname ? 'border-red-300' : 'border-gray-200'
                     }`}
                     placeholder="Nhập họ và tên"
                   />
-                  {errors.name && (
-                    <p className="mt-1 text-xs text-red-600">{errors.name}</p>
+                  {errors.fullname && (
+                    <p className="mt-1 text-xs text-red-600">{errors.fullname}</p>
                   )}
                 </div>
 
@@ -163,6 +218,87 @@ export default function NewAccountPage() {
                   </div>
                   {errors.email && (
                     <p className="mt-1 text-xs text-red-600">{errors.email}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                    Số điện thoại <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      id="phone"
+                      value={formData.phone}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/70 backdrop-blur-sm text-sm transition-all duration-200 ${
+                        errors.phone ? 'border-red-300' : 'border-gray-200'
+                      }`}
+                      placeholder="Nhập số điện thoại"
+                    />
+                    <PhoneIcon className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
+                  </div>
+                  {errors.phone && (
+                    <p className="mt-1 text-xs text-red-600">{errors.phone}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="birthdate" className="block text-sm font-medium text-gray-700 mb-2">
+                    Ngày sinh <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      id="birthdate"
+                      value={formData.birthdate}
+                      onChange={(e) => handleInputChange('birthdate', e.target.value)}
+                      className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/70 backdrop-blur-sm text-sm transition-all duration-200 ${
+                        errors.birthdate ? 'border-red-300' : 'border-gray-200'
+                      }`}
+                    />
+                    <CalendarIcon className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
+                  </div>
+                  {errors.birthdate && (
+                    <p className="mt-1 text-xs text-red-600">{errors.birthdate}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-2">
+                    Giới tính
+                  </label>
+                  <select
+                    id="gender"
+                    value={formData.gender}
+                    onChange={(e) => handleInputChange('gender', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/70 backdrop-blur-sm text-sm transition-all duration-200"
+                  >
+                    <option value="Male">Nam</option>
+                    <option value="Female">Nữ</option>
+                    <option value="Other">Khác</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
+                    Địa chỉ <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      id="address"
+                      value={formData.address}
+                      onChange={(e) => handleInputChange('address', e.target.value)}
+                      className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/70 backdrop-blur-sm text-sm transition-all duration-200 ${
+                        errors.address ? 'border-red-300' : 'border-gray-200'
+                      }`}
+                      placeholder="Nhập địa chỉ"
+                    />
+                    <MapPinIcon className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
+                  </div>
+                  {errors.address && (
+                    <p className="mt-1 text-xs text-red-600">{errors.address}</p>
                   )}
                 </div>
               </div>
@@ -219,72 +355,6 @@ export default function NewAccountPage() {
               <p className="text-xs text-gray-500 mt-2">
                 Mật khẩu phải có ít nhất 6 ký tự
               </p>
-            </div>
-
-            {/* Role and Status */}
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-3 mb-6 pb-3 border-b border-gray-100">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <UserGroupIcon className="h-5 w-5 text-purple-600" />
-                </div>
-                Phân quyền và trạng thái
-              </h2>
-              
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
-                    Vai trò
-                  </label>
-                  <select
-                    id="role"
-                    value={formData.role}
-                    onChange={(e) => handleInputChange('role', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/70 backdrop-blur-sm text-sm transition-all duration-200"
-                  >
-                    <option value="user">Người dùng</option>
-                    <option value="manager">Quản lý</option>
-                    <option value="admin">Quản trị viên</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
-                    Trạng thái
-                  </label>
-                  <select
-                    id="status"
-                    value={formData.status}
-                    onChange={(e) => handleInputChange('status', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/70 backdrop-blur-sm text-sm transition-all duration-200"
-                  >
-                    <option value="active">Hoạt động</option>
-                    <option value="inactive">Không hoạt động</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Additional Options */}
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Tùy chọn bổ sung</h2>
-              
-              <div className="bg-gray-50/50 rounded-lg p-4">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="sendWelcomeEmail"
-                    checked={formData.sendWelcomeEmail}
-                    onChange={(e) => handleInputChange('sendWelcomeEmail', e.target.checked)}
-                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="sendWelcomeEmail" className="ml-3 block text-sm font-medium text-gray-700">
-                    Gửi email chào mừng cho người dùng mới
-                  </label>
-                </div>
-                <p className="text-xs text-gray-500 mt-1 ml-7">
-                  Email sẽ chứa thông tin đăng nhập và hướng dẫn sử dụng hệ thống
-                </p>
-              </div>
             </div>
 
             {/* Submit Buttons */}
