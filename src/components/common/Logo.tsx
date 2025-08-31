@@ -42,7 +42,6 @@ const Logo: React.FC<LogoProps> = ({
     lg: 'text-sm',
     xl: 'text-base'
   };
-
   // Custom Image Logo
   const CustomImageLogo = () => (
     <div className={`${sizeClasses[size]} w-auto flex items-center`}>
@@ -52,6 +51,7 @@ const Logo: React.FC<LogoProps> = ({
         width={imageSizeMapping[size].width}
         height={imageSizeMapping[size].height}
         className="object-contain"
+        style={{ width: 'auto', height: 'auto' }}
         priority
       />
     </div>

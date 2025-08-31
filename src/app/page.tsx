@@ -167,6 +167,7 @@ export default function Home() {    const services = [
                     width={400}
                     height={192}
                     className="w-full h-full object-cover"
+                    style={{ width: 'auto', height: 'auto' }}
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.src = '/images/lab-equipment.svg';
@@ -259,14 +260,14 @@ export default function Home() {    const services = [
                 key={index} 
                 className="bg-secondary-50 rounded-2xl p-8 animate-slide-up"
                 style={{animationDelay: `${index * 100}ms`}}
-              >                <div className="flex items-center mb-6">
-                  <div className="relative w-16 h-16 rounded-full overflow-hidden mr-4 flex-shrink-0">
+              >                <div className="flex items-center mb-6">                  <div className="relative w-16 h-16 rounded-full overflow-hidden mr-4 flex-shrink-0">
                     <Image 
                       src={testimonial.imageUrl} 
                       alt={testimonial.name}
                       width={64}
                       height={64}
                       className="w-full h-full object-cover"
+                      style={{ width: 'auto', height: 'auto' }}
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.src = '/images/lab-equipment.svg';
